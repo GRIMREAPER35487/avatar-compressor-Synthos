@@ -189,6 +189,25 @@ namespace dev.limitex.avatar.compressor.texture
 
         #endregion
 
+        #region Combined Strategy Defaults
+
+        /// <summary>
+        /// Default weight for Fast strategy in combined analysis.
+        /// </summary>
+        public const float CombinedDefaultFastWeight = 0.3f;
+
+        /// <summary>
+        /// Default weight for HighAccuracy strategy in combined analysis.
+        /// </summary>
+        public const float CombinedDefaultHighAccuracyWeight = 0.5f;
+
+        /// <summary>
+        /// Default weight for Perceptual strategy in combined analysis.
+        /// </summary>
+        public const float CombinedDefaultPerceptualWeight = 0.2f;
+
+        #endregion
+
         #region Default Values
 
         /// <summary>

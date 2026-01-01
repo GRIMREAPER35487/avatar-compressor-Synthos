@@ -21,10 +21,11 @@ namespace dev.limitex.avatar.compressor.texture
         /// <summary>
         /// Creates an analyzer for the specified strategy type.
         /// </summary>
-        public static ITextureComplexityAnalyzer Create(AnalysisStrategyType type,
-            float fastWeight = 0.3f,
-            float highAccuracyWeight = 0.5f,
-            float perceptualWeight = 0.2f)
+        public static ITextureComplexityAnalyzer Create(
+            AnalysisStrategyType type,
+            float fastWeight = AnalysisConstants.CombinedDefaultFastWeight,
+            float highAccuracyWeight = AnalysisConstants.CombinedDefaultHighAccuracyWeight,
+            float perceptualWeight = AnalysisConstants.CombinedDefaultPerceptualWeight)
         {
             switch (type)
             {
@@ -41,7 +42,7 @@ namespace dev.limitex.avatar.compressor.texture
                     return new CombinedStrategy(fastWeight, highAccuracyWeight, perceptualWeight);
 
                 default:
-                    throw new ArgumentException($"Unknown strategy type: {type}");
+                    throw new ArgumentException($"Unknown strategy type: {type}", nameof(type));
             }
         }
 
