@@ -1,0 +1,22 @@
+{
+    "name": "dev.limitex.avatar-compressor.editor.tests",
+    "rootNamespace": "dev.limitex.avatar.compressor.tests",
+    "references": [
+        "dev.limitex.avatar-compressor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
