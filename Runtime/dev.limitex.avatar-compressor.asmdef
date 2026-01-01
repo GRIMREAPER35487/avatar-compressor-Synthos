@@ -1,0 +1,17 @@
+{
+    "name": "dev.limitex.avatar-compressor",
+    "rootNamespace": "dev.limitex.avatar.compressor",
+    "references": [
+        "nadena.dev.ndmf",
+        "VRC.SDKBase"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
