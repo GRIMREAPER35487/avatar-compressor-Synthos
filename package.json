@@ -12,5 +12,9 @@
     "email": "76650151+Limitex@users.noreply.github.com",
     "url": "https://github.com/Limitex/avatar-compressor"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "vpmDependencies" : {
+    "com.vrchat.base" : ">=3.10.0",
+    "com.vrchat.avatar" : ">=3.10.0"
+  }
 }
