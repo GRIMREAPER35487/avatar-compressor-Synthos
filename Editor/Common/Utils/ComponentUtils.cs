@@ -14,12 +14,7 @@ namespace dev.limitex.avatar.compressor.common
         public static void SafeDestroy(Object obj)
         {
             if (obj == null) return;
-
-#if UNITY_EDITOR
             Object.DestroyImmediate(obj);
-#else
-            Object.Destroy(obj);
-#endif
         }
 
         /// <summary>

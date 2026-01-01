@@ -3,7 +3,8 @@
     "rootNamespace": "dev.limitex.avatar.compressor.editor",
     "references": [
         "dev.limitex.avatar-compressor",
-        "nadena.dev.ndmf"
+        "nadena.dev.ndmf",
+        "VRC.SDKBase"
     ],
     "includePlatforms": [
         "Editor"

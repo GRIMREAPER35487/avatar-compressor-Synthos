@@ -2,7 +2,6 @@
     "name": "dev.limitex.avatar-compressor",
     "rootNamespace": "dev.limitex.avatar.compressor",
     "references": [
-        "nadena.dev.ndmf",
         "VRC.SDKBase"
     ],
     "includePlatforms": [],

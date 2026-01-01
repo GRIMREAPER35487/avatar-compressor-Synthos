@@ -3,6 +3,7 @@
     "rootNamespace": "dev.limitex.avatar.compressor.tests",
     "references": [
         "dev.limitex.avatar-compressor",
+        "dev.limitex.avatar-compressor.editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

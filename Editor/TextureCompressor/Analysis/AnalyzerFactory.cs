@@ -3,17 +3,6 @@ using System;
 namespace dev.limitex.avatar.compressor.texture
 {
     /// <summary>
-    /// Strategy type for complexity analysis.
-    /// </summary>
-    public enum AnalysisStrategyType
-    {
-        Fast,
-        HighAccuracy,
-        Perceptual,
-        Combined
-    }
-
-    /// <summary>
     /// Factory for creating texture complexity analyzers.
     /// </summary>
     public static class AnalyzerFactory
