@@ -7,7 +7,7 @@ namespace dev.limitex.avatar.compressor.texture
     /// </summary>
     public static class PixelSampler
     {
-        private const int MaxSampledPixels = 262144; // 512x512
+        private const int MaxSampledPixels = AnalysisConstants.MaxSampledPixels;
 
         /// <summary>
         /// Samples pixels if the texture exceeds the maximum sample size.
@@ -26,8 +26,8 @@ namespace dev.limitex.avatar.compressor.texture
             }
 
             float ratio = Mathf.Sqrt((float)MaxSampledPixels / totalPixels);
-            sampledWidth = Mathf.Max(64, (int)(width * ratio));
-            sampledHeight = Mathf.Max(64, (int)(height * ratio));
+            sampledWidth = Mathf.Max(AnalysisConstants.MinSampledDimension, (int)(width * ratio));
+            sampledHeight = Mathf.Max(AnalysisConstants.MinSampledDimension, (int)(height * ratio));
 
             sampledPixels = new Color[sampledWidth * sampledHeight];
 

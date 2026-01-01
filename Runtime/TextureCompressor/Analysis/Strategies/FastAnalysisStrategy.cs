@@ -19,14 +19,23 @@ namespace dev.limitex.avatar.compressor.texture
             float colorVar = ImageMath.CalculateColorVariance(
                 data.OpaquePixels, data.OpaqueCount);
 
-            float normalizedGradient = MathUtils.NormalizeWithPercentile(gradient, 0.05f, 0.8f);
-            float normalizedSpatialFreq = MathUtils.NormalizeWithPercentile(spatialFreq, 0.01f, 0.15f);
-            float normalizedColorVar = MathUtils.NormalizeWithPercentile(colorVar, 0.005f, 0.08f);
+            float normalizedGradient = MathUtils.NormalizeWithPercentile(
+                gradient,
+                AnalysisConstants.GradientPercentileLow,
+                AnalysisConstants.GradientPercentileHigh);
+            float normalizedSpatialFreq = MathUtils.NormalizeWithPercentile(
+                spatialFreq,
+                AnalysisConstants.SpatialFreqPercentileLow,
+                AnalysisConstants.SpatialFreqPercentileHigh);
+            float normalizedColorVar = MathUtils.NormalizeWithPercentile(
+                colorVar,
+                AnalysisConstants.ColorVariancePercentileLow,
+                AnalysisConstants.ColorVariancePercentileHigh);
 
             float score = Mathf.Clamp01(
-                0.4f * normalizedGradient +
-                0.35f * normalizedSpatialFreq +
-                0.25f * normalizedColorVar
+                AnalysisConstants.FastGradientWeight * normalizedGradient +
+                AnalysisConstants.FastSpatialFrequencyWeight * normalizedSpatialFreq +
+                AnalysisConstants.FastColorVarianceWeight * normalizedColorVar
             );
 
             return new TextureComplexityResult(score);

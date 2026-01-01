@@ -35,9 +35,11 @@ namespace dev.limitex.avatar.compressor.texture
             float totalWeight = _fastWeight + _highAccuracyWeight + _perceptualWeight;
 
             // Avoid division by zero - use equal weights if all are zero
-            if (totalWeight < 0.0001f)
+            if (totalWeight < AnalysisConstants.ZeroWeightThreshold)
             {
-                return new TextureComplexityResult(Mathf.Clamp01((fast + highAcc + perceptual) / 3f));
+                return new TextureComplexityResult(
+                    Mathf.Clamp01((fast + highAcc + perceptual) / 3f),
+                    "Combined analysis with equal weights (all weights were zero)");
             }
 
             float combined = (

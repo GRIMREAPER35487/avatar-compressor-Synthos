@@ -110,10 +110,12 @@ namespace dev.limitex.avatar.compressor.texture
                 AlphaExtractor.ExtractOpaquePixels(sampledPixels, sampledWidth, sampledHeight,
                     out Color[] opaquePixels, out float[] grayscale, out int opaqueCount);
 
-                if (opaqueCount < 100)
+                if (opaqueCount < AnalysisConstants.MinOpaquePixelsForStandardAnalysis)
                 {
                     // Too few opaque pixels for meaningful analysis
-                    complexityResult = new TextureComplexityResult(0.1f, "Too few opaque pixels for analysis");
+                    complexityResult = new TextureComplexityResult(
+                        AnalysisConstants.DefaultComplexityScore * 0.2f,
+                        "Too few opaque pixels for analysis");
                 }
                 else
                 {

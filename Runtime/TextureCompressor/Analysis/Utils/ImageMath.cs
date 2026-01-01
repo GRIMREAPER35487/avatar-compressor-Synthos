@@ -9,9 +9,9 @@ namespace dev.limitex.avatar.compressor.texture
     /// </summary>
     public static class ImageMath
     {
-        private const int DctBlockSize = 8;
-        private const int GlcmLevels = 16;
-        private const int HistogramBins = 256;
+        private const int DctBlockSize = AnalysisConstants.DctBlockSize;
+        private const int GlcmLevels = AnalysisConstants.GlcmLevels;
+        private const int HistogramBins = AnalysisConstants.HistogramBins;
 
         // Cached DCT cosine table (thread-safe static initialization)
         private static readonly float[,] DctCosTable = InitializeDctCosTable();

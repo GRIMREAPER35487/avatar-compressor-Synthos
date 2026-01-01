@@ -10,11 +10,18 @@ namespace dev.limitex.avatar.compressor.texture
     {
         public TextureComplexityResult Analyze(ProcessedPixelData data)
         {
-            if (data.Width < 8 || data.Height < 8 || data.OpaqueCount < 64)
-                return new TextureComplexityResult(0.5f);
+            if (data.Width < AnalysisConstants.MinAnalysisDimension ||
+                data.Height < AnalysisConstants.MinAnalysisDimension ||
+                data.OpaqueCount < AnalysisConstants.MinOpaquePixelsForAnalysis)
+            {
+                return new TextureComplexityResult(
+                    AnalysisConstants.DefaultComplexityScore,
+                    "Texture too small for perceptual analysis");
+            }
 
             float avgVariance = ImageMath.CalculateBlockVariance(
-                data.Grayscale, data.Width, data.Height, data.OpaqueCount, 4);
+                data.Grayscale, data.Width, data.Height, data.OpaqueCount,
+                AnalysisConstants.PerceptualBlockSize);
 
             float avgEdge = ImageMath.CalculateEdgeDensity(
                 data.Grayscale, data.Width, data.Height, data.OpaqueCount);
@@ -22,13 +29,19 @@ namespace dev.limitex.avatar.compressor.texture
             float detailDensity = ImageMath.CalculateDetailDensity(
                 data.Grayscale, data.Width, data.Height, data.OpaqueCount, avgVariance);
 
-            float varianceScore = MathUtils.NormalizeWithPercentile(avgVariance, 0.001f, 0.05f);
-            float edgeScore = MathUtils.NormalizeWithPercentile(avgEdge, 0.02f, 0.3f);
+            float varianceScore = MathUtils.NormalizeWithPercentile(
+                avgVariance,
+                AnalysisConstants.VariancePercentileLow,
+                AnalysisConstants.VariancePercentileHigh);
+            float edgeScore = MathUtils.NormalizeWithPercentile(
+                avgEdge,
+                AnalysisConstants.EdgePercentileLow,
+                AnalysisConstants.EdgePercentileHigh);
 
             float score = Mathf.Clamp01(
-                0.4f * varianceScore +
-                0.3f * edgeScore +
-                0.3f * detailDensity
+                AnalysisConstants.PerceptualVarianceWeight * varianceScore +
+                AnalysisConstants.PerceptualEdgeWeight * edgeScore +
+                AnalysisConstants.PerceptualDetailWeight * detailDensity
             );
 
             return new TextureComplexityResult(score);

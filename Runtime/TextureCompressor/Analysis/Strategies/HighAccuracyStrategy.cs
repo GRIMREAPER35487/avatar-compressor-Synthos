@@ -19,15 +19,21 @@ namespace dev.limitex.avatar.compressor.texture
             float entropy = ImageMath.CalculateEntropy(
                 data.Grayscale, data.OpaqueCount);
 
-            float normalizedEntropy = MathUtils.NormalizeWithPercentile(entropy, 2f, 7f);
-            float normalizedContrast = MathUtils.NormalizeWithPercentile(glcm.contrast, 5f, 80f);
+            float normalizedEntropy = MathUtils.NormalizeWithPercentile(
+                entropy,
+                AnalysisConstants.EntropyPercentileLow,
+                AnalysisConstants.EntropyPercentileHigh);
+            float normalizedContrast = MathUtils.NormalizeWithPercentile(
+                glcm.contrast,
+                AnalysisConstants.ContrastPercentileLow,
+                AnalysisConstants.ContrastPercentileHigh);
 
             float score = Mathf.Clamp01(
-                0.35f * dctRatio +
-                0.25f * normalizedContrast +
-                0.20f * (1f - glcm.homogeneity) +
-                0.10f * (1f - Mathf.Sqrt(glcm.energy)) +
-                0.10f * normalizedEntropy
+                AnalysisConstants.HighAccuracyDctWeight * dctRatio +
+                AnalysisConstants.HighAccuracyContrastWeight * normalizedContrast +
+                AnalysisConstants.HighAccuracyHomogeneityWeight * (1f - glcm.homogeneity) +
+                AnalysisConstants.HighAccuracyEnergyWeight * (1f - Mathf.Sqrt(glcm.energy)) +
+                AnalysisConstants.HighAccuracyEntropyWeight * normalizedEntropy
             );
 
             return new TextureComplexityResult(score);

@@ -16,15 +16,23 @@ namespace dev.limitex.avatar.compressor.texture
 
         private float CalculateNormalMapComplexity(Color[] pixels, int width, int height)
         {
-            if (width < 4 || height < 4) return 0.5f;
-            if (pixels.Length != width * height) return 0.5f;
+            if (width < AnalysisConstants.MinNormalMapDimension ||
+                height < AnalysisConstants.MinNormalMapDimension)
+            {
+                return AnalysisConstants.DefaultComplexityScore;
+            }
+
+            if (pixels.Length != width * height)
+            {
+                return AnalysisConstants.DefaultComplexityScore;
+            }
 
             float totalVariation = 0f;
             int count = 0;
 
-            for (int y = 1; y < height - 1; y += 2)
+            for (int y = 1; y < height - 1; y += AnalysisConstants.NormalMapSampleStep)
             {
-                for (int x = 1; x < width - 1; x += 2)
+                for (int x = 1; x < width - 1; x += AnalysisConstants.NormalMapSampleStep)
                 {
                     int idx = y * width + x;
                     int idxRight = idx + 1;
@@ -53,7 +61,7 @@ namespace dev.limitex.avatar.compressor.texture
 
             float avgVariation = count > 0 ? totalVariation / count : 0f;
 
-            return Mathf.Clamp01(avgVariation * 2f);
+            return Mathf.Clamp01(avgVariation * AnalysisConstants.NormalMapVariationMultiplier);
         }
 
         private Vector3 DecodeNormal(Color c)
