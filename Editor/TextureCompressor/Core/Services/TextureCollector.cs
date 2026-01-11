@@ -33,6 +33,7 @@ namespace dev.limitex.avatar.compressor.texture
         private readonly bool _processNormalMaps;
         private readonly bool _processEmissionMaps;
         private readonly bool _processOtherTextures;
+        private readonly List<string> _excludedPathPrefixes;
         private readonly HashSet<string> _frozenSkipPaths;
 
         public TextureCollector(
@@ -42,6 +43,7 @@ namespace dev.limitex.avatar.compressor.texture
             bool processNormalMaps,
             bool processEmissionMaps,
             bool processOtherTextures,
+            IEnumerable<string> excludedPathPrefixes = null,
             IEnumerable<string> frozenSkipPaths = null)
         {
             _minSourceSize = minSourceSize;
@@ -50,6 +52,9 @@ namespace dev.limitex.avatar.compressor.texture
             _processNormalMaps = processNormalMaps;
             _processEmissionMaps = processEmissionMaps;
             _processOtherTextures = processOtherTextures;
+            _excludedPathPrefixes = excludedPathPrefixes != null
+                ? new List<string>(excludedPathPrefixes.Where(p => !string.IsNullOrWhiteSpace(p)))
+                : new List<string>();
             _frozenSkipPaths = frozenSkipPaths != null
                 ? new HashSet<string>(frozenSkipPaths)
                 : new HashSet<string>();
@@ -189,8 +194,22 @@ namespace dev.limitex.avatar.compressor.texture
 
         private (bool shouldProcess, SkipReason skipReason) GetProcessResult(Texture2D texture, string propertyName)
         {
-            // Check frozen skip first (highest priority)
             string assetPath = AssetDatabase.GetAssetPath(texture);
+
+            // Skip runtime-generated textures (no asset path).
+            // These are dynamically created during build and may use RGB values for non-visual data
+            // (e.g., depth, deformation vectors), which compression would corrupt.
+            if (string.IsNullOrEmpty(assetPath))
+                return (false, SkipReason.RuntimeGenerated);
+
+            // Skip textures in excluded paths
+            foreach (var prefix in _excludedPathPrefixes)
+            {
+                if (assetPath.StartsWith(prefix))
+                    return (false, SkipReason.ExcludedPath);
+            }
+
+            // Check frozen skip (highest priority for asset-based textures)
             if (_frozenSkipPaths.Contains(assetPath))
                 return (false, SkipReason.FrozenSkip);
 
