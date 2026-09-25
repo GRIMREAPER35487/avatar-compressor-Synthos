@@ -10,17 +10,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
     /// </summary>
     internal sealed class TextureCompressorPreferencesSection : IPreferencesSection
     {
-        private static readonly GUIContent AnalysisBackendContent = new(
-            "Analysis Backend",
-            "Select the backend used for texture complexity analysis"
-        );
-
-        private static readonly GUIContent ResizeBackendContent = new(
-            "Resize Backend",
-            "Select the backend used for Area Averaging texture resize"
-        );
-
-        public string Title => "Texture Compressor";
+        public string Title =>
+            AvatarCompressorLocalization.Tr("TextureCompressor:label:preferences");
 
         public IEnumerable<string> Keywords =>
             new[] { "Texture", "Analysis", "Resize", "Backend", "GPU", "CPU", "Software" };
@@ -37,11 +28,14 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         {
             // Change checks keep EditorPrefs writes off the repaint path.
             EditorGUI.BeginChangeCheck();
-            var analysisBackend = (AnalysisBackendPreference)
-                EditorGUILayout.EnumPopup(
-                    AnalysisBackendContent,
-                    TextureCompressorPreferences.AnalysisBackend
-                );
+            var analysisBackend = AvatarCompressorLocalization.EnumPopup(
+                "TextureCompressor",
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:analysisBackend",
+                    "TextureCompressor:prop:analysisBackend:tooltip"
+                ),
+                TextureCompressorPreferences.AnalysisBackend
+            );
             if (EditorGUI.EndChangeCheck())
                 TextureCompressorPreferences.AnalysisBackend = analysisBackend;
             if (_analysisNameFor != analysisBackend)
@@ -52,17 +46,21 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             DrawBackendHelpBox(
                 analysisBackend == AnalysisBackendPreference.CPU,
                 _analysisName,
-                "texture analysis"
+                "TextureCompressor:message:analysisBackendCpuHelp",
+                "TextureCompressor:message:analysisBackendAutoHelp"
             );
 
             EditorGUILayout.Space(4);
 
             EditorGUI.BeginChangeCheck();
-            var resizeBackend = (ResizeBackendPreference)
-                EditorGUILayout.EnumPopup(
-                    ResizeBackendContent,
-                    TextureCompressorPreferences.ResizeBackend
-                );
+            var resizeBackend = AvatarCompressorLocalization.EnumPopup(
+                "TextureCompressor",
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:resizeBackend",
+                    "TextureCompressor:prop:resizeBackend:tooltip"
+                ),
+                TextureCompressorPreferences.ResizeBackend
+            );
             if (EditorGUI.EndChangeCheck())
                 TextureCompressorPreferences.ResizeBackend = resizeBackend;
             if (_resizeNameFor != resizeBackend)
@@ -73,19 +71,21 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             DrawBackendHelpBox(
                 resizeBackend == ResizeBackendPreference.CPU,
                 _resizeName,
-                "Area Averaging resize"
+                "TextureCompressor:message:resizeBackendCpuHelp",
+                "TextureCompressor:message:resizeBackendAutoHelp"
             );
         }
 
         private static void DrawBackendHelpBox(
             bool isCpuForced,
             string resolvedName,
-            string subject
+            string cpuHelpKey,
+            string autoHelpKey
         )
         {
             var help = isCpuForced
-                ? $"Always uses CPU for {subject}. Useful when GPU results are unstable or for debugging."
-                : $"Currently using {resolvedName}. Uses GPU compute shaders for {subject} when available, otherwise falls back to CPU.";
+                ? AvatarCompressorLocalization.Tr(cpuHelpKey)
+                : AvatarCompressorLocalization.Tr(autoHelpKey, resolvedName);
             EditorGUILayout.HelpBox(help, MessageType.Info);
         }
     }

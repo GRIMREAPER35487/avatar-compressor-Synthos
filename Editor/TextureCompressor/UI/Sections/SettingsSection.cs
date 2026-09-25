@@ -29,7 +29,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             {
                 showAdvanced = EditorGUILayout.Foldout(
                     showAdvanced,
-                    "Advanced Settings (Read Only)",
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:advancedReadOnly"),
                     true
                 );
                 if (showAdvanced)
@@ -55,8 +55,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config,
                 serializedObject,
                 nameof(TextureCompressor.Strategy),
-                "Strategy",
-                compactMode
+                "TextureCompressor:prop:strategy",
+                compactMode,
+                "TextureCompressor:prop:strategy:tooltip"
             );
 
             if (config.Strategy == AnalysisStrategyType.Combined)
@@ -67,21 +68,21 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     config,
                     serializedObject,
                     nameof(TextureCompressor.FastWeight),
-                    "Fast Weight",
+                    "TextureCompressor:prop:fastWeight",
                     compactMode
                 );
                 DrawPropertyWithModifiedIndicator(
                     config,
                     serializedObject,
                     nameof(TextureCompressor.HighAccuracyWeight),
-                    "High Accuracy Weight",
+                    "TextureCompressor:prop:highAccuracyWeight",
                     compactMode
                 );
                 DrawPropertyWithModifiedIndicator(
                     config,
                     serializedObject,
                     nameof(TextureCompressor.PerceptualWeight),
-                    "Perceptual Weight",
+                    "TextureCompressor:prop:perceptualWeight",
                     compactMode
                 );
                 if (!compactMode)
@@ -95,15 +96,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config,
                 serializedObject,
                 nameof(TextureCompressor.HighComplexityThreshold),
-                "High (Keep Detail)",
-                compactMode
+                "TextureCompressor:prop:highThreshold",
+                compactMode,
+                "TextureCompressor:prop:highThreshold:tooltip"
             );
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.LowComplexityThreshold),
-                "Low (Compress More)",
-                compactMode
+                "TextureCompressor:prop:lowThreshold",
+                compactMode,
+                "TextureCompressor:prop:lowThreshold:tooltip"
             );
 
             DrawSectionSpacing(compactMode);
@@ -113,46 +116,47 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config,
                 serializedObject,
                 nameof(TextureCompressor.MinDivisor),
-                "Min Divisor",
-                compactMode
+                "TextureCompressor:prop:minDivisor",
+                compactMode,
+                "TextureCompressor:prop:minDivisor:tooltip"
             );
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.MaxDivisor),
-                "Max Divisor",
-                compactMode
+                "TextureCompressor:prop:maxDivisor",
+                compactMode,
+                "TextureCompressor:prop:maxDivisor:tooltip"
             );
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.MaxResolution),
-                "Max Resolution",
-                compactMode
+                "TextureCompressor:prop:maxResolution",
+                compactMode,
+                "TextureCompressor:prop:maxResolution:tooltip"
             );
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.MinResolution),
-                "Min Resolution",
-                compactMode
+                "TextureCompressor:prop:minResolution",
+                compactMode,
+                "TextureCompressor:prop:minResolution:tooltip"
             );
 
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.ForcePowerOfTwo),
-                "Force Power of 2",
+                "TextureCompressor:prop:forcePowerOfTwo",
                 compactMode,
-                "When enabled, dimensions are rounded to nearest power of 2.\n"
-                    + "When disabled, dimensions are rounded to nearest multiple of 4.\n"
-                    + "Note: All output dimensions are always multiples of 4 for DXT/BC compression compatibility."
+                "TextureCompressor:prop:forcePowerOfTwo:tooltip"
             );
             if (!compactMode)
             {
                 EditorGUILayout.HelpBox(
-                    "Output dimensions are always multiples of 4 for DXT/BC compression compatibility. "
-                        + "Example: 150x150 becomes 152x152.",
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:multipleOfFourHelp"),
                     MessageType.Info
                 );
             }
@@ -164,15 +168,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config,
                 serializedObject,
                 nameof(TextureCompressor.MinSourceSize),
-                "Min Source Size",
-                compactMode
+                "TextureCompressor:prop:minSourceSize",
+                compactMode,
+                "TextureCompressor:prop:minSourceSize:tooltip"
             );
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.SkipIfSmallerThan),
-                "Skip If Smaller Than",
-                compactMode
+                "TextureCompressor:prop:skipIfSmaller",
+                compactMode,
+                "TextureCompressor:prop:skipIfSmaller:tooltip"
             );
 
             DrawSectionSpacing(compactMode);
@@ -182,17 +188,18 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config,
                 serializedObject,
                 nameof(TextureCompressor.TargetPlatform),
-                "Target Platform",
-                compactMode
+                "TextureCompressor:prop:targetPlatform",
+                compactMode,
+                "TextureCompressor:prop:targetPlatform:tooltip"
             );
 
             DrawPropertyWithModifiedIndicator(
                 config,
                 serializedObject,
                 nameof(TextureCompressor.UseHighQualityFormatForHighComplexity),
-                "High Quality for Complex",
+                "TextureCompressor:prop:highQualityComplex",
                 compactMode,
-                "Use BC7/ASTC_4x4 for high complexity textures (uses Complexity Threshold)"
+                "TextureCompressor:prop:highQualityComplex:tooltip"
             );
 
             if (compactMode)
@@ -211,37 +218,52 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             TextureCompressor config,
             SerializedObject serializedObject,
             string propertyName,
-            string label,
+            string labelKey,
             bool compactMode,
-            string tooltip = null
+            string tooltipKey = null
         )
         {
-            if (compactMode)
+            bool isModified = !compactMode && IsFieldModified(config, propertyName);
+            string displayLabel = AvatarCompressorLocalization.Tr(labelKey);
+            if (isModified)
             {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty(propertyName));
+                displayLabel += " *";
+            }
+
+            var originalColor = GUI.contentColor;
+            if (isModified)
+            {
+                GUI.contentColor = EditorStylesCache.ModifiedStatusStyle.normal.textColor;
+            }
+
+            var property = serializedObject.FindProperty(propertyName);
+            var content = new GUIContent(
+                displayLabel,
+                tooltipKey == null ? null : AvatarCompressorLocalization.Tr(tooltipKey)
+            );
+
+            if (propertyName == nameof(TextureCompressor.Strategy))
+            {
+                AvatarCompressorLocalization.DrawEnumProperty<AnalysisStrategyType>(
+                    "TextureCompressor",
+                    property,
+                    content
+                );
+            }
+            else if (propertyName == nameof(TextureCompressor.TargetPlatform))
+            {
+                AvatarCompressorLocalization.DrawEnumProperty<CompressionPlatform>(
+                    "TextureCompressor",
+                    property,
+                    content
+                );
             }
             else
             {
-                bool isModified = IsFieldModified(config, propertyName);
-                string displayLabel = label ?? propertyName;
-                if (isModified)
-                {
-                    displayLabel = displayLabel + " *";
-                }
-
-                var originalColor = GUI.contentColor;
-                if (isModified)
-                {
-                    GUI.contentColor = EditorStylesCache.ModifiedStatusStyle.normal.textColor;
-                }
-
-                EditorGUILayout.PropertyField(
-                    serializedObject.FindProperty(propertyName),
-                    new GUIContent(displayLabel, tooltip)
-                );
-
-                GUI.contentColor = originalColor;
+                EditorGUILayout.PropertyField(property, content);
             }
+
+            GUI.contentColor = originalColor;
         }
 
         private static bool IsFieldModified(TextureCompressor config, string fieldName)

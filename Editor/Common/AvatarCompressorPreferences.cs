@@ -7,7 +7,7 @@ namespace dev.limitex.avatar.compressor.editor
 {
     /// <summary>
     /// Shared editor preferences for Avatar Compressor.
-    /// Hosts the General section and draws the sections contributed by
+    /// Hosts the General and Language sections and draws sections contributed by
     /// features through IPreferencesSection.
     /// Accessible via Edit > Preferences > Avatar Compressor.
     /// </summary>
@@ -16,11 +16,6 @@ namespace dev.limitex.avatar.compressor.editor
         public const string PrefsPrefix = "dev.limitex.avatar-compressor.";
         private const string BasePath = "Preferences/Avatar Compressor";
         private const string EnableLoggingKey = PrefsPrefix + "enableLogging";
-
-        private static readonly GUIContent EnableLoggingContent = new(
-            "Enable Logging",
-            "Output debug logs during build and preview"
-        );
 
         /// <summary>
         /// When true, debug log output is enabled during build and preview.
@@ -72,7 +67,19 @@ namespace dev.limitex.avatar.compressor.editor
         {
             var sections = CreateSections(TypeCache.GetTypesDerivedFrom<IPreferencesSection>());
 
-            var keywords = new HashSet<string> { "Avatar", "Compressor", "LAC", "Log", "Debug" };
+            var keywords = new HashSet<string>
+            {
+                "Avatar",
+                "Compressor",
+                "LAC",
+                "Log",
+                "Debug",
+                "Language",
+                "语言",
+                "語言",
+                "言語",
+                "언어",
+            };
             foreach (var section in sections)
             {
                 keywords.UnionWith(section.Keywords);
@@ -85,8 +92,24 @@ namespace dev.limitex.avatar.compressor.editor
                 {
                     EditorGUILayout.BeginVertical(EditorStyles.inspectorDefaultMargins);
 
-                    EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
-                    EnableLogging = EditorGUILayout.Toggle(EnableLoggingContent, EnableLogging);
+                    EditorGUILayout.LabelField(
+                        AvatarCompressorLocalization.Tr("Common:label:general"),
+                        EditorStyles.boldLabel
+                    );
+                    EnableLogging = EditorGUILayout.Toggle(
+                        AvatarCompressorLocalization.Content(
+                            "Common:prop:enableLogging",
+                            "Common:prop:enableLogging:tooltip"
+                        ),
+                        EnableLogging
+                    );
+
+                    EditorGUILayout.Space(10);
+                    EditorGUILayout.LabelField(
+                        AvatarCompressorLocalization.Tr("Common:label:language"),
+                        EditorStyles.boldLabel
+                    );
+                    AvatarCompressorLocalization.DrawLanguagePicker();
 
                     foreach (var section in sections)
                     {

@@ -80,7 +80,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             }
             else
             {
-                menu.AddDisabledItem(new GUIContent("No presets available"));
+                menu.AddDisabledItem(
+                    new GUIContent(AvatarCompressorLocalization.Tr("TextureCompressor:menu:none"))
+                );
             }
 
             return menu;
@@ -101,8 +103,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 var restriction = PresetLocationResolver.GetRestriction(preset);
                 string suffix = restriction switch
                 {
-                    PresetRestriction.BuiltIn => " (Built-in)",
-                    PresetRestriction.ExternalPackage => " (Package)",
+                    PresetRestriction.BuiltIn => AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:menu:builtInSuffix"
+                    ),
+                    PresetRestriction.ExternalPackage => AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:menu:packageSuffix"
+                    ),
                     _ => "",
                 };
 

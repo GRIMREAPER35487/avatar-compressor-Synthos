@@ -81,12 +81,14 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         )
         {
             string tooltip = restriction.RequiresUnlink()
-                ? "Unlink preset and edit settings manually"
-                : "Manually configure compression settings";
+                ? AvatarCompressorLocalization.Tr(
+                    "TextureCompressor:prop:customEditModeUnlink:tooltip"
+                )
+                : AvatarCompressorLocalization.Tr("TextureCompressor:prop:customEditMode:tooltip");
 
             if (
                 EditorDrawUtils.DrawColoredButton(
-                    "Edit Mode",
+                    AvatarCompressorLocalization.Tr("TextureCompressor:prop:customEditMode"),
                     tooltip,
                     PresetColors.EditMode,
                     isEditable,
@@ -105,11 +107,13 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             float buttonWidth
         )
         {
-            string presetLabel = "Custom Preset \u25BE";
+            string presetLabel = AvatarCompressorLocalization.Tr(
+                "TextureCompressor:prop:customPreset"
+            );
 
             bool clicked = EditorDrawUtils.DrawColoredButton(
                 presetLabel,
-                "Select a custom preset from the menu",
+                AvatarCompressorLocalization.Tr("TextureCompressor:prop:customPreset:tooltip"),
                 PresetColors.CustomPreset,
                 !isEditable,
                 height: 24f,
@@ -175,21 +179,29 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            EditorDrawUtils.DrawSectionHeader("Custom Preset (Use Only)");
+            EditorDrawUtils.DrawSectionHeader(
+                AvatarCompressorLocalization.Tr("TextureCompressor:label:customUseOnly")
+            );
             EditorGUILayout.Space(4);
 
             EditorGUILayout.BeginHorizontal();
             if (restriction == PresetRestriction.BuiltIn)
             {
                 EditorGUILayout.LabelField(
-                    $"{config.CustomPresetAsset.name} (Built-in)",
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customNameBuiltIn",
+                        config.CustomPresetAsset.name
+                    ),
                     EditorStyles.boldLabel
                 );
             }
             else if (restriction == PresetRestriction.ExternalPackage)
             {
                 EditorGUILayout.LabelField(
-                    $"{config.CustomPresetAsset.name} (Package)",
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customNamePackage",
+                        config.CustomPresetAsset.name
+                    ),
                     EditorStyles.boldLabel
                 );
             }
@@ -209,15 +221,28 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 var lockIcon = EditorGUIUtility.IconContent("IN LockButton on");
                 lockIcon.tooltip = restriction switch
                 {
-                    PresetRestriction.BuiltIn => "This preset is built-in",
-                    PresetRestriction.ExternalPackage => "This preset is in a package",
-                    PresetRestriction.Locked => "This preset is locked",
-                    _ => "This preset cannot be edited",
+                    PresetRestriction.BuiltIn => AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customLockBuiltIn"
+                    ),
+                    PresetRestriction.ExternalPackage => AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customLockPackage"
+                    ),
+                    PresetRestriction.Locked => AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customLockLocked"
+                    ),
+                    _ => AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customLockUneditable"
+                    ),
                 };
                 GUILayout.Label(lockIcon, GUILayout.Width(18), GUILayout.Height(18));
             }
 
-            if (GUILayout.Button("Edit", GUILayout.Width(50)))
+            if (
+                GUILayout.Button(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:button:editCustomPreset"),
+                    GUILayout.Width(60)
+                )
+            )
             {
                 PresetEditTransition.TryEnterEditMode(config);
             }
@@ -237,7 +262,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            EditorDrawUtils.DrawSectionHeader("Custom Preset");
+            EditorDrawUtils.DrawSectionHeader(
+                AvatarCompressorLocalization.Tr("TextureCompressor:label:customPreset")
+            );
             EditorGUILayout.Space(4);
             DrawPresetField(
                 config,
@@ -297,7 +324,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             {
                 if (
                     GUILayout.Button(
-                        new GUIContent("\u2193", "Save current settings to preset"),
+                        new GUIContent(
+                            "\u2193",
+                            AvatarCompressorLocalization.Tr(
+                                "TextureCompressor:button:saveCustomPreset:tooltip"
+                            )
+                        ),
                         GUILayout.Width(24),
                         GUILayout.Height(18)
                     )
@@ -308,7 +340,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
                 if (
                     GUILayout.Button(
-                        new GUIContent("\u21A9", "Discard changes and reload from preset"),
+                        new GUIContent(
+                            "\u21A9",
+                            AvatarCompressorLocalization.Tr(
+                                "TextureCompressor:button:discardCustomPreset:tooltip"
+                            )
+                        ),
                         GUILayout.Width(24),
                         GUILayout.Height(18)
                     )
@@ -320,7 +357,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
             if (
                 GUILayout.Button(
-                    new GUIContent("+", "Create new preset from current settings"),
+                    new GUIContent(
+                        "+",
+                        AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:button:createCustomPreset:tooltip"
+                        )
+                    ),
                     GUILayout.Width(24),
                     GUILayout.Height(18)
                 )
@@ -333,7 +375,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             {
                 if (
                     GUILayout.Button(
-                        new GUIContent("\u2715", "Unlink preset (keep current settings)"),
+                        new GUIContent(
+                            "\u2715",
+                            AvatarCompressorLocalization.Tr(
+                                "TextureCompressor:button:unlinkCustomPreset:tooltip"
+                            )
+                        ),
                         GUILayout.Width(24),
                         GUILayout.Height(18)
                     )
@@ -349,8 +396,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             if (!hasPresetAsset)
             {
                 EditorGUILayout.HelpBox(
-                    "Settings are stored in this component only.\n"
-                        + "Create a preset to reuse across avatars.",
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:customComponentOnly"
+                    ),
                     MessageType.Info
                 );
                 return;
@@ -359,31 +407,38 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             if (isModified)
             {
                 EditorGUILayout.LabelField(
-                    "\u25CF Modified",
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:customModified"),
                     EditorStylesCache.ModifiedStatusStyle
                 );
             }
             else
             {
-                EditorGUILayout.LabelField("\u2713 Synced", EditorStylesCache.SyncedStatusStyle);
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:customSynced"),
+                    EditorStylesCache.SyncedStatusStyle
+                );
             }
         }
 
         private static void DrawPresetSummary(TextureCompressor config)
         {
             // Called only from DrawUseOnlyPanel where CustomPresetAsset is guaranteed non-null
-            if (!string.IsNullOrEmpty(config.CustomPresetAsset.Description))
+            string description = config.CustomPresetAsset.Description;
+            if (!string.IsNullOrEmpty(description))
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.LabelField("Description", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(
-                    config.CustomPresetAsset.Description,
-                    EditorStyles.wordWrappedLabel
+                    AvatarCompressorLocalization.Tr("TextureCompressor:prop:customDescription"),
+                    EditorStyles.boldLabel
                 );
+                EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
                 EditorGUILayout.EndVertical();
             }
 
-            SettingsSummaryDrawer.Draw(config, "Settings Summary");
+            SettingsSummaryDrawer.Draw(
+                config,
+                AvatarCompressorLocalization.Tr("TextureCompressor:label:settings")
+            );
         }
 
         #endregion
@@ -467,10 +522,10 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         {
             string defaultName = "NewTextureCompressorPreset";
             string path = EditorUtility.SaveFilePanelInProject(
-                "Create New Texture Compressor Preset",
+                AvatarCompressorLocalization.Tr("TextureCompressor:dialog:createPresetTitle"),
                 defaultName,
                 PresetFileExtension,
-                "Choose a location to save the new preset",
+                AvatarCompressorLocalization.Tr("TextureCompressor:dialog:createPresetMessage"),
                 DefaultPresetFolder
             );
 

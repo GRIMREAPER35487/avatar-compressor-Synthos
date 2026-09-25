@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using dev.limitex.avatar.compressor.editor;
+using nadena.dev.ndmf.localization;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -37,6 +38,7 @@ namespace dev.limitex.avatar.compressor.editor.ui
         private object _cachedSourceRef;
         private int _cachedSourceCount;
         private object _cachedPredicate;
+        private string _cachedLanguage;
 
         /// <summary>
         /// Creates a new SearchBoxControl with optional initial state.
@@ -72,9 +74,9 @@ namespace dev.limitex.avatar.compressor.editor.ui
 
                 EditorGUI.BeginChangeCheck();
                 var fuzzy = EditorGUILayout.ToggleLeft(
-                    "Fuzzy",
+                    AvatarCompressorLocalization.Tr("Common:prop:fuzzySearch"),
                     UseFuzzySearch,
-                    GUILayout.Width(55)
+                    GUILayout.Width(70)
                 );
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -87,7 +89,11 @@ namespace dev.limitex.avatar.compressor.editor.ui
                 if (totalCount >= 0)
                 {
                     GUILayout.Label(
-                        $"Showing {matchedCount} of {totalCount}",
+                        AvatarCompressorLocalization.Tr(
+                            "Common:message:searchShowing",
+                            matchedCount,
+                            totalCount
+                        ),
                         EditorStyles.miniLabel
                     );
                 }
@@ -101,7 +107,8 @@ namespace dev.limitex.avatar.compressor.editor.ui
         /// <summary>
         /// Returns the number of items matching the current search, with caching.
         /// When not searching, returns <c>items.Count</c> without invoking the predicate.
-        /// The cache is keyed on (SearchText, UseFuzzySearch, collection reference, items.Count, predicate)
+        /// The cache is keyed on (SearchText, UseFuzzySearch, collection reference, items.Count,
+        /// predicate, active language)
         /// and is automatically invalidated when any of these change.
         /// </summary>
         /// <param name="items">Source collection.</param>
@@ -111,12 +118,15 @@ namespace dev.limitex.avatar.compressor.editor.ui
             if (!IsSearching)
                 return items.Count;
 
+            string activeLanguage = LanguagePrefs.Language;
+
             if (
                 SearchText == _cachedCountSearchText
                 && UseFuzzySearch == _cachedCountUseFuzzy
                 && ReferenceEquals(items, _cachedSourceRef)
                 && items.Count == _cachedSourceCount
                 && Equals(predicate, _cachedPredicate)
+                && activeLanguage == _cachedLanguage
             )
             {
                 return _cachedCount;
@@ -135,6 +145,7 @@ namespace dev.limitex.avatar.compressor.editor.ui
             _cachedSourceRef = items;
             _cachedSourceCount = items.Count;
             _cachedPredicate = predicate;
+            _cachedLanguage = activeLanguage;
             return count;
         }
 
@@ -148,6 +159,7 @@ namespace dev.limitex.avatar.compressor.editor.ui
             _cachedCountSearchText = null;
             _cachedSourceRef = null;
             _cachedPredicate = null;
+            _cachedLanguage = null;
         }
 
         /// <summary>
@@ -194,6 +206,20 @@ namespace dev.limitex.avatar.compressor.editor.ui
                 return true;
 
             return MatchesCore(text1) || MatchesCore(text2) || MatchesCore(text3);
+        }
+
+        /// <summary>
+        /// Checks if any of the four provided strings matches the current search.
+        /// </summary>
+        public bool MatchesSearchAny(string text1, string text2, string text3, string text4)
+        {
+            if (!IsSearching)
+                return true;
+
+            return MatchesCore(text1)
+                || MatchesCore(text2)
+                || MatchesCore(text3)
+                || MatchesCore(text4);
         }
 
         /// <summary>
