@@ -1,9 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using dev.limitex.avatar.compressor.editor;
-using nadena.dev.ndmf;
-using nadena.dev.ndmf.animator;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -12,19 +12,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
 {
     /// <summary>
     /// Service for collecting materials from various sources in an avatar hierarchy.
+    /// Decoupled from NDMF; scans Animators, VRCAvatarDescriptors, and Renderers directly.
     /// </summary>
     internal static class MaterialCollector
     {
         /// <summary>
         /// Collects all materials from Renderer components in the hierarchy.
         /// </summary>
-        /// <remarks>
-        /// This method is kept separate from <see cref="CollectFromComponents"/> for performance reasons.
-        /// Direct access to <see cref="Renderer.sharedMaterials"/> is significantly faster than
-        /// iterating through all properties via <see cref="UnityEditor.SerializedObject"/>.
-        /// </remarks>
-        /// <param name="root">Root GameObject of the hierarchy</param>
-        /// <returns>List of material references from Renderers</returns>
         public static List<MaterialReference> CollectFromRenderers(GameObject root)
         {
             var references = new List<MaterialReference>();
@@ -50,23 +44,54 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Collects materials referenced by animations from an Animator component.
-        /// This is used for Editor preview (outside NDMF build context).
+        /// Collects materials referenced by animations across the entire avatar hierarchy,
+        /// including Animator components, VRCAvatarDescriptor layers, and legacy Animation components.
         /// </summary>
-        /// <param name="root">Root GameObject with an Animator component</param>
-        /// <returns>List of material references from animations</returns>
         public static List<MaterialReference> CollectFromAnimator(GameObject root)
         {
             var references = new List<MaterialReference>();
-
-            var animator = root.GetComponent<Animator>();
-            if (animator == null || animator.runtimeAnimatorController == null)
-            {
+            if (root == null)
                 return references;
+
+            var clips = new HashSet<AnimationClip>();
+
+            // 1. Collect from all Animator components in hierarchy
+            var animators = root.GetComponentsInChildren<Animator>(true);
+            foreach (var animator in animators)
+            {
+                if (animator != null && animator.runtimeAnimatorController != null)
+                {
+                    foreach (var clip in GetAllAnimationClips(animator.runtimeAnimatorController))
+                    {
+                        if (clip != null)
+                            clips.Add(clip);
+                    }
+                }
             }
 
-            var clips = GetAllAnimationClips(animator.runtimeAnimatorController);
+            // 2. Collect from VRCAvatarDescriptor controllers (base and special layers)
+            var descriptors = root.GetComponentsInChildren<Component>(true)
+                .Where(c => c != null && (c.GetType().Name == "VRCAvatarDescriptor" || c is VRC.SDKBase.VRC_AvatarDescriptor));
+            foreach (var desc in descriptors)
+            {
+                CollectClipsFromAvatarDescriptor(desc, clips);
+            }
 
+            // 3. Collect from legacy Animation components
+            var legacyAnims = root.GetComponentsInChildren<Animation>(true);
+            foreach (var anim in legacyAnims)
+            {
+                if (anim != null)
+                {
+                    foreach (AnimationState state in anim)
+                    {
+                        if (state.clip != null)
+                            clips.Add(state.clip);
+                    }
+                }
+            }
+
+            // Extract material references from all found clips
             foreach (var clip in clips)
             {
                 if (clip == null)
@@ -76,6 +101,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 foreach (var binding in bindings)
                 {
                     var keyframes = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                    if (keyframes == null)
+                        continue;
+
                     foreach (var keyframe in keyframes)
                     {
                         if (keyframe.value is Material material && material != null)
@@ -90,109 +118,73 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Collects materials referenced by animations from NDMF's AnimatorServicesContext.
-        /// This is used during NDMF build.
-        /// </summary>
-        /// <param name="ctx">NDMF BuildContext</param>
-        /// <returns>List of material references from animations</returns>
-        private static List<MaterialReference> CollectFromAnimator(BuildContext ctx)
-        {
-            var references = new List<MaterialReference>();
-
-            try
-            {
-                ctx.ActivateExtensionContextRecursive<AnimatorServicesContext>();
-                var animatorServices = ctx.Extension<AnimatorServicesContext>();
-
-                if (animatorServices?.AnimationIndex == null)
-                {
-                    return references;
-                }
-
-                var materials = animatorServices
-                    .AnimationIndex.GetPPtrReferencedObjects.OfType<Material>()
-                    .Distinct();
-
-                foreach (var material in materials)
-                {
-                    if (material != null)
-                    {
-                        // In NDMF context, we don't have direct access to the source clip
-                        // Use the AnimationIndex as the source object
-                        references.Add(MaterialReference.FromAnimation(material, null));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning(
-                    $"[MaterialCollector] Failed to collect materials from animations: {ex.Message}"
-                );
-            }
-
-            return references;
-        }
-
-        /// <summary>
         /// Collects materials referenced by components (e.g., MA MaterialSetter) in the hierarchy.
         /// </summary>
-        /// <remarks>
-        /// Renderer components are skipped because they are handled by <see cref="CollectFromRenderers"/>,
-        /// which provides faster direct access to materials. This avoids duplicate collection and
-        /// leverages the performance benefit of direct property access over SerializedObject iteration.
-        /// </remarks>
-        /// <param name="root">Root GameObject of the hierarchy</param>
-        /// <returns>List of material references from components</returns>
         public static List<MaterialReference> CollectFromComponents(GameObject root)
         {
             var references = new List<MaterialReference>();
-            var allComponents = root.GetComponentsInChildren<Component>(true);
+            var components = root.GetComponentsInChildren<Component>(true);
 
-            foreach (var component in allComponents)
+            foreach (var component in components)
             {
                 if (component == null)
+                    continue;
+                if (component is Renderer)
+                    continue;
+                if (component is Animator)
+                    continue;
+                if (component.GetType().Name == "TextureCompressor")
                     continue;
                 if (ComponentUtils.IsEditorOnly(component.gameObject))
                     continue;
 
-                // Skip Renderer components (handled separately)
-                if (component is Renderer)
-                    continue;
-
-                try
-                {
-                    using var serializedObject = new SerializedObject(component);
-                    var iterator = serializedObject.GetIterator();
-
-                    while (iterator.NextVisible(true))
-                    {
-                        if (iterator.propertyType == SerializedPropertyType.ObjectReference)
-                        {
-                            var obj = iterator.objectReferenceValue;
-                            if (obj is Material material && material != null)
-                            {
-                                references.Add(
-                                    MaterialReference.FromComponent(material, component)
-                                );
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    // Ignore errors from components that can't be serialized
-                }
+                CollectFromSerializedProperties(component, references);
             }
 
             return references;
         }
 
+        private static void CollectFromSerializedProperties(
+            Component component,
+            List<MaterialReference> references
+        )
+        {
+            SerializedObject so;
+            try
+            {
+                so = new SerializedObject(component);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            using (so)
+            {
+                var iterator = so.GetIterator();
+                while (iterator.NextVisible(true))
+                {
+                    if (
+                        iterator.propertyType == SerializedPropertyType.ObjectReference
+                        && iterator.objectReferenceValue is Material material
+                        && material != null
+                    )
+                    {
+                        references.Add(
+                            MaterialReference.FromComponent(
+                                material,
+                                component,
+                                iterator.propertyPath
+                            )
+                        );
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Collects all materials from all sources (Renderers, Animations, Components).
-        /// This is used for Editor preview (outside NDMF build context).
         /// </summary>
-        /// <param name="root">Root GameObject of the hierarchy</param>
-        /// <returns>List of all material references</returns>
         public static List<MaterialReference> CollectAll(GameObject root)
         {
             var references = new List<MaterialReference>();
@@ -205,27 +197,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Collects all materials from all sources (Renderers, Animations, Components).
-        /// This is used during NDMF build.
-        /// </summary>
-        /// <param name="ctx">NDMF BuildContext</param>
-        /// <returns>List of all material references</returns>
-        public static List<MaterialReference> CollectAll(BuildContext ctx)
-        {
-            var references = new List<MaterialReference>();
-
-            references.AddRange(CollectFromRenderers(ctx.AvatarRootObject));
-            references.AddRange(CollectFromAnimator(ctx));
-            references.AddRange(CollectFromComponents(ctx.AvatarRootObject));
-
-            return references;
-        }
-
-        /// <summary>
         /// Gets distinct materials from a list of references.
         /// </summary>
-        /// <param name="references">List of material references</param>
-        /// <returns>Distinct materials</returns>
         public static IEnumerable<Material> GetDistinctMaterials(
             IEnumerable<MaterialReference> references
         )
@@ -235,11 +208,49 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         #region Animation Clip Helpers
 
-        private static List<AnimationClip> GetAllAnimationClips(
+        public static void CollectClipsFromAvatarDescriptor(Component descriptor, HashSet<AnimationClip> clips)
+        {
+            if (descriptor == null) return;
+            var type = descriptor.GetType();
+            var baseLayersProp = type.GetField("baseAnimationLayers") ?? (MemberInfo)type.GetProperty("baseAnimationLayers");
+            CollectClipsFromLayers(descriptor, baseLayersProp, clips);
+            var specialLayersProp = type.GetField("specialAnimationLayers") ?? (MemberInfo)type.GetProperty("specialAnimationLayers");
+            CollectClipsFromLayers(descriptor, specialLayersProp, clips);
+        }
+
+        private static void CollectClipsFromLayers(object descriptor, MemberInfo member, HashSet<AnimationClip> clips)
+        {
+            if (member == null) return;
+            object val = member is FieldInfo f ? f.GetValue(descriptor) : ((PropertyInfo)member).GetValue(descriptor);
+            if (val is IEnumerable enumerable)
+            {
+                foreach (var item in enumerable)
+                {
+                    if (item == null) continue;
+                    var ctrlField = item.GetType().GetField("animatorController") ?? (MemberInfo)item.GetType().GetProperty("animatorController");
+                    if (ctrlField != null)
+                    {
+                        var ctrl = ctrlField is FieldInfo cf ? cf.GetValue(item) : ((PropertyInfo)ctrlField).GetValue(item);
+                        if (ctrl is RuntimeAnimatorController rac)
+                        {
+                            foreach (var c in GetAllAnimationClips(rac))
+                            {
+                                if (c != null)
+                                    clips.Add(c);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public static List<AnimationClip> GetAllAnimationClips(
             RuntimeAnimatorController controller
         )
         {
             var clips = new HashSet<AnimationClip>();
+            if (controller == null)
+                return clips.ToList();
 
             if (controller is AnimatorOverrideController overrideController)
             {

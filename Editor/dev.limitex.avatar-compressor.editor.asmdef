@@ -3,9 +3,8 @@
     "rootNamespace": "dev.limitex.avatar.compressor.editor",
     "references": [
         "dev.limitex.avatar-compressor",
-        "nadena.dev.ndmf",
-        "nadena.dev.ndmf.runtime",
-        "VRC.SDKBase"
+        "VRC.SDKBase",
+        "VRC.SDKBase.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -16,6 +15,17 @@
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.vrcfury.vrcfury",
+            "expression": "",
+            "define": "ENABLE_VRCFURY"
+        },
+        {
+            "name": "com.vrchat.base",
+            "expression": "",
+            "define": "ENABLE_VRCHAT_BASE"
+        }
+    ],
     "noEngineReferences": false
 }

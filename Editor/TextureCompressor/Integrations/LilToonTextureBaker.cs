@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using nadena.dev.ndmf;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -906,7 +905,6 @@ namespace dev.limitex.avatar.compressor.editor.texture.integrations
                 return null;
 
             baked.name = source.name + "_baked";
-            ObjectRegistry.RegisterReplacedObject(source, baked);
             _bakeCache[(source, key)] = baked;
             return baked;
         }
