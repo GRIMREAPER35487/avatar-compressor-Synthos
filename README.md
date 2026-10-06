@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/GRIMREAPER35487/avatar-compressor-Synthos/main/.github/banner.png" alt="Avatar Compressor (Synthos Edition)" width="100%" />
+</div>
+
+<br/>
+
 # Avatar Compressor (Synthos Edition)
 
 A non-destructive avatar texture optimization utility for VRChat. Create lightweight avatars that drastically reduce VRAM usage and download size so more players can see you.
