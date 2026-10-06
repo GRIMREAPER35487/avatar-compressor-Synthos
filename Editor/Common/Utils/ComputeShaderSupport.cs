@@ -42,6 +42,35 @@ namespace dev.limitex.avatar.compressor.editor
         {
             shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(path);
             if (shader == null)
+            {
+                if (path.StartsWith("Packages/dev.limitex.avatar-compressor/"))
+                {
+                    var altPath = path.Replace("Packages/dev.limitex.avatar-compressor/", "Packages/com.synthos.avatar-compressor/");
+                    shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(altPath);
+                }
+                else if (path.StartsWith("Packages/com.synthos.avatar-compressor/"))
+                {
+                    var altPath = path.Replace("Packages/com.synthos.avatar-compressor/", "Packages/dev.limitex.avatar-compressor/");
+                    shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(altPath);
+                }
+            }
+
+            if (shader == null)
+            {
+                var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
+                var guids = AssetDatabase.FindAssets($"t:ComputeShader {fileName}");
+                foreach (var guid in guids)
+                {
+                    var foundPath = AssetDatabase.GUIDToAssetPath(guid);
+                    if (foundPath.EndsWith(System.IO.Path.GetFileName(path), System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(foundPath);
+                        if (shader != null) break;
+                    }
+                }
+            }
+
+            if (shader == null)
                 return false;
 
             foreach (var kernel in kernels)

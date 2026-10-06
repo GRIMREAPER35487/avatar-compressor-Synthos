@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using dev.limitex.avatar.compressor.editor;
-using nadena.dev.ndmf.localization;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;

@@ -1,64 +1,89 @@
-# Avatar Compressor
+# Avatar Compressor (Synthos Edition)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/limitex/avatar-compressor)](https://github.com/limitex/avatar-compressor/releases/latest)
-[![GitHub Downloads (latest)](https://img.shields.io/github/downloads/limitex/avatar-compressor/latest/total?label=downloads%40latest)](https://github.com/limitex/avatar-compressor/releases/latest)
-[![GitHub Downloads (total)](https://img.shields.io/github/downloads/limitex/avatar-compressor/total?label=downloads%40total)](https://github.com/limitex/avatar-compressor/releases)
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/limitex/avatar-compressor/gameci.yml?label=tests)](https://github.com/limitex/avatar-compressor/actions)
+A non-destructive avatar texture optimization utility for VRChat. Create lightweight avatars that drastically reduce VRAM usage and download size so more players can see you.
 
-A non-destructive avatar optimization utility for VRChat. Create lightweight avatars that more players can see.
+This repository is a customized edition of [Limitex's Avatar Compressor (LAC)](https://github.com/Limitex/avatar-compressor) (under the MIT License), tailored to run **completely independent of NDMF (*Non-Destructive Modular Framework*)** with native **VRCFury** and standard **VRCSDK** build pipeline support.
+
+---
+
+## What Was Changed?
+
+1. **NDMF Dependency Completely Removed**
+   - **In Stock Avatar Compressor:** You could only use it through NDMF (`nadena.dev.ndmf`), requiring extra third-party frameworks and forcing avatars through the NDMF build lifecycle.
+   - **In Synthos Edition:** NDMF is completely stripped. It runs natively using VRChat's official avatar build pipeline callbacks (`IVRCSDKPreprocessAvatarCallback`).
+
+2. **Native VRCFury Integration**
+   - Implements `AvatarCompressorVrcfuryBuildHook` running at `callbackOrder => 10000`.
+   - VRCFury executes at `callbackOrder => -10000`, so all modular clothing, toggles, props, and merged animators are already assembled before Avatar Compressor analyzes and compresses textures.
+
+3. **Direct Animator & Controller Scanning**
+   - Replaced NDMF's internal `AnimatorServicesContext` with direct avatar hierarchy and `VRCAvatarDescriptor` controller scanning.
+   - Collects all animation clips (including FX, Gesture, Action layers and sub-state machines) to protect animated textures and update object curves to point to compressed textures and cloned materials.
+
+4. **Self-Contained Localization & UI**
+   - Bundled translations (English, Japanese, Korean, Simplified Chinese, Traditional Chinese) are parsed directly from PO files without requiring NDMF's localization system.
+   - Works immediately in any Unity Editor project.
+
+5. **Manual Editor Compression Tool**
+   - Added `Tools > Avatar Compressor > Compress Selected Avatar` to allow creators to preview and test compression in the Editor without needing a full VRChat upload.
+
+---
+
+## What Is No Longer Needed?
+
+- **NDMF (`nadena.dev.ndmf`) is NO LONGER required:** You do not need NDMF installed in your project.
+- Works seamlessly with **VRCFury** and standard **VRCSDK3**.
+
+---
 
 ## Features
 
 ### Texture Compressor
+Analyzes and compresses avatar textures based on their complexity:
+- **Complexity-based analysis** - Textures are analyzed to determine optimal compression levels.
+- **Multiple analysis strategies** - Fast, HighAccuracy, Perceptual, and Combined modes.
+- **Preset configurations** - Quick setup with 5 built-in presets (High Quality, Quality, Balanced, Aggressive, Maximum, Custom).
+- **Texture type awareness** - Specialized handling for normal maps, emission maps, and alpha masks.
+- **lilToon integration** - Optional baking of color adjustments, alpha masks, and pruning of unused texture slots.
+- **Platform-specific formats** - Automatic format selection for PC (DXT/BC) and Quest (ASTC).
+- **GPU Accelerated** - Uses GPU compute shaders for ultra-fast texture analysis and area-averaging resize with automatic CPU fallback.
+- **VRAM estimation** - Inspect and preview estimated VRAM usage directly in the inspector.
 
-Analyzes and compresses avatar textures based on their complexity.
-
-- **Complexity-based analysis** - Textures are analyzed to determine optimal compression levels
-- **Multiple analysis strategies** - Fast, HighAccuracy, Perceptual, and Combined modes
-- **Preset configurations** - Quick setup with 5 built-in presets
-- **Texture type awareness** - Specialized handling for normal maps, emission maps, and more
-- **Platform-specific formats** - Automatic format selection for PC (DXT/BC) and Quest (ASTC)
-- **High-quality compression** - BC7/ASTC_4x4 for high complexity textures
-- **Memory estimation** - Preview estimated VRAM usage before building
-- **Shared texture optimization** - Shared textures are processed once and reused
+---
 
 ## Requirements
 
-- Unity 2022.3.22f1 (VRChat specified version)
+- Unity 2022.3 (VRChat specified version)
 - VRChat SDK Avatars 3.10.0 or later
-- NDMF 1.10.0 or later
+- *(Optional)* VRCFury
 
-## Installation
+---
 
-### Via ALCOM (Recommended)
+## Installation via VPM (VRChat Creator Companion / ALCOM)
 
-1. Open [ALCOM](https://vrc-get.anatawa12.com/alcom/)
-2. Add the repository: `https://vpm.limitex.dev/`
-3. Add **Avatar Compressor** to your project
+Add the Synthos package repository to VCC / ALCOM:
+```
+https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json
+```
+Then add **Avatar Compressor (Synthos Edition)** to your project.
 
-### Via VRChat Creator Companion
-
-1. Open VRChat Creator Companion
-2. Add the repository: `https://vpm.limitex.dev/`
-3. Add **Avatar Compressor** to your project
-
-### Manual Installation
-
-Download the latest release from [GitHub Releases](https://github.com/limitex/avatar-compressor/releases) and import the `.zip` file into your Unity project.
+---
 
 ## Usage
 
-Add optimization components to your avatar's root GameObject, configure settings, and build your avatar. All optimizations are applied automatically at build time via NDMF.
+1. Add the `TextureCompressor` component to your avatar's root GameObject.
+2. Select your desired compression preset (e.g. *Balanced* or *Quality*).
+3. Test or upload your avatar:
+   - **Automatic:** When uploading via the VRChat SDK (or testing in Play Mode with VRCFury), textures are automatically compressed and applied during the pre-upload process without modifying your original project files.
+   - **Manual:** Use `Tools > Avatar Compressor > Compress Selected Avatar` from the top menu bar to test on an avatar instance in your scene.
 
-## Recommended
-
-For best results, we recommend using this tool together with [Avatar Optimizer (AAO)](https://vpm.anatawa12.com/avatar-optimizer/). Avatar Optimizer provides additional optimization features such as mesh merging, bone reduction, and more. LAC runs before Avatar Optimizer in the build pipeline, ensuring optimal texture compression before other optimizations are applied.
+---
 
 ## License
 
 [MIT License](LICENSE)
 
-## Author
+## Original Author
 
-[Limitex](https://github.com/limitex)
+- Original LAC tool by [Limitex](https://github.com/Limitex)
+- Decoupled and modified for VRCFury by [Synthos](https://github.com/GRIMREAPER35487)

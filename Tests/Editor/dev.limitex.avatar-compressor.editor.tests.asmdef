@@ -4,7 +4,6 @@
     "references": [
         "dev.limitex.avatar-compressor",
         "dev.limitex.avatar-compressor.editor",
-        "nadena.dev.ndmf",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

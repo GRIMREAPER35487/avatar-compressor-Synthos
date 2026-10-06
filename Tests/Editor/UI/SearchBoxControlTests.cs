@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using dev.limitex.avatar.compressor.editor.ui;
-using nadena.dev.ndmf.localization;
 using NUnit.Framework;
 
 namespace dev.limitex.avatar.compressor.tests

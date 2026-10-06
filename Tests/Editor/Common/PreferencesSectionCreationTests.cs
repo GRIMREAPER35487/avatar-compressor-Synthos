@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.texture.ui;
-using nadena.dev.ndmf.localization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;

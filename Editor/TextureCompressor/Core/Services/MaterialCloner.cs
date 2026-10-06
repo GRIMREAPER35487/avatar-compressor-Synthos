@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using nadena.dev.ndmf;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor.editor.texture
@@ -97,10 +96,6 @@ namespace dev.limitex.avatar.compressor.editor.texture
             clonedMat = Object.Instantiate(originalMat);
             clonedMat.name = originalMat.name + "_clone";
 
-            // Register the material replacement in ObjectRegistry so that subsequent NDMF plugins
-            // can track which original material was cloned. This maintains proper reference
-            // tracking across the build pipeline for tools like TexTransTool and Avatar Optimizer.
-            ObjectRegistry.RegisterReplacedObject(originalMat, clonedMat);
             clonedMaterials[originalMat] = clonedMat;
 
             return clonedMat;
