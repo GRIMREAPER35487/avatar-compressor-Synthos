@@ -14,7 +14,18 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             AvatarCompressorLocalization.Tr("TextureCompressor:label:preferences");
 
         public IEnumerable<string> Keywords =>
-            new[] { "Texture", "Analysis", "Resize", "Backend", "GPU", "CPU", "Software" };
+            new[]
+            {
+                "Texture",
+                "Analysis",
+                "Resize",
+                "Backend",
+                "GPU",
+                "CPU",
+                "Software",
+                "Source",
+                "Cache",
+            };
 
         // GPU availability is static per editor session (statics reset on
         // domain reload), so resolved names are cached per preference value
@@ -74,6 +85,26 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 "TextureCompressor:message:resizeBackendCpuHelp",
                 "TextureCompressor:message:resizeBackendAutoHelp"
             );
+
+            EditorGUILayout.Space(4);
+
+            EditorGUI.BeginChangeCheck();
+            bool useSourceFiles = EditorGUILayout.Toggle(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:useSourceFiles",
+                    "TextureCompressor:prop:useSourceFiles:tooltip"
+                ),
+                TextureCompressorPreferences.UseSourceFiles
+            );
+            if (EditorGUI.EndChangeCheck())
+                TextureCompressorPreferences.UseSourceFiles = useSourceFiles;
+
+            if (
+                GUILayout.Button(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:button:clearSourceCache")
+                )
+            )
+                TextureSourceCache.ClearCache();
         }
 
         private static void DrawBackendHelpBox(

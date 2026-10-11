@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://lac.limitex.dev/sitemap.xml

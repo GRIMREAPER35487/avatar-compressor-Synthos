@@ -445,6 +445,27 @@ namespace dev.limitex.avatar.compressor.tests
 
         #endregion
 
+        #region PrepareForCompression - Renormalization
+
+        [Test]
+        public void PrepareForCompression_ShortenedRgbVector_KeepsDirection()
+        {
+            // (0.4, 0, 0.8) is what averaging (0.8, 0, 0.6) and (0, 0, 1) produces. Its true
+            // direction is (0.447, 0, 0.894); rebuilding Z from the shortened X would give 0.4.
+            var texture = CreateSinglePixelTexture(178, 128, 229, 255);
+            _createdObjects.Add(texture);
+
+            _preprocessor.PrepareForCompression(texture, TextureFormat.RGBA32, TextureFormat.BC5);
+
+            var pixels = texture.GetPixels32();
+            float x = (pixels[0].r / 255f) * 2f - 1f;
+            float z = (pixels[0].b / 255f) * 2f - 1f;
+            Assert.That(x, Is.EqualTo(0.447f).Within(0.02f));
+            Assert.That(z, Is.EqualTo(0.894f).Within(0.02f));
+        }
+
+        #endregion
+
         #region PrepareForCompression - Z Reconstruction Accuracy
 
         [Test]

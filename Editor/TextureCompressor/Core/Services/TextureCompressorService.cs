@@ -29,6 +29,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private readonly bool _unusedDetectionEnabled;
         private readonly ILilToonBaker _lilToonBaker;
         private readonly bool _lilToonBakeEnabled;
+        private readonly TextureSourceCache _sourceCache;
 
         // Flag to avoid repeating the same warning for every texture (per-build instance)
         private bool _streamingMipmapsWarningShown;
@@ -44,10 +45,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
             ResizeBackendPreference resizeBackendPreference,
             AnimationUsageMap animationUsageMap = null,
             IUnusedSlotOptimizer unusedSlotOptimizer = null,
-            ILilToonBaker lilToonBaker = null
+            ILilToonBaker lilToonBaker = null,
+            TextureSourceCache sourceCache = null
         )
         {
             _config = config;
+            _sourceCache = sourceCache;
 
             _frozenLookup = FrozenTextureSettings.BuildLookup(config.FrozenTextures);
 
@@ -89,7 +92,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
             _formatSelector = new TextureFormatSelector(
                 config.TargetPlatform,
                 config.UseHighQualityFormatForHighComplexity,
-                config.HighComplexityThreshold
+                config.HighComplexityThreshold,
+                config.RespectImportFormat
             );
 
             _complexityCalc = new ComplexityCalculator(
@@ -225,6 +229,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 Debug.Log($"[{Name}] Processing {textures.Count} textures...");
             }
 
+            // Make full-quality copies of the source files before analysis: the sizes the
+            // analysis scales from depend on them.
+            _sourceCache?.Prepare(textures.Keys);
+            var baseSizes = new Dictionary<Texture2D, Vector2Int>();
+            foreach (var texture in textures.Keys)
+                baseSizes[texture] = GetBaseSize(texture);
+
             var rawScores = _analyzer.AnalyzeBatch(textures);
 
             // Iterate inputs, not backend output — see ITextureAnalysisBackend contract.
@@ -238,8 +249,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
                 analysisResults[texture] = AnalysisResultHelper.BuildResult(
                     score,
-                    texture.width,
-                    texture.height,
+                    baseSizes[texture].x,
+                    baseSizes[texture].y,
                     info.IsEmission,
                     info.IsNormalMap,
                     _complexityCalc,
@@ -256,10 +267,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 var originalTexture = kvp.Key;
                 var textureInfo = kvp.Value;
 
+                var baseSize = baseSizes[originalTexture];
                 var resolved = ResolveAnalysis(
                     originalTexture,
                     textureInfo,
                     analysisResults,
+                    baseSize,
                     enableLogging
                 );
                 if (resolved == null)
@@ -269,13 +282,46 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 var formatOverride = resolved.Value.FormatOverride;
                 var sourceFormat = originalTexture.format;
                 bool isNormalMap = textureInfo.IsNormalMap;
+                var importedSize = new Vector2Int(originalTexture.width, originalTexture.height);
+                var targetSize = _processor.CalculateTargetSize(baseSize, analysis);
 
-                // Resize (lock acquired and released inside ResizeSingle)
-                var resizedTexture = _processor.ResizeSingle(
-                    originalTexture,
-                    analysis,
-                    isNormalMap
-                );
+                // Unity's import is already a single compression of the source file. If the
+                // result would have the same size and format, keep it: recompressing would only
+                // lose quality. Normal maps always run through the layout conversion, which also
+                // repairs normal maps imported with the wrong texture type.
+                if (
+                    !isNormalMap
+                    && targetSize == importedSize
+                    && _formatSelector.KeepsImportFormat(sourceFormat, formatOverride)
+                )
+                {
+                    LogUnchanged(originalTexture, enableLogging);
+                    continue;
+                }
+
+                // Resize from the full-quality source when available (lock acquired and released
+                // inside ResizeSingle). The normal-map layout is read from the same pixels.
+                var source = _sourceCache?.Load(originalTexture);
+                bool fromSource = source != null;
+                NormalMapPreprocessor.SourceLayout sourceLayout;
+                Texture2D resizedTexture;
+                try
+                {
+                    sourceLayout = isNormalMap
+                        ? ResolveNormalLayout(originalTexture, source, sourceFormat)
+                        : NormalMapPreprocessor.SourceLayout.Auto;
+                    resizedTexture = _processor.ResizeSingle(
+                        fromSource ? source : originalTexture,
+                        targetSize,
+                        isNormalMap
+                    );
+                }
+                finally
+                {
+                    if (fromSource)
+                        UnityEngine.Object.DestroyImmediate(source);
+                }
+
                 if (resizedTexture == null)
                     continue;
 
@@ -293,9 +339,17 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     formatOverride
                 );
 
-                var sourceLayout = isNormalMap
-                    ? NormalMapSourceLayoutDetector.Resolve(originalTexture, sourceFormat)
-                    : NormalMapPreprocessor.SourceLayout.Auto;
+                if (
+                    !isNormalMap
+                    && targetSize == importedSize
+                    && targetFormat == sourceFormat
+                    && TextureFormatInfo.IsCompressed(sourceFormat)
+                )
+                {
+                    UnityEngine.Object.DestroyImmediate(resizedTexture);
+                    LogUnchanged(originalTexture, enableLogging);
+                    continue;
+                }
 
                 bool preserveAlpha =
                     isNormalMap
@@ -359,7 +413,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                             ? " [FROZEN]"
                             : "";
                     Debug.Log(
-                        $"[{Name}] {originalTexture.name}: "
+                        $"[{Name}] {originalTexture.name}{(fromSource ? " [SOURCE]" : "")}: "
                             + $"{originalTexture.width}x{originalTexture.height} -> "
                             + $"{resizedTexture.width}x{resizedTexture.height} ({resizedTexture.format}){frozenInfo} "
                             + $"(Complexity: {analysis.NormalizedComplexity:P0}, "
@@ -501,6 +555,55 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
+        /// Returns the size a texture is scaled from: its imported size, or — when not respecting
+        /// the import Max Size and a full-quality source exists — the source size fit to
+        /// Max Resolution. Never larger than the pixels actually available.
+        /// </summary>
+        private Vector2Int GetBaseSize(Texture2D texture)
+        {
+            var imported = new Vector2Int(texture.width, texture.height);
+            if (
+                _config.RespectImportMaxSize
+                || _sourceCache == null
+                || !_sourceCache.TryGetCachedSize(texture, out var sourceSize)
+            )
+            {
+                return imported;
+            }
+
+            return TextureSourceCache.FitWithin(sourceSize, _config.MaxResolution);
+        }
+
+        /// <summary>
+        /// Resolves the channel layout of a normal map's pixels: from the source copy when one
+        /// is used, otherwise from the imported texture's format.
+        /// </summary>
+        private static NormalMapPreprocessor.SourceLayout ResolveNormalLayout(
+            Texture2D imported,
+            Texture2D source,
+            TextureFormat importedFormat
+        )
+        {
+            if (source == null)
+                return NormalMapSourceLayoutDetector.Resolve(imported, importedFormat);
+
+            return TextureSourceCache.IsRawNormalSource(imported)
+                ? NormalMapPreprocessor.SourceLayout.RGB
+                : NormalMapSourceLayoutDetector.DetectDXTnmLike(source);
+        }
+
+        private void LogUnchanged(Texture2D texture, bool enableLogging)
+        {
+            if (enableLogging)
+            {
+                Debug.Log(
+                    $"[{Name}] {texture.name}: {texture.width}x{texture.height} ({texture.format}) "
+                        + "already optimal, kept as imported"
+                );
+            }
+        }
+
+        /// <summary>
         /// Resolves analysis settings for a texture (frozen override or analysis result).
         /// </summary>
         /// <returns>Resolved analysis and format override, or null if the texture should be skipped.</returns>
@@ -511,6 +614,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
             Texture2D originalTexture,
             TextureInfo textureInfo,
             Dictionary<Texture2D, TextureAnalysisResult> analysisResults,
+            Vector2Int baseSize,
             bool enableLogging
         )
         {
@@ -525,8 +629,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
             {
                 int divisor = frozenSettings.Divisor;
                 Vector2Int resolution = _processor.CalculateNewDimensions(
-                    originalTexture.width,
-                    originalTexture.height,
+                    baseSize.x,
+                    baseSize.y,
                     divisor
                 );
 

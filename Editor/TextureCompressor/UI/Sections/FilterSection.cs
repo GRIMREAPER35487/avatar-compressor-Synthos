@@ -71,6 +71,46 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         }
 
         /// <summary>
+        /// Draws the source texture options: whether the creator's import Max Size and
+        /// compression format are kept or the compressor decides.
+        /// </summary>
+        public static void DrawSourceTextures(TextureCompressor config, ref bool showSection)
+        {
+            showSection = EditorGUILayout.Foldout(
+                showSection,
+                AvatarCompressorLocalization.Tr("TextureCompressor:label:sourceTextures"),
+                true
+            );
+            if (!showSection)
+                return;
+
+            EditorGUI.BeginChangeCheck();
+
+            bool respectSize = EditorGUILayout.ToggleLeft(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:respectImportMaxSize",
+                    "TextureCompressor:prop:respectImportMaxSize:tooltip"
+                ),
+                config.RespectImportMaxSize
+            );
+            bool respectFormat = EditorGUILayout.ToggleLeft(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:respectImportFormat",
+                    "TextureCompressor:prop:respectImportFormat:tooltip"
+                ),
+                config.RespectImportFormat
+            );
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(config, "Change Source Texture Options");
+                config.RespectImportMaxSize = respectSize;
+                config.RespectImportFormat = respectFormat;
+                EditorUtility.SetDirty(config);
+            }
+        }
+
+        /// <summary>
         /// Draws texture type filters (Main, Normal, Emission, Other) with foldout
         /// and an inline sub-option for skipping uncompressed textures on unknown properties.
         /// </summary>

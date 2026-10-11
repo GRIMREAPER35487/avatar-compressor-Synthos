@@ -7,9 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - Synthos Edition
+
+### Changed
+
+- **NDMF replaced by a VRChat SDK build hook** - Runs after VRCFury (VRCFury is now a required dependency) and before the SDK strips editor-only components. Works on uploads, Build & Test, VRCFury Play Mode and VRCFury's editor test copies. Avatars without VRCFury components are compressed when entering Play Mode as well.
+- **Material and texture swap animations** are rewritten copy-on-write: VRCFury's build copies are edited in place, project clips, blend trees and controllers are copied first. Project assets are never modified.
+- Generated textures, materials and animation copies are saved to `Assets/_AvatarCompressorTemp` (one folder per build) so they survive the SDK's prefab save, and are removed once no loaded avatar uses them.
+- Localization uses Unity's `.po` importer directly instead of NDMF.
+
 ### Added
 
-- Added NDMF-based editor localization for English, Simplified Chinese, Traditional Chinese, Japanese, and Korean, with shared language switching in inspectors and Preferences.
+- **Compress from source files** - Textures are compressed once, from a full-quality copy of their image file (cached in `Library/AvatarCompressorCache`), instead of re-compressing Unity's already-compressed import. Works for every format Unity imports (PNG, PSD, TGA, ...), keeps the creator's normal-map, alpha and color-space settings, and never changes the original import settings. Can be turned off in Preferences.
+- **Source Textures options** - "Respect import Max Size" and "Respect import format" toggles (both on by default). Turning them off lets the compressor size textures from the source file and choose the format itself, so results no longer depend on how the creator set up imports.
+- Normal maps are also detected from their import settings, not only from shader property names.
+
+### Fixed
+
+- Textures that would keep the same size and format are left as imported instead of being decoded and recompressed (pure quality loss).
+- Compressed textures are saved without Read/Write enabled, so uploads no longer keep a second CPU-side copy of every compressed texture in memory.
+- Resized RGB normal maps are renormalized instead of having Z rebuilt from shortened X/Y, which flattened detail.
+- Localization and GPU compute shaders were not found after the package rename to `com.synthos.avatar-compressor`.
+- lilToon bakes are traced back to their source asset again, so they are compressed instead of skipped.
 
 ## [v0.9.0] - 2026-07-17
 

@@ -103,6 +103,21 @@ namespace dev.limitex.avatar.compressor
         )]
         public bool BakeLilToonTextures = true;
 
+        [Header("Source Textures")]
+        [Tooltip(
+            "Use the texture's import Max Size as the starting size. When off, the full-quality "
+                + "source file (fit to Max Resolution) is the starting size, so textures the "
+                + "creator imported smaller can come out larger."
+        )]
+        public bool RespectImportMaxSize = true;
+
+        [Tooltip(
+            "Keep the compression format the texture was imported with for this platform. When "
+                + "off, the format is chosen from each texture's detail and alpha, which can make "
+                + "detailed textures larger and simple ones smaller."
+        )]
+        public bool RespectImportFormat = true;
+
         [Header("Size Filters")]
         [Tooltip("Only process textures larger than this size")]
         public int MinSourceSize = 256;

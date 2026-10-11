@@ -671,3 +671,27 @@ msgstr "Excluded texture"
 
 msgid "TextureCompressor:enum:skipReasonUnknownUncompressedProperty"
 msgstr "Uncompressed on unknown property (see Data Protection)"
+
+msgid "TextureCompressor:label:sourceTextures"
+msgstr "Source Textures"
+
+msgid "TextureCompressor:prop:respectImportMaxSize"
+msgstr "Respect import Max Size"
+
+msgid "TextureCompressor:prop:respectImportMaxSize:tooltip"
+msgstr "Use each texture's import Max Size as the starting size. When off, the full-quality source file (fit to Max Resolution) is the starting size, so textures imported smaller than their file can come out larger."
+
+msgid "TextureCompressor:prop:respectImportFormat"
+msgstr "Respect import format"
+
+msgid "TextureCompressor:prop:respectImportFormat:tooltip"
+msgstr "Keep the compression format each texture was imported with for this platform. When off, the format is chosen from the texture's detail and alpha: simple textures can get smaller, detailed ones larger."
+
+msgid "TextureCompressor:prop:useSourceFiles"
+msgstr "Compress from source files"
+
+msgid "TextureCompressor:prop:useSourceFiles:tooltip"
+msgstr "Compress textures once from full-quality copies of their image files (cached in Library/AvatarCompressorCache) instead of re-compressing Unity's compressed import. The first build after a texture changes is slower."
+
+msgid "TextureCompressor:button:clearSourceCache"
+msgstr "Clear Source File Cache"

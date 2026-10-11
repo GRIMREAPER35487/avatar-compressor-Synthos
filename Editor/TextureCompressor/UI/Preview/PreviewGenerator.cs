@@ -81,7 +81,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             var formatSelector = new TextureFormatSelector(
                 config.TargetPlatform,
                 config.UseHighQualityFormatForHighComplexity,
-                config.HighComplexityThreshold
+                config.HighComplexityThreshold,
+                config.RespectImportFormat
             );
 
             var allTextures = collector.CollectAll(config.gameObject);
@@ -177,10 +178,11 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         if (!rawScores.TryGetValue(texture, out var score))
                             continue;
 
+                        var baseSize = GetBaseSize(texture, config);
                         var result = AnalysisResultHelper.BuildResult(
                             score,
-                            texture.width,
-                            texture.height,
+                            baseSize.x,
+                            baseSize.y,
                             texInfo.IsEmission,
                             texInfo.IsNormalMap,
                             complexityCalc,
@@ -250,13 +252,14 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     Vector2Int recommendedSize;
                     TextureFormat targetFormat;
                     bool hasAlpha;
+                    var baseSize = GetBaseSize(tex, config);
 
                     if (isFrozen && !frozenSettings.Skip)
                     {
                         divisor = frozenSettings.Divisor;
                         recommendedSize = processor.CalculateNewDimensions(
-                            tex.width,
-                            tex.height,
+                            baseSize.x,
+                            baseSize.y,
                             divisor
                         );
                         // Match the build pipeline: frozen textures always flow through
@@ -267,7 +270,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             divisor,
                             recommendedSize
                         );
-                        var resizedTex = processor.ResizeSingle(tex, frozenAnalysis, isNormalMap);
+                        recommendedSize = processor.CalculateTargetSize(baseSize, frozenAnalysis);
+                        var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
                         if (resizedTex != null)
                         {
                             hasAlpha = TextureFormatSelector.HasSignificantAlpha(resizedTex);
@@ -288,11 +292,11 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     else
                     {
                         divisor = analysis.RecommendedDivisor;
-                        recommendedSize = analysis.RecommendedResolution;
+                        recommendedSize = processor.CalculateTargetSize(baseSize, analysis);
                         // Match the build pipeline: detect alpha on the resized texture
                         // so that alpha regions lost during downscaling don't cause an
                         // unnecessary alpha-capable format (e.g. BC7 instead of DXT1).
-                        var resizedTex = processor.ResizeSingle(tex, analysis, isNormalMap);
+                        var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
                         if (resizedTex != null)
                         {
                             hasAlpha = TextureFormatSelector.HasSignificantAlpha(resizedTex);
@@ -417,6 +421,25 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         /// Computes a hash of analysis-affecting settings only (Strategy, Weights, Thresholds, Resolution).
         /// Used as the cache key for analysis results.
         /// </summary>
+        /// <summary>
+        /// Mirrors the build's base size: the imported size, or the source file's size fit to
+        /// Max Resolution when not respecting the import Max Size. Read from the importer, so the
+        /// preview never imports anything.
+        /// </summary>
+        private static Vector2Int GetBaseSize(Texture2D texture, TextureCompressor config)
+        {
+            if (
+                !config.RespectImportMaxSize
+                && TextureCompressorPreferences.UseSourceFiles
+                && TextureSourceCache.TryGetSourceSize(texture, out var sourceSize)
+            )
+            {
+                return TextureSourceCache.FitWithin(sourceSize, config.MaxResolution);
+            }
+
+            return new Vector2Int(texture.width, texture.height);
+        }
+
         private static int ComputeAnalysisHash(
             TextureCompressor config,
             AnalysisBackendPreference backendPreference
@@ -436,6 +459,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 hash = hash * 31 + config.MaxResolution;
                 hash = hash * 31 + config.MinResolution;
                 hash = hash * 31 + config.ForcePowerOfTwo.GetHashCode();
+                hash = hash * 31 + config.RespectImportMaxSize.GetHashCode();
+                hash = hash * 31 + TextureCompressorPreferences.UseSourceFiles.GetHashCode();
                 hash = hash * 31 + backendPreference.GetHashCode();
                 return hash;
             }
@@ -475,6 +500,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 }
                 hash = hash * 31 + config.TargetPlatform.GetHashCode();
                 hash = hash * 31 + config.UseHighQualityFormatForHighComplexity.GetHashCode();
+                hash = hash * 31 + config.RespectImportFormat.GetHashCode();
                 hash = hash * 31 + config.gameObject.GetInstanceID();
 
                 // Include frozen textures in hash

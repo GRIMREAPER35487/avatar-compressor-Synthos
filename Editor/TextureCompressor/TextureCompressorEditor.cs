@@ -17,6 +17,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         // UI state for sections that don't own their own
         private bool _showExclusionsSection;
         private bool _showTextureFiltersSection;
+        private bool _showSourceTexturesSection;
         private bool _showLilToonOptimizationsSection = true;
 
         private void OnEnable()
@@ -41,6 +42,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             // Texture filters
             FilterSection.DrawTextureFilters(config, ref _showTextureFiltersSection);
+            EditorGUILayout.Space(10);
+
+            FilterSection.DrawSourceTextures(config, ref _showSourceTexturesSection);
             EditorGUILayout.Space(10);
 
             FilterSection.DrawLilToonOptimizations(config, ref _showLilToonOptimizationsSection);

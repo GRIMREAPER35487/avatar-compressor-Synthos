@@ -12,16 +12,19 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private readonly CompressionPlatform _targetPlatform;
         private readonly bool _useHighQualityFormatForHighComplexity;
         private readonly float _highQualityComplexityThreshold;
+        private readonly bool _respectImportFormat;
 
         public TextureFormatSelector(
             CompressionPlatform targetPlatform = CompressionPlatform.Auto,
             bool useHighQualityFormatForHighComplexity = true,
-            float highQualityComplexityThreshold = 0.7f
+            float highQualityComplexityThreshold = 0.7f,
+            bool respectImportFormat = true
         )
         {
             _targetPlatform = targetPlatform;
             _useHighQualityFormatForHighComplexity = useHighQualityFormatForHighComplexity;
             _highQualityComplexityThreshold = highQualityComplexityThreshold;
+            _respectImportFormat = respectImportFormat;
         }
 
         /// <summary>
@@ -48,7 +51,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         /// <summary>
         /// Resolves the target format for a texture, applying the full priority chain:
-        /// frozen format override → already compressed source → prediction from analysis.
+        /// frozen format override → already compressed import (when respecting the import
+        /// format) → prediction from analysis.
         /// </summary>
         public TextureFormat ResolveTargetFormat(
             TextureFormat sourceFormat,
@@ -60,9 +64,20 @@ namespace dev.limitex.avatar.compressor.editor.texture
         {
             if (frozenFormat.HasValue && frozenFormat.Value != FrozenTextureFormat.Auto)
                 return ConvertFrozenFormat(frozenFormat.Value);
-            if (TextureFormatInfo.IsCompressed(sourceFormat))
+            if (_respectImportFormat && TextureFormatInfo.IsCompressed(sourceFormat))
                 return sourceFormat;
             return PredictFormat(isNormalMap, complexity, hasAlpha);
+        }
+
+        /// <summary>
+        /// Returns true if <see cref="ResolveTargetFormat"/> is certain to return the import
+        /// format, without needing alpha or complexity information.
+        /// </summary>
+        public bool KeepsImportFormat(TextureFormat sourceFormat, FrozenTextureFormat? frozenFormat)
+        {
+            if (frozenFormat.HasValue && frozenFormat.Value != FrozenTextureFormat.Auto)
+                return ConvertFrozenFormat(frozenFormat.Value) == sourceFormat;
+            return _respectImportFormat && TextureFormatInfo.IsCompressed(sourceFormat);
         }
 
         /// <summary>

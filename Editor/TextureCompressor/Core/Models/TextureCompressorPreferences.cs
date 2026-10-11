@@ -39,6 +39,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
             AvatarCompressorPreferences.PrefsPrefix + "analysisBackend";
         private const string ResizeBackendKey =
             AvatarCompressorPreferences.PrefsPrefix + "resizeBackend";
+        private const string UseSourceFilesKey =
+            AvatarCompressorPreferences.PrefsPrefix + "useSourceFiles";
 
         /// <summary>
         /// Which backend to use for texture analysis.
@@ -62,6 +64,16 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 (ResizeBackendPreference)
                     EditorPrefs.GetInt(ResizeBackendKey, (int)ResizeBackendPreference.Auto);
             set => EditorPrefs.SetInt(ResizeBackendKey, (int)value);
+        }
+
+        /// <summary>
+        /// Whether to compress from full-quality copies of the source image files
+        /// (cached in Library/AvatarCompressorCache) instead of Unity's compressed imports.
+        /// </summary>
+        public static bool UseSourceFiles
+        {
+            get => EditorPrefs.GetBool(UseSourceFilesKey, true);
+            set => EditorPrefs.SetBool(UseSourceFilesKey, value);
         }
     }
 }

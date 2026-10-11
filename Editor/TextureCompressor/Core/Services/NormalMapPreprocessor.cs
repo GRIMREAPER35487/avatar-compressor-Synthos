@@ -28,6 +28,19 @@ namespace dev.limitex.avatar.compressor.editor.texture
         /// <summary>
         /// Source channel layout override for cases where format alone is ambiguous (e.g. BC7).
         /// </summary>
+        /// <summary>
+        /// Below this squared length an RGB vector is treated as degenerate (e.g. a mid-grey
+        /// 128,128,128 pixel) and Z is rebuilt from XY instead of normalizing noise.
+        /// </summary>
+        private const float MinRenormalizeLengthSqr = 0.25f;
+
+        /// <summary>
+        /// Above this squared length an RGB vector is unit length up to 8-bit quantization and
+        /// takes the regular path. Only vectors clearly shortened by resize averaging are
+        /// renormalized.
+        /// </summary>
+        private const float MaxRenormalizeLengthSqr = 0.97f;
+
         internal enum SourceLayout
         {
             Auto,
@@ -105,8 +118,23 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
                 float xySqr = x * x + y * y;
                 float z;
+                float xyzSqr = xySqr + originalZ * originalZ;
 
-                if (xySqr < 1f)
+                if (
+                    isRgbSource
+                    && xyzSqr > MinRenormalizeLengthSqr
+                    && xyzSqr < MaxRenormalizeLengthSqr
+                )
+                {
+                    // RGB sources store all three components. Resizing averages neighbouring
+                    // vectors, which shortens them; normalizing keeps the averaged direction,
+                    // whereas rebuilding Z from the shortened XY would flatten the surface.
+                    float invLength = 1f / Mathf.Sqrt(xyzSqr);
+                    x *= invLength;
+                    y *= invLength;
+                    z = originalZ * invLength;
+                }
+                else if (xySqr < 1f)
                 {
                     // Normal case: reconstruct Z from unit sphere constraint.
                     // The resulting vector (x, y, z) is unit-length by construction,
