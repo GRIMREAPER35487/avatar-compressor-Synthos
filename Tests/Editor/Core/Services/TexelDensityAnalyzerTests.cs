@@ -237,6 +237,130 @@ namespace dev.limitex.avatar.compressor.tests
             Assert.That(result.width, Is.EqualTo(expectedSize));
         }
 
+        [Test]
+        public void ApplyFloor_DetailedAndUnderTarget_KeepsBaseSize()
+        {
+            var processor = new TextureProcessor(32, 2048, true, ResizeBackendPreference.CPU);
+            // 2048 gives 20 px/cm where 48 is needed.
+            var density = new TexelDensityInfo(2048.0 * 2048.0 * 5.76, 48f, false);
+            var analysis = new TextureAnalysisResult(0.24f, 2, new Vector2Int(1024, 1024));
+
+            var floored = TexelDensityAnalyzer.ApplyFloor(
+                analysis,
+                new Vector2Int(2048, 2048),
+                density,
+                1,
+                0.1f,
+                processor
+            );
+
+            Assert.That(floored.RecommendedDivisor, Is.EqualTo(1));
+            Assert.That(floored.RecommendedResolution, Is.EqualTo(new Vector2Int(2048, 2048)));
+        }
+
+        [Test]
+        public void ApplyFloor_StopsAtDivisorThatMeetsTarget()
+        {
+            var processor = new TextureProcessor(32, 2048, true, ResizeBackendPreference.CPU);
+            // Needs 512 pixels across: 2048 / 8 = 256 falls short, 2048 / 4 = 512 meets it.
+            var density = new TexelDensityInfo(512.0 * 512.0, 50f, false);
+            var analysis = new TextureAnalysisResult(0.5f, 8, new Vector2Int(256, 256));
+
+            var floored = TexelDensityAnalyzer.ApplyFloor(
+                analysis,
+                new Vector2Int(2048, 2048),
+                density,
+                1,
+                0.1f,
+                processor
+            );
+
+            Assert.That(floored.RecommendedDivisor, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ApplyFloor_LowDetailOrMinDivisor_StillShrinks()
+        {
+            var processor = new TextureProcessor(32, 2048, true, ResizeBackendPreference.CPU);
+            var density = new TexelDensityInfo(2048.0 * 2048.0 * 5.76, 48f, false);
+            var base2048 = new Vector2Int(2048, 2048);
+
+            var lowDetail = TexelDensityAnalyzer.ApplyFloor(
+                new TextureAnalysisResult(0.04f, 2, new Vector2Int(1024, 1024)),
+                base2048,
+                density,
+                1,
+                0.1f,
+                processor
+            );
+            var minDivisor = TexelDensityAnalyzer.ApplyFloor(
+                new TextureAnalysisResult(0.5f, 8, new Vector2Int(256, 256)),
+                base2048,
+                density,
+                2,
+                0.1f,
+                processor
+            );
+
+            Assert.That(lowDetail.RecommendedDivisor, Is.EqualTo(2));
+            Assert.That(minDivisor.RecommendedDivisor, Is.EqualTo(2));
+        }
+
+        [TestCase(true, 1024)]
+        [TestCase(false, 512)]
+        public void Compress_LargeDetailedSurface_KeepsSizeOnlyWithFloor(
+            bool keepDetail,
+            int expectedSize
+        )
+        {
+            var texture = CreateDetailedTexture(1024);
+            var (renderer, _) = CreateQuad(1f, texture);
+
+            var holder = new GameObject("Config");
+            _created.Add(holder);
+            var config = holder.AddComponent<TextureCompressor>();
+            config.ApplyPreset(CompressorPreset.Balanced);
+            config.TargetPlatform = CompressionPlatform.Desktop;
+            config.MinDivisor = 1;
+            config.MaxDivisor = 2;
+            // Wide thresholds: the pattern lands below the midpoint, so the detail analysis halves it.
+            config.LowComplexityThreshold = 0.01f;
+            config.HighComplexityThreshold = 0.99f;
+            config.ExcludedPaths.Clear();
+            config.AvoidCompressionArtifacts = false;
+            config.KeepVisibleDetail = keepDetail;
+
+            new TextureCompressorService(
+                config,
+                AnalysisBackendPreference.Auto,
+                ResizeBackendPreference.CPU
+            ).Compress(renderer.gameObject, false);
+
+            var result = (Texture2D)renderer.sharedMaterial.mainTexture;
+            _created.Add(renderer.sharedMaterial);
+            if (result != texture)
+                _created.Add(result);
+            Assert.That(result.width, Is.EqualTo(expectedSize));
+        }
+
+        private static Texture2D CreateDetailedTexture(int size)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true);
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    byte v = (byte)((x ^ y) * 4);
+                    pixels[y * size + x] = new Color32(v, (byte)(255 - v), (byte)(x * 8), 255);
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(true);
+            AssetDatabase.CreateAsset(texture, $"{TestFolder}/Detailed{size}.asset");
+            return texture;
+        }
+
         private static TexelDensityInfo? Analyze(
             Renderer renderer,
             Material material,

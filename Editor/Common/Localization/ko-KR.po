@@ -730,3 +730,9 @@ msgstr "머리"
 
 msgid "TextureCompressor:label:densityBody"
 msgstr "몸"
+
+msgid "TextureCompressor:prop:keepVisibleDetail"
+msgstr "보이는 곳의 디테일 유지"
+
+msgid "TextureCompressor:prop:keepVisibleDetail:tooltip"
+msgstr "표면이 이미 시청 거리에 필요한 선명도보다 낮은 디테일 텍스처(아바타 대부분을 덮는 피부나 옷 등)는 줄이지 않습니다. 최소 제수는 그대로 적용됩니다. AO 맵이나 단색처럼 디테일이 적은 텍스처는 계속 줄어듭니다."

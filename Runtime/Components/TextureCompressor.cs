@@ -134,6 +134,14 @@ namespace dev.limitex.avatar.compressor
         public bool LimitByOnAvatarSize = true;
 
         [Tooltip(
+            "Do not shrink a detailed texture whose surface is already less sharp than the view "
+                + "distance needs (typically skin and clothing that cover most of the avatar). "
+                + "Min Divisor still applies. Low-detail textures such as AO or flat colors are "
+                + "still reduced."
+        )]
+        public bool KeepVisibleDetail = true;
+
+        [Tooltip(
             "How closely the head (face, eyes, hair) can be looked at, in cm. Smaller keeps "
                 + "more detail. 15 cm is a face pressed up to a mirror."
         )]
