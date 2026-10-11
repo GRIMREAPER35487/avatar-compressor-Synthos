@@ -34,27 +34,31 @@ Analyzes and compresses avatar textures based on their complexity.
 
 - Unity 2022.3.22f1 (VRChat specified version)
 - VRChat SDK Avatars 3.10.0 or later
-- [VRCFury](https://vrcfury.com/) (optional, fully supported)
+- [VRCFury](https://vrcfury.com/) 1.1298.0 or later
 
 This edition does not use NDMF. It runs as a VRChat SDK build hook, after VRCFury has merged its clothing, props and controllers.
+
+VRCFury is installed automatically as a dependency, but its package repository must be added to VCC/ALCOM first: `https://vcc.vrcfury.com`
 
 ## Installation
 
 ### Via ALCOM (Recommended)
 
 1. Open [ALCOM](https://vrc-get.anatawa12.com/alcom/)
-2. Add the repository: `https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json`
-3. Add **Avatar Compressor (Synthos Edition)** to your project
+2. Add the VRCFury repository: `https://vcc.vrcfury.com`
+3. Add the repository: `https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json`
+4. Add **Avatar Compressor (Synthos Edition)** to your project
 
 ### Via VRChat Creator Companion
 
 1. Open VRChat Creator Companion
-2. Add the repository: `https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json`
-3. Add **Avatar Compressor (Synthos Edition)** to your project
+2. Add the VRCFury repository: `https://vcc.vrcfury.com`
+3. Add the repository: `https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json`
+4. Add **Avatar Compressor (Synthos Edition)** to your project
 
 ### Manual Installation
 
-Download the latest release from [GitHub Releases](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases) and import the `.zip` file into your Unity project.
+Install [VRCFury](https://vrcfury.com/download) first, then download the latest release from [GitHub Releases](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases) and import the `.zip` file into your Unity project.
 
 ## Usage
 

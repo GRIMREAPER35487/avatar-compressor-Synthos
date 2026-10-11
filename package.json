@@ -23,7 +23,8 @@
   "license": "MIT",
   "vpmDependencies" : {
     "com.vrchat.base" : ">=3.10.0",
-    "com.vrchat.avatars" : ">=3.10.0"
+    "com.vrchat.avatars" : ">=3.10.0",
+    "com.vrcfury.vrcfury" : ">=1.1298.0"
   },
   "legacyPackages": [
     "dev.limitex.avatar-compressor"
