@@ -748,3 +748,9 @@ msgstr "尺寸篩選檢查原始檔尺寸"
 
 msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
 msgstr "僅在關閉「遵循匯入的最大尺寸」時有效。開啟時，最小來源尺寸與「小於此值則略過」依原始檔尺寸判斷，因此從大檔案以小尺寸匯入的紋理仍會被處理。關閉時依匯入尺寸判斷，這類紋理會被略過並保持匯入時的狀態。"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures"
+msgstr "仍最佳化被篩選紋理的格式"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures:tooltip"
+msgstr "被尺寸篩選命中的紋理保持匯入尺寸，但仍會依細節與透明度選擇壓縮格式（含色帶檢查），並從高品質原始檔只壓縮一次。即使開啟「遵循匯入的壓縮格式」也會生效。關閉時保持匯入時的狀態。"

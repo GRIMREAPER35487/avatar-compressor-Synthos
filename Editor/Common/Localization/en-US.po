@@ -749,3 +749,9 @@ msgstr "Size filters check source size"
 
 msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
 msgstr "Only with Respect import Max Size off. When on, Min Source Size and Skip If Smaller Than check the source file, so a texture imported small from a large file is still processed. When off, they check the imported size, so those textures are skipped and left exactly as imported."
+
+msgid "TextureCompressor:prop:reformatFilteredTextures"
+msgstr "Still optimize format of filtered textures"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures:tooltip"
+msgstr "Textures caught by the size filters keep their imported size but still get their compression format chosen from their detail and alpha (with the banding check), recompressed once from the full-quality source. Applies even when Respect import format is on. When off, they are left exactly as imported."

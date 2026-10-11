@@ -748,3 +748,9 @@ msgstr "サイズフィルターでソースのサイズを確認"
 
 msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
 msgstr "インポート時の最大サイズの尊重がオフのときのみ有効です。オンの場合、最小ソースサイズと「これ以下はスキップ」はソースファイルのサイズで判定するため、大きなファイルから小さくインポートされたテクスチャも処理されます。オフの場合はインポートサイズで判定するため、そのようなテクスチャはスキップされ、インポートされたまま残ります。"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures"
+msgstr "フィルター対象でも形式を最適化"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures:tooltip"
+msgstr "サイズフィルターに該当したテクスチャは、インポートサイズを保ったまま、ディテールとアルファから圧縮形式を選び直し（バンディング検査あり）、高品質なソースから一度だけ再圧縮します。インポート形式の尊重がオンでも適用されます。オフの場合はインポートされたまま残ります。"

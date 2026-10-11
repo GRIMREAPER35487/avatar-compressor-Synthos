@@ -66,7 +66,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 || !TextureCompressorPreferences.UseSourceFiles
                 || !config.SizeFiltersUseSourceSize
                     ? null
-                    : texture => GetBaseSize(texture, config)
+                    : texture => GetBaseSize(texture, config),
+                config.ReformatFilteredTextures
             );
 
             var processor = new TextureProcessor(
@@ -81,6 +82,13 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.LowComplexityThreshold,
                 config.MinDivisor,
                 config.MaxDivisor
+            );
+
+            var formatOnlySelector = new TextureFormatSelector(
+                config.TargetPlatform,
+                config.UseHighQualityFormatForHighComplexity,
+                config.HighComplexityThreshold,
+                respectImportFormat: false
             );
 
             var formatSelector = new TextureFormatSelector(
@@ -269,6 +277,11 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     TextureFormat targetFormat;
                     bool hasAlpha;
                     var baseSize = GetBaseSize(tex, config);
+                    var selector = info.FormatOnly ? formatOnlySelector : formatSelector;
+                    var formatOnlySize = new Vector2Int(
+                        TextureProcessor.EnsureMultipleOf4(tex.width),
+                        TextureProcessor.EnsureMultipleOf4(tex.height)
+                    );
 
                     if (isFrozen && !frozenSettings.Skip)
                     {
@@ -287,13 +300,18 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             recommendedSize
                         );
                         recommendedSize = processor.CalculateTargetSize(baseSize, frozenAnalysis);
+                        if (info.FormatOnly)
+                        {
+                            recommendedSize = formatOnlySize;
+                            divisor = 1;
+                        }
                         var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
                         try
                         {
                             hasAlpha = TextureFormatSelector.HasSignificantAlpha(
                                 resizedTex != null ? resizedTex : tex
                             );
-                            targetFormat = formatSelector.ResolveTargetFormat(
+                            targetFormat = selector.ResolveTargetFormat(
                                 tex.format,
                                 isNormalMap,
                                 AnalysisConstants.DefaultComplexityScore,
@@ -302,7 +320,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             );
                             targetFormat = AvoidArtifacts(
                                 config,
-                                formatSelector,
+                                selector,
                                 tex,
                                 resizedTex,
                                 isNormalMap,
@@ -318,7 +336,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     }
                     else
                     {
-                        if (densities.TryGetValue(tex, out var density))
+                        if (!info.FormatOnly && densities.TryGetValue(tex, out var density))
                         {
                             analysis = TexelDensityAnalyzer.ApplyLimit(
                                 analysis,
@@ -340,7 +358,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         }
                         divisor = analysis.RecommendedDivisor;
                         recommendedSize = processor.CalculateTargetSize(baseSize, analysis);
-                        if (!config.RespectImportMaxSize)
+                        if (info.FormatOnly)
+                        {
+                            recommendedSize = formatOnlySize;
+                            divisor = 1;
+                        }
+                        else if (!config.RespectImportMaxSize)
                         {
                             recommendedSize = UpscaleGate.Apply(
                                 recommendedSize,
@@ -362,7 +385,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             hasAlpha = TextureFormatSelector.HasSignificantAlpha(
                                 resizedTex != null ? resizedTex : tex
                             );
-                            targetFormat = formatSelector.ResolveTargetFormat(
+                            targetFormat = selector.ResolveTargetFormat(
                                 tex.format,
                                 isNormalMap,
                                 analysis.NormalizedComplexity,
@@ -371,7 +394,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             );
                             targetFormat = AvoidArtifacts(
                                 config,
-                                formatSelector,
+                                selector,
                                 tex,
                                 resizedTex,
                                 isNormalMap,
@@ -389,6 +412,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     Vector2Int? maxResolutionWanted = null;
                     if (
                         !isFrozen
+                        && !info.FormatOnly
                         && densities.TryGetValue(tex, out var limitDensity)
                         && TexelDensityAnalyzer.IsLimitedByMaxResolution(
                             recommendedSize,
@@ -643,6 +667,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 hash = hash * 31 + config.gameObject.GetInstanceID();
                 hash = hash * 31 + config.LimitByOnAvatarSize.GetHashCode();
                 hash = hash * 31 + config.SizeFiltersUseSourceSize.GetHashCode();
+                hash = hash * 31 + config.ReformatFilteredTextures.GetHashCode();
                 hash = hash * 31 + config.KeepVisibleDetail.GetHashCode();
                 hash = hash * 31 + config.FaceViewDistance.GetHashCode();
                 hash = hash * 31 + config.BodyViewDistance.GetHashCode();
