@@ -160,8 +160,7 @@ namespace dev.limitex.avatar.compressor.editor
         )
         {
             if (avatarRoot == null) return;
-            if ((processedTextures == null || processedTextures.Count == 0) &&
-                (clonedMaterials == null || clonedMaterials.Count == 0))
+            if (processedTextures.Count == 0 && clonedMaterials.Count == 0)
                 return;
 
             try

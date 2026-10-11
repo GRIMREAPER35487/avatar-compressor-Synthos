@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.ui;
 using NUnit.Framework;
 
@@ -13,15 +14,15 @@ namespace dev.limitex.avatar.compressor.tests
         [SetUp]
         public void SetUp()
         {
-            _originalLanguage = LanguagePrefs.Language;
-            LanguagePrefs.Language = "en-US";
+            _originalLanguage = AvatarCompressorLocalization.CurrentLanguage;
+            AvatarCompressorLocalization.CurrentLanguage = "en-US";
             _searchBox = new SearchBoxControl();
         }
 
         [TearDown]
         public void TearDown()
         {
-            LanguagePrefs.Language = _originalLanguage;
+            AvatarCompressorLocalization.CurrentLanguage = _originalLanguage;
         }
 
         #region Constructor Tests
@@ -326,7 +327,7 @@ namespace dev.limitex.avatar.compressor.tests
             int englishCount = search.CountMatches(items, predicate);
             int firstCallCount = callCount;
 
-            LanguagePrefs.Language = "ja-JP";
+            AvatarCompressorLocalization.CurrentLanguage = "ja-JP";
             int japaneseCount = search.CountMatches(items, predicate);
 
             Assert.That(englishCount, Is.EqualTo(2));
