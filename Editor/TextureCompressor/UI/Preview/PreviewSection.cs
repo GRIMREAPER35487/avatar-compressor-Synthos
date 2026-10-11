@@ -443,6 +443,32 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             EditorGUILayout.LabelField(sizeText, GUILayout.MinWidth(0));
             EditorGUILayout.EndHorizontal();
 
+            if (data.Density.HasValue)
+            {
+                var density = data.Density.Value;
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:label:previewOnAvatar"),
+                    GUILayout.Width(85)
+                );
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:previewDensity",
+                        density.DensityAt(data.BaseSize).ToString("F0"),
+                        density.DensityAt(data.RecommendedSize).ToString("F0"),
+                        density.TargetDensity.ToString("F0"),
+                        AvatarCompressorLocalization.Tr(
+                            density.FromHead
+                                ? "TextureCompressor:label:densityHead"
+                                : "TextureCompressor:label:densityBody"
+                        )
+                    ),
+                    EditorStyles.miniLabel,
+                    GUILayout.MinWidth(0)
+                );
+                EditorGUILayout.EndHorizontal();
+            }
+
             // Format
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(

@@ -701,3 +701,33 @@ msgstr "Avoid banding and blocky edges"
 
 msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
 msgstr "When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), it first test-compresses the texture's smooth and clean areas. If that shows stair-stepping in gradients or blocky color edges, it uses BC7 instead (on mobile, the next finer ASTC block size that stays clean, down to 4x4), which uses more memory but looks clean. Formats kept by Respect import format and frozen formats are never changed."
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize"
+msgstr "Limit by on-avatar size"
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize:tooltip"
+msgstr "Shrink textures that are sharper than anyone could see, judged from how large the surface they cover is on the avatar (for example a 2048 texture on an earring). The head is sized for the face view distance and the rest for the body view distance. Only ever makes textures smaller than the detail analysis would, never larger. Matcaps, ramps, gradients and textures only used through animations are not limited."
+
+msgid "TextureCompressor:prop:faceViewDistance"
+msgstr "Face view distance (cm)"
+
+msgid "TextureCompressor:prop:faceViewDistance:tooltip"
+msgstr "How closely the head (face, eyes, hair) can be looked at. Smaller keeps more detail. 15 cm is a face pressed up to a mirror."
+
+msgid "TextureCompressor:prop:bodyViewDistance"
+msgstr "Body view distance (cm)"
+
+msgid "TextureCompressor:prop:bodyViewDistance:tooltip"
+msgstr "How closely the rest of the avatar can be looked at. Smaller keeps more detail. 30 cm is looking at your hands or a close-up photo."
+
+msgid "TextureCompressor:label:previewOnAvatar"
+msgstr "On avatar:"
+
+msgid "TextureCompressor:message:previewDensity"
+msgstr "{0} → {1} px/cm (needs {2} on the {3})"
+
+msgid "TextureCompressor:label:densityHead"
+msgstr "head"
+
+msgid "TextureCompressor:label:densityBody"
+msgstr "body"

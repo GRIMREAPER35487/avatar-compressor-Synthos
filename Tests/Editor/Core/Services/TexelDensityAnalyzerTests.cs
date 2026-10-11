@@ -1,0 +1,315 @@
+using System.Collections.Generic;
+using dev.limitex.avatar.compressor.editor.texture;
+using NUnit.Framework;
+using UnityEditor;
+using UnityEngine;
+
+namespace dev.limitex.avatar.compressor.tests
+{
+    [TestFixture]
+    internal sealed class TexelDensityAnalyzerTests
+    {
+        private const string TestFolder = "Assets/_LAC_DENSITY_TMP";
+
+        private readonly List<Object> _created = new List<Object>();
+
+        [SetUp]
+        public void SetUp()
+        {
+            AssetDatabase.CreateFolder("Assets", "_LAC_DENSITY_TMP");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var obj in _created)
+            {
+                if (obj != null)
+                    Object.DestroyImmediate(obj);
+            }
+            _created.Clear();
+            AssetDatabase.DeleteAsset(TestFolder);
+        }
+
+        [Test]
+        public void TargetDensity_MatchesViewingDistance()
+        {
+            // 25 px/degree; 1 cm at 15 cm spans ~3.81 degrees.
+            Assert.That(TexelDensityAnalyzer.TargetDensity(15f), Is.EqualTo(95.3f).Within(0.5f));
+            Assert.That(TexelDensityAnalyzer.TargetDensity(30f), Is.EqualTo(47.7f).Within(0.5f));
+        }
+
+        [Test]
+        public void Quad10cm_1024Texture_MeasuresAbout102PixelsPerCm()
+        {
+            var texture = CreateTexture(1024);
+            var (renderer, material) = CreateQuad(0.1f, texture);
+
+            var info = Analyze(renderer, material, texture);
+
+            Assert.That(info.HasValue, Is.True);
+            Assert.That(
+                info.Value.DensityAt(new Vector2Int(1024, 1024)),
+                Is.EqualTo(102.4f).Within(0.5f)
+            );
+            // No humanoid: everything uses the stricter face distance, which 1024 meets.
+            Assert.That(info.Value.FromHead, Is.True);
+            Assert.That(info.Value.GetDivisor(new Vector2Int(1024, 1024)), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Quad1cm_1024Texture_CanBeDividedBy8()
+        {
+            var texture = CreateTexture(1024);
+            var (renderer, material) = CreateQuad(0.01f, texture);
+
+            var info = Analyze(renderer, material, texture);
+
+            // Needs ~95 px across 1 cm: 1024 / 8 = 128 still meets it, 1024 / 16 = 64 does not.
+            Assert.That(info.Value.GetDivisor(new Vector2Int(1024, 1024)), Is.EqualTo(8));
+        }
+
+        [Test]
+        public void Tiling_MultipliesDensity()
+        {
+            var texture = CreateTexture(1024);
+            var (renderer, material) = CreateQuad(0.1f, texture);
+            material.SetTextureScale("_MainTex", new Vector2(2f, 2f));
+
+            var info = Analyze(renderer, material, texture);
+
+            Assert.That(
+                info.Value.DensityAt(new Vector2Int(1024, 1024)),
+                Is.EqualTo(204.8f).Within(1f)
+            );
+        }
+
+        [Test]
+        public void ScaledTransform_MeasuresWorldSize()
+        {
+            var texture = CreateTexture(1024);
+            var (renderer, material) = CreateQuad(0.1f, texture);
+            renderer.transform.localScale = new Vector3(2f, 2f, 2f);
+
+            var info = Analyze(renderer, material, texture);
+
+            Assert.That(
+                info.Value.DensityAt(new Vector2Int(1024, 1024)),
+                Is.EqualTo(51.2f).Within(0.5f)
+            );
+        }
+
+        [Test]
+        public void SkinnedMesh_ScaledTransform_MeasuresWorldSize()
+        {
+            var texture = CreateTexture(1024);
+            var material = new Material(Shader.Find("Standard")) { mainTexture = texture };
+            _created.Add(material);
+            var go = new GameObject("Skinned");
+            _created.Add(go);
+            go.transform.localScale = new Vector3(2f, 2f, 2f);
+            var skinned = go.AddComponent<SkinnedMeshRenderer>();
+            skinned.sharedMesh = CreateQuadMesh(0.1f);
+            skinned.sharedMaterial = material;
+
+            var info = Analyze(skinned, material, texture);
+
+            Assert.That(
+                info.Value.DensityAt(new Vector2Int(1024, 1024)),
+                Is.EqualTo(51.2f).Within(0.5f)
+            );
+        }
+
+        // Skinned vertices follow the bone, not the renderer's transform.
+        [TestCase(1f, 2f, 102.4f)]
+        [TestCase(2f, 1f, 51.2f)]
+        public void SkinnedMesh_WithBone_MeasuresPosedWorldSize(
+            float boneScale,
+            float rendererScale,
+            float expected
+        )
+        {
+            var texture = CreateTexture(1024);
+            var material = new Material(Shader.Find("Standard")) { mainTexture = texture };
+            _created.Add(material);
+
+            var root = new GameObject("Root");
+            _created.Add(root);
+            var bone = new GameObject("Bone").transform;
+            bone.SetParent(root.transform, false);
+            bone.localScale = Vector3.one * boneScale;
+            var go = new GameObject("Skinned");
+            go.transform.SetParent(root.transform, false);
+            go.transform.localScale = Vector3.one * rendererScale;
+
+            var mesh = CreateQuadMesh(0.1f);
+            mesh.boneWeights = new[]
+            {
+                new BoneWeight { boneIndex0 = 0, weight0 = 1f },
+                new BoneWeight { boneIndex0 = 0, weight0 = 1f },
+                new BoneWeight { boneIndex0 = 0, weight0 = 1f },
+                new BoneWeight { boneIndex0 = 0, weight0 = 1f },
+            };
+            mesh.bindposes = new[] { Matrix4x4.identity };
+
+            var skinned = go.AddComponent<SkinnedMeshRenderer>();
+            skinned.sharedMesh = mesh;
+            skinned.bones = new[] { bone };
+            skinned.rootBone = bone;
+            skinned.sharedMaterial = material;
+
+            var info = Analyze(skinned, material, texture);
+
+            Assert.That(
+                info.Value.DensityAt(new Vector2Int(1024, 1024)),
+                Is.EqualTo(expected).Within(0.5f)
+            );
+        }
+
+        [Test]
+        public void MaterialNotOnAnyRenderer_IsNotMeasured()
+        {
+            var texture = CreateTexture(1024);
+            var (renderer, _) = CreateQuad(0.1f, texture);
+            var animationOnly = new Material(Shader.Find("Standard")) { mainTexture = texture };
+            _created.Add(animationOnly);
+
+            var info = Analyze(renderer, animationOnly, texture);
+
+            Assert.That(info.HasValue, Is.False);
+        }
+
+        [Test]
+        public void IsUvMapped_RejectsViewAndLookupTextures()
+        {
+            var material = new Material(Shader.Find("Standard"));
+            _created.Add(material);
+
+            Assert.That(TexelDensityAnalyzer.IsUvMapped(material, "_MainTex"), Is.True);
+            Assert.That(TexelDensityAnalyzer.IsUvMapped(material, "_BumpMap"), Is.True);
+            Assert.That(TexelDensityAnalyzer.IsUvMapped(material, "_MatCapTex"), Is.False);
+            Assert.That(TexelDensityAnalyzer.IsUvMapped(material, "_Ramp"), Is.False);
+            Assert.That(TexelDensityAnalyzer.IsUvMapped(material, "_MainGradationTex"), Is.False);
+            Assert.That(TexelDensityAnalyzer.IsUvMapped(material, "_DecalTexture"), Is.False);
+        }
+
+        [Test]
+        public void WeightedPercentile_IgnoresSmallOutliers()
+        {
+            var samples = new List<(double, double)>
+            {
+                (100, 50),
+                (200, 49),
+                (1_000_000, 1), // 1% of the area: a stretched, hidden triangle
+            };
+
+            Assert.That(TexelDensityAnalyzer.WeightedPercentile(samples), Is.EqualTo(200));
+        }
+
+        [TestCase(true, 128)]
+        [TestCase(false, 1024)]
+        public void Compress_TinyMesh_ShrinksOnlyWhenLimitIsOn(bool limit, int expectedSize)
+        {
+            var texture = CreateTexture(1024);
+            var (renderer, _) = CreateQuad(0.01f, texture);
+
+            var holder = new GameObject("Config");
+            _created.Add(holder);
+            var config = holder.AddComponent<TextureCompressor>();
+            config.ApplyPreset(CompressorPreset.Balanced);
+            config.TargetPlatform = CompressionPlatform.Desktop;
+            config.MinDivisor = 1;
+            config.MaxDivisor = 1;
+            config.ExcludedPaths.Clear();
+            config.AvoidCompressionArtifacts = false;
+            config.LimitByOnAvatarSize = limit;
+
+            new TextureCompressorService(
+                config,
+                AnalysisBackendPreference.Auto,
+                ResizeBackendPreference.CPU
+            ).Compress(renderer.gameObject, false);
+
+            var result = (Texture2D)renderer.sharedMaterial.mainTexture;
+            _created.Add(renderer.sharedMaterial);
+            if (result != texture)
+                _created.Add(result);
+            Assert.That(result.width, Is.EqualTo(expectedSize));
+        }
+
+        private static TexelDensityInfo? Analyze(
+            Renderer renderer,
+            Material material,
+            Texture2D texture
+        )
+        {
+            var info = new TextureInfo();
+            info.References.Add(
+                new MaterialTextureReference { Material = material, PropertyName = "_MainTex" }
+            );
+            var result = TexelDensityAnalyzer.Analyze(
+                new[] { renderer },
+                new Dictionary<Texture2D, TextureInfo> { { texture, info } },
+                TexelDensityAnalyzer.DefaultFaceViewDistance,
+                TexelDensityAnalyzer.DefaultBodyViewDistance
+            );
+            return result.TryGetValue(texture, out var density) ? density : (TexelDensityInfo?)null;
+        }
+
+        private (Renderer, Material) CreateQuad(float size, Texture2D texture)
+        {
+            var go = new GameObject("Quad");
+            _created.Add(go);
+            go.AddComponent<MeshFilter>().sharedMesh = CreateQuadMesh(size);
+            var renderer = go.AddComponent<MeshRenderer>();
+            var material = new Material(Shader.Find("Standard")) { mainTexture = texture };
+            _created.Add(material);
+            renderer.sharedMaterial = material;
+            return (renderer, material);
+        }
+
+        private Mesh CreateQuadMesh(float size)
+        {
+            var mesh = new Mesh
+            {
+                vertices = new[]
+                {
+                    new Vector3(0, 0, 0),
+                    new Vector3(size, 0, 0),
+                    new Vector3(0, size, 0),
+                    new Vector3(size, size, 0),
+                },
+                uv = new[]
+                {
+                    new Vector2(0, 0),
+                    new Vector2(1, 0),
+                    new Vector2(0, 1),
+                    new Vector2(1, 1),
+                },
+                triangles = new[] { 0, 2, 1, 2, 3, 1 },
+            };
+            _created.Add(mesh);
+            return mesh;
+        }
+
+        private static Texture2D CreateTexture(int size)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true);
+            var pixels = new Color32[size * size];
+            var random = new System.Random(1);
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = new Color32(
+                    (byte)random.Next(256),
+                    (byte)random.Next(256),
+                    (byte)random.Next(256),
+                    255
+                );
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(true);
+            AssetDatabase.CreateAsset(texture, $"{TestFolder}/Texture{size}.asset");
+            return texture;
+        }
+    }
+}

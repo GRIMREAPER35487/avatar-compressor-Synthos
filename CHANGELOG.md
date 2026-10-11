@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Avoid banding and blocky edges** (on by default) - When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), it first test-compresses the texture's clean, smooth areas. If that shows stair-stepping across gradients or blocky colors along clean edges over a meaningful part of the texture, it uses BC7 instead. On mobile it steps through finer ASTC block sizes (8x8 -> 6x6 -> 5x5 -> 4x4) and uses the first that stays clean. Noisy and detailed areas, which hide these artifacts, are not counted, and a small smooth patch does not upgrade a whole texture. Formats kept by "Respect import format" and frozen formats are never changed.
 
+- **Limit by on-avatar size** (on by default) - Measures how large the surface each texture covers is on the avatar and shrinks textures that are sharper than anyone could see (a 2048 texture on an earring). The head is sized for a face view distance of 15 cm and the rest for a body view distance of 30 cm, both adjustable. Only ever makes textures smaller than the detail analysis would; frozen textures, matcaps, ramps, gradients, decals and animation-only textures are not limited. The preview shows pixels per cm.
+
 ### Fixed
 
 - With "Respect import Max Size" off, the size filters now check the source file's size, so a texture imported small from a large file is no longer skipped before the toggle applies.

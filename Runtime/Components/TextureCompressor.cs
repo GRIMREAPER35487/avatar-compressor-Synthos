@@ -125,6 +125,28 @@ namespace dev.limitex.avatar.compressor
         )]
         public bool AvoidCompressionArtifacts = true;
 
+        [Header("On-Avatar Size")]
+        [Tooltip(
+            "Shrink textures that are sharper than anyone could see, judged from how large the "
+                + "surface they cover is on the avatar (a 2048 texture on an earring). Only ever "
+                + "makes textures smaller than the detail analysis would, never larger."
+        )]
+        public bool LimitByOnAvatarSize = true;
+
+        [Tooltip(
+            "How closely the head (face, eyes, hair) can be looked at, in cm. Smaller keeps "
+                + "more detail. 15 cm is a face pressed up to a mirror."
+        )]
+        [Min(1f)]
+        public float FaceViewDistance = 15f;
+
+        [Tooltip(
+            "How closely the rest of the avatar can be looked at, in cm. Smaller keeps more "
+                + "detail. 30 cm is looking at your hands or a close-up photo."
+        )]
+        [Min(1f)]
+        public float BodyViewDistance = 30f;
+
         [Header("Size Filters")]
         [Tooltip("Only process textures larger than this size")]
         public int MinSourceSize = 256;

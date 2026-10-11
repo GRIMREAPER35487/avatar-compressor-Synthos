@@ -245,6 +245,15 @@ namespace dev.limitex.avatar.compressor.editor.texture
             foreach (var texture in textures.Keys)
                 baseSizes[texture] = GetBaseSize(texture);
 
+            var densities = _config.LimitByOnAvatarSize
+                ? TexelDensityAnalyzer.Analyze(
+                    GetRenderers(referenceList),
+                    textures,
+                    _config.FaceViewDistance,
+                    _config.BodyViewDistance
+                )
+                : null;
+
             var rawScores = _analyzer.AnalyzeBatch(textures);
 
             // Iterate inputs, not backend output — see ITextureAnalysisBackend contract.
@@ -289,6 +298,31 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
                 var analysis = resolved.Value.Analysis;
                 var formatOverride = resolved.Value.FormatOverride;
+
+                // Frozen textures keep their explicit divisor.
+                if (
+                    formatOverride == null
+                    && densities != null
+                    && densities.TryGetValue(originalTexture, out var density)
+                )
+                {
+                    var limited = TexelDensityAnalyzer.ApplyLimit(
+                        analysis,
+                        baseSize,
+                        density,
+                        _processor
+                    );
+                    if (enableLogging && limited.RecommendedDivisor != analysis.RecommendedDivisor)
+                    {
+                        Debug.Log(
+                            $"[{Name}] {originalTexture.name}: {density.DensityAt(baseSize):F0} "
+                                + $"px/cm on the {(density.FromHead ? "head" : "body")} (needs "
+                                + $"{density.TargetDensity:F0}), divisor "
+                                + $"{analysis.RecommendedDivisor}x -> {limited.RecommendedDivisor}x"
+                        );
+                    }
+                    analysis = limited;
+                }
                 var sourceFormat = originalTexture.format;
                 bool isNormalMap = textureInfo.IsNormalMap;
                 var importedSize = new Vector2Int(originalTexture.width, originalTexture.height);
@@ -584,6 +618,23 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             string guid = AssetDatabase.AssetPathToGUID(assetPath);
             return !string.IsNullOrEmpty(guid) && _frozenLookup.ContainsKey(guid);
+        }
+
+        private static IEnumerable<Renderer> GetRenderers(List<MaterialReference> references)
+        {
+            var renderers = new HashSet<Renderer>();
+            foreach (var reference in references)
+            {
+                if (
+                    reference.SourceType == MaterialSourceType.Renderer
+                    && reference.SourceObject is Renderer renderer
+                    && renderer != null
+                )
+                {
+                    renderers.Add(renderer);
+                }
+            }
+            return renderers;
         }
 
         /// <summary>

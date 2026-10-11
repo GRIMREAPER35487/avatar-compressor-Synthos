@@ -700,3 +700,33 @@ msgstr "バンディングとブロックノイズを回避"
 
 msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
 msgstr "コンプレッサーが DXT1/DXT5（モバイルでは ASTC 6x6/8x8）を選ぶ場合、まずテクスチャの滑らかできれいな部分を試験的に圧縮します。グラデーションの段差や色の境界のブロックノイズが出る場合は、代わりに BC7（モバイルでは、きれいに表示される次に細かい ASTC ブロックサイズ、最大 4x4）を使用します。メモリは増えますが、きれいに表示されます。インポート形式の尊重で維持される形式と凍結された形式は変更されません。"
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize"
+msgstr "アバター上のサイズで制限"
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize:tooltip"
+msgstr "アバター上で覆う面の大きさから見て、誰にも見分けられないほど細かいテクスチャを縮小します（例: イヤリングに 2048 のテクスチャ）。頭部は顔の視認距離、それ以外は体の視認距離を基準にします。詳細解析の結果より小さくするだけで、大きくすることはありません。マットキャップ、ランプ、グラデーション、アニメーションでのみ使われるテクスチャは制限されません。"
+
+msgid "TextureCompressor:prop:faceViewDistance"
+msgstr "顔の視認距離（cm）"
+
+msgid "TextureCompressor:prop:faceViewDistance:tooltip"
+msgstr "頭部（顔・目・髪）をどこまで近づいて見られるか。小さいほど細部を保ちます。15 cm は鏡に顔を近づけた距離です。"
+
+msgid "TextureCompressor:prop:bodyViewDistance"
+msgstr "体の視認距離（cm）"
+
+msgid "TextureCompressor:prop:bodyViewDistance:tooltip"
+msgstr "アバターのその他の部分をどこまで近づいて見られるか。小さいほど細部を保ちます。30 cm は自分の手やクローズアップ写真を見る距離です。"
+
+msgid "TextureCompressor:label:previewOnAvatar"
+msgstr "アバター上："
+
+msgid "TextureCompressor:message:previewDensity"
+msgstr "{0} → {1} px/cm（{3}で {2} 必要）"
+
+msgid "TextureCompressor:label:densityHead"
+msgstr "頭部"
+
+msgid "TextureCompressor:label:densityBody"
+msgstr "体"
