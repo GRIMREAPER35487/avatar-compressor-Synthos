@@ -462,8 +462,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         }
 
         /// <summary>
-        /// Mirrors the build: upgrades a low-bitrate format the compressor picked when a test
-        /// compression of the texture's clean areas shows banding or blocky edges.
+        /// Mirrors the build: steps a low-bitrate format the compressor picked up to the
+        /// cheapest format whose test compression of the clean areas shows no banding or
+        /// blocky edges.
         /// </summary>
         private static TextureFormat AvoidArtifacts(
             TextureCompressor config,
@@ -480,11 +481,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 && !isNormalMap
                 && config.AvoidCompressionArtifacts
                 && formatSelector.ChoosesFormat(texture.format, frozenFormat)
-                && CompressionArtifactDetector.IsCandidateFormat(targetFormat)
-                && CompressionArtifactDetector.WouldShowArtifacts(resized, targetFormat)
             )
             {
-                return CompressionArtifactDetector.GetSaferFormat(targetFormat);
+                return CompressionArtifactDetector.ChooseCleanFormat(resized, targetFormat);
             }
 
             return targetFormat;

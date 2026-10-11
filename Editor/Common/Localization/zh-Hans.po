@@ -699,4 +699,4 @@ msgid "TextureCompressor:prop:avoidCompressionArtifacts"
 msgstr "避免色带和块状边缘"
 
 msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
-msgstr "当压缩器选择 DXT1/DXT5（移动端为 ASTC 6x6/8x8）时，会先对纹理平滑、干净的区域进行试压缩。如果渐变出现阶梯状色带或颜色边缘出现块状噪点，则改用 BC7（ASTC 4x4），占用更多内存但画面干净。由“遵循导入的压缩格式”保留的格式和冻结的格式不会被更改。"
+msgstr "当压缩器选择 DXT1/DXT5（移动端为 ASTC 6x6/8x8）时，会先对纹理平滑、干净的区域进行试压缩。如果渐变出现阶梯状色带或颜色边缘出现块状噪点，则改用 BC7（移动端则逐级改用更细的 ASTC 块大小，直到画面干净，最细为 4x4），占用更多内存但画面干净。由“遵循导入的压缩格式”保留的格式和冻结的格式不会被更改。"

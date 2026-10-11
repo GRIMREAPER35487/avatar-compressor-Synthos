@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Avoid banding and blocky edges** (on by default) - When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), it first test-compresses the texture's clean, smooth areas. If that shows stair-stepping across gradients or blocky colors along clean edges over a meaningful part of the texture, it uses BC7 (ASTC 4x4) instead. Noisy and detailed areas, which hide these artifacts, are not counted, and a small smooth patch does not upgrade a whole texture. Formats kept by "Respect import format" and frozen formats are never changed.
+- **Avoid banding and blocky edges** (on by default) - When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), it first test-compresses the texture's clean, smooth areas. If that shows stair-stepping across gradients or blocky colors along clean edges over a meaningful part of the texture, it uses BC7 instead. On mobile it steps through finer ASTC block sizes (8x8 -> 6x6 -> 5x5 -> 4x4) and uses the first that stays clean. Noisy and detailed areas, which hide these artifacts, are not counted, and a small smooth patch does not upgrade a whole texture. Formats kept by "Respect import format" and frozen formats are never changed.
 
 ### Fixed
 

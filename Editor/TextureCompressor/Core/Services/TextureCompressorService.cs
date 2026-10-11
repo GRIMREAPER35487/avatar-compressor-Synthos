@@ -349,24 +349,26 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 );
 
                 // A low-detail score can still mean a smooth gradient, which is exactly where
-                // DXT1/ASTC 8x8 band. Test-compress the clean areas before committing to them.
+                // DXT1/ASTC 8x8 band. Test-compress the clean areas before committing to them,
+                // stepping up to the cheapest format that stays clean.
                 if (
                     !isNormalMap
                     && _config.AvoidCompressionArtifacts
                     && _formatSelector.ChoosesFormat(sourceFormat, formatOverride)
-                    && CompressionArtifactDetector.IsCandidateFormat(targetFormat)
-                    && CompressionArtifactDetector.WouldShowArtifacts(resizedTexture, targetFormat)
                 )
                 {
-                    var saferFormat = CompressionArtifactDetector.GetSaferFormat(targetFormat);
-                    if (enableLogging)
+                    var cleanFormat = CompressionArtifactDetector.ChooseCleanFormat(
+                        resizedTexture,
+                        targetFormat
+                    );
+                    if (cleanFormat != targetFormat && enableLogging)
                     {
                         Debug.Log(
                             $"[{Name}] {originalTexture.name}: {targetFormat} would band or show "
-                                + $"blocky edges, using {saferFormat}"
+                                + $"blocky edges, using {cleanFormat}"
                         );
                     }
-                    targetFormat = saferFormat;
+                    targetFormat = cleanFormat;
                 }
 
                 if (
