@@ -19,14 +19,14 @@ namespace dev.limitex.avatar.compressor.tests
         [SetUp]
         public void SetUp()
         {
-            _originalLanguage = LanguagePrefs.Language;
-            LanguagePrefs.Language = "en-US";
+            _originalLanguage = AvatarCompressorLocalization.CurrentLanguage;
+            AvatarCompressorLocalization.CurrentLanguage = "en-US";
         }
 
         [TearDown]
         public void TearDown()
         {
-            LanguagePrefs.Language = _originalLanguage;
+            AvatarCompressorLocalization.CurrentLanguage = _originalLanguage;
         }
 
         [Test]

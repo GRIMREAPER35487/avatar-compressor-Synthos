@@ -1,6 +1,6 @@
 {
   "name": "com.synthos.avatar-compressor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Avatar Compressor (Synthos Edition)",
   "description": "High-performance non-destructive avatar texture optimization utility decoupled from NDMF. Optimized for VRCFury and standard VRCSDK builds.",
   "unity": "2022.3",

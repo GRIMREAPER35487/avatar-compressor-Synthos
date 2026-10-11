@@ -117,7 +117,7 @@ namespace dev.limitex.avatar.compressor.editor.ui
             if (!IsSearching)
                 return items.Count;
 
-            string activeLanguage = LanguagePrefs.Language;
+            string activeLanguage = AvatarCompressorLocalization.CurrentLanguage;
 
             if (
                 SearchText == _cachedCountSearchText

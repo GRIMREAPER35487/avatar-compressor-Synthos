@@ -171,11 +171,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     )
                     {
                         references.Add(
-                            MaterialReference.FromComponent(
-                                material,
-                                component,
-                                iterator.propertyPath
-                            )
+MaterialReference.FromComponent(material, component)
                         );
                     }
                 }
