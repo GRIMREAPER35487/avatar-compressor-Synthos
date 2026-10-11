@@ -68,10 +68,7 @@ Add optimization components to your avatar's root GameObject, configure settings
 
 Use this together with VRCFury: Avatar Compressor runs after VRCFury in the build, so textures on VRCFury-merged clothing and props, and materials swapped by VRCFury toggles, are compressed too.
 
-## License
+## Credits & License
 
-[MIT License](LICENSE)
-
-## Author
-
-Original work by [Limitex](https://github.com/limitex). Synthos Edition maintained by [GRIMREAPER35487](https://github.com/GRIMREAPER35487).
+* **Original Library:** Developed by [Limitex](https://github.com/Limitex/avatar-compressor) under the [MIT License](LICENSE).
+* **NDMF Removal & VRCFury Integration:** Maintained by [Synthos](https://github.com/GRIMREAPER35487).
