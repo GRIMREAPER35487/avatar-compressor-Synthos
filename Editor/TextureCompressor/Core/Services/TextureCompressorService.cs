@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using dev.limitex.avatar.compressor.editor.ui;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace dev.limitex.avatar.compressor.editor.texture
 {
@@ -967,23 +967,36 @@ namespace dev.limitex.avatar.compressor.editor.texture
             }
         }
 
+        private static long GetUploadedSize(Texture2D texture)
+        {
+            return MemoryCalculator.CalculateCompressedMemory(
+                texture.width,
+                texture.height,
+                texture.format,
+                texture.mipmapCount
+            );
+        }
+
         private void LogSummary(
             Dictionary<Texture2D, TextureInfo> original,
             Dictionary<Texture2D, Texture2D> processed
         )
         {
+            // Same calculation as the preview: the size the textures take once uploaded. The
+            // editor's runtime memory figure counts CPU-side copies too and reads about double.
             long originalSize = 0;
             long compressedSize = 0;
 
             foreach (var kvp in original)
             {
                 var origTex = kvp.Key;
-                originalSize += Profiler.GetRuntimeMemorySizeLong(origTex);
+                long before = GetUploadedSize(origTex);
+                originalSize += before;
 
-                if (processed.TryGetValue(origTex, out var compTex))
-                {
-                    compressedSize += Profiler.GetRuntimeMemorySizeLong(compTex);
-                }
+                // Textures kept as imported still ship at their original size.
+                compressedSize += processed.TryGetValue(origTex, out var compTex)
+                    ? GetUploadedSize(compTex)
+                    : before;
             }
 
             float savings = originalSize > 0 ? 1f - (float)compressedSize / originalSize : 0f;

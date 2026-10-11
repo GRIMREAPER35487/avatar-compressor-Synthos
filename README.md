@@ -88,6 +88,8 @@ On its own it only ever makes a texture smaller than the detail analysis would, 
 
 ## Recommended
 
+For Quest avatars, the **Quality** preset with **Respect import format** off is a good starting point: in testing, a full avatar went from 55 MB to about 13 MB of texture memory while body textures stayed sharp up close.
+
 Use this together with VRCFury: Avatar Compressor runs after VRCFury in the build, so textures on VRCFury-merged clothing and props, and materials swapped by VRCFury toggles, are compressed too.
 
 ## Credits & License
