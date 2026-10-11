@@ -670,3 +670,27 @@ msgstr "紋理已排除"
 
 msgid "TextureCompressor:enum:skipReasonUnknownUncompressedProperty"
 msgstr "未知屬性上的未壓縮紋理（參見資料保護）"
+
+msgid "TextureCompressor:label:sourceTextures"
+msgstr "來源紋理"
+
+msgid "TextureCompressor:prop:respectImportMaxSize"
+msgstr "遵循匯入的最大尺寸"
+
+msgid "TextureCompressor:prop:respectImportMaxSize:tooltip"
+msgstr "以每張紋理匯入設定中的 Max Size 作為起始尺寸。關閉時以高品質來源檔案（縮放至 Max Resolution 以內）為起始尺寸，因此匯入尺寸小於原檔案的紋理可能輸出得更大。"
+
+msgid "TextureCompressor:prop:respectImportFormat"
+msgstr "遵循匯入的壓縮格式"
+
+msgid "TextureCompressor:prop:respectImportFormat:tooltip"
+msgstr "保留紋理在目前平台匯入時的壓縮格式。關閉時依紋理的細節與透明度選擇格式：簡單的紋理可能變小，細節豐富的紋理可能變大。"
+
+msgid "TextureCompressor:prop:useSourceFiles"
+msgstr "從來源檔案壓縮"
+
+msgid "TextureCompressor:prop:useSourceFiles:tooltip"
+msgstr "從圖片檔案的高品質副本（快取於 Library/AvatarCompressorCache）進行一次壓縮，而非重新壓縮 Unity 已壓縮的匯入結果。紋理變更後的首次建置會較慢。"
+
+msgid "TextureCompressor:button:clearSourceCache"
+msgstr "清除來源檔案快取"

@@ -71,6 +71,20 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
+        /// Returns true if the texture (or the asset a build-time copy came from) is imported
+        /// with Texture Type "Normal map".
+        /// </summary>
+        internal static bool IsImportedAsNormalMap(Texture2D texture)
+        {
+            string path = AssetDatabase.GetAssetPath(ResolveOriginalObject(texture));
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            return AssetImporter.GetAtPath(path) is TextureImporter importer
+                && importer.textureType == TextureImporterType.NormalMap;
+        }
+
+        /// <summary>
         /// Collects textures that should be processed from the avatar hierarchy.
         /// </summary>
         public Dictionary<Texture2D, TextureInfo> Collect(GameObject root)
@@ -156,6 +170,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     continue;
 
                 var category = TexturePropertyDefinitions.GetCategory(propertyName);
+
+                // Shaders with unlisted property names still get correct normal-map handling
+                // when the texture is imported as a normal map.
+                if (category != TexturePropertyCategory.Normal && IsImportedAsNormalMap(texture))
+                    category = TexturePropertyCategory.Normal;
+
                 bool isNormalMap = category == TexturePropertyCategory.Normal;
                 bool isEmission = category == TexturePropertyCategory.Emission;
 

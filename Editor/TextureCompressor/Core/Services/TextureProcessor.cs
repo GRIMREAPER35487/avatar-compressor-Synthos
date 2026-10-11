@@ -30,24 +30,26 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         /// <summary>
         /// Calculates the target resize dimensions for a texture based on its analysis result.
-        /// When no downscaling is needed and the source fits within max resolution, dimensions are
-        /// kept at the source size (rounded to multiples of 4). Otherwise, uses the recommended resolution.
+        /// When no downscaling is needed and the base size fits within max resolution, dimensions
+        /// are kept at the base size (rounded to multiples of 4). Otherwise, uses the recommended
+        /// resolution.
         /// </summary>
-        private (int Width, int Height) CalculateResizeDimensions(
-            Texture2D source,
-            TextureAnalysisResult analysis
-        )
+        /// <param name="baseSize">
+        /// The size the analysis scaled from. This is the imported size unless the texture is
+        /// resized from a full-quality source with a different size.
+        /// </param>
+        public Vector2Int CalculateTargetSize(Vector2Int baseSize, TextureAnalysisResult analysis)
         {
             if (
                 analysis.RecommendedDivisor <= 1
-                && source.width <= _maxResolution
-                && source.height <= _maxResolution
+                && baseSize.x <= _maxResolution
+                && baseSize.y <= _maxResolution
             )
             {
-                return (EnsureMultipleOf4(source.width), EnsureMultipleOf4(source.height));
+                return new Vector2Int(EnsureMultipleOf4(baseSize.x), EnsureMultipleOf4(baseSize.y));
             }
 
-            return (analysis.RecommendedResolution.x, analysis.RecommendedResolution.y);
+            return analysis.RecommendedResolution;
         }
 
         /// <summary>
@@ -103,15 +105,28 @@ namespace dev.limitex.avatar.compressor.editor.texture
             bool isNormalMap
         )
         {
+            return ResizeSingle(
+                source,
+                CalculateTargetSize(new Vector2Int(source.width, source.height), analysis),
+                isNormalMap
+            );
+        }
+
+        /// <summary>
+        /// Resizes a single texture to an explicit size, acquiring and releasing the
+        /// RenderTexture lock per call.
+        /// </summary>
+        /// <returns>A new readable RGBA32 Texture2D, or null if resize failed.</returns>
+        public Texture2D ResizeSingle(Texture2D source, Vector2Int targetSize, bool isNormalMap)
+        {
             lock (TextureReadback.RenderTextureLock)
             {
                 try
                 {
-                    var (newWidth, newHeight) = CalculateResizeDimensions(source, analysis);
                     return _resizer.Resize(
                         source,
-                        newWidth,
-                        newHeight,
+                        targetSize.x,
+                        targetSize.y,
                         forceLinearOutput: isNormalMap
                     );
                 }

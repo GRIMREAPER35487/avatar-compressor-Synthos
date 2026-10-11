@@ -670,3 +670,27 @@ msgstr "除外テクスチャ"
 
 msgid "TextureCompressor:enum:skipReasonUnknownUncompressedProperty"
 msgstr "不明なプロパティの非圧縮テクスチャ（データ保護を参照）"
+
+msgid "TextureCompressor:label:sourceTextures"
+msgstr "ソーステクスチャ"
+
+msgid "TextureCompressor:prop:respectImportMaxSize"
+msgstr "インポートの Max Size を尊重"
+
+msgid "TextureCompressor:prop:respectImportMaxSize:tooltip"
+msgstr "各テクスチャのインポート設定の Max Size を基準サイズとして使用します。オフの場合は高品質なソースファイル（Max Resolution に収まるよう縮小）を基準にするため、ファイルより小さくインポートされたテクスチャが大きく出力されることがあります。"
+
+msgid "TextureCompressor:prop:respectImportFormat"
+msgstr "インポートの圧縮形式を尊重"
+
+msgid "TextureCompressor:prop:respectImportFormat:tooltip"
+msgstr "このプラットフォーム向けにインポートされた圧縮形式を維持します。オフの場合は各テクスチャの詳細度とアルファから形式を選ぶため、単純なテクスチャは小さく、詳細なテクスチャは大きくなることがあります。"
+
+msgid "TextureCompressor:prop:useSourceFiles"
+msgstr "ソースファイルから圧縮"
+
+msgid "TextureCompressor:prop:useSourceFiles:tooltip"
+msgstr "Unity が圧縮済みのインポートを再圧縮する代わりに、画像ファイルの高品質なコピー（Library/AvatarCompressorCache にキャッシュ）から一度だけ圧縮します。テクスチャ変更後の最初のビルドは時間がかかります。"
+
+msgid "TextureCompressor:button:clearSourceCache"
+msgstr "ソースファイルのキャッシュを削除"

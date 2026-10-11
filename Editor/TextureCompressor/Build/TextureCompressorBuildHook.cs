@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using dev.limitex.avatar.compressor.editor.texture.integrations;
 using UnityEditor;
 using UnityEngine;
@@ -89,7 +90,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     TextureCompressorPreferences.ResizeBackend,
                     animationUsageMap,
                     unusedSlotOptimizer,
-                    lilToonBaker
+                    lilToonBaker,
+                    TextureCompressorPreferences.UseSourceFiles ? new TextureSourceCache() : null
                 );
                 var (processedTextures, clonedMaterials) = service.CompressWithMappings(
                     materialReferences,
@@ -100,10 +102,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 // survives the SDK saving the avatar as a prefab. This covers lilToon bakes that
                 // were not compressed as well as compressed textures.
                 var liveTextures = LilToonTextureBaker.CollectLiveTextures(clonedMaterials.Values);
-                foreach (var texture in liveTextures)
+                foreach (var texture in liveTextures.Concat(processedTextures.Values))
+                {
+                    if (IsGeneratedTexture(texture))
+                        MarkNonReadable(texture);
                     store.Persist(texture);
-                foreach (var texture in processedTextures.Values)
-                    store.Persist(texture);
+                }
                 foreach (var material in clonedMaterials.Values)
                     store.Persist(material);
 
@@ -119,6 +123,33 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             foreach (var component in components)
                 ComponentUtils.SafeDestroy(component);
+        }
+
+        /// <summary>
+        /// True for textures this build generated (compressed or baked), which are registered
+        /// as replacements and not yet saved as assets.
+        /// </summary>
+        private static bool IsGeneratedTexture(Texture2D texture)
+        {
+            return texture != null
+                && !EditorUtility.IsPersistent(texture)
+                && ReplacedObjectRegistry.Resolve(texture) != texture;
+        }
+
+        /// <summary>
+        /// Clears Read/Write on a generated texture so the uploaded avatar doesn't keep a
+        /// second, CPU-side copy of it in memory. The pixel data stays in the editor object,
+        /// so saving it as an asset still writes the full texture.
+        /// </summary>
+        private static void MarkNonReadable(Texture2D texture)
+        {
+            using var serializedTexture = new SerializedObject(texture);
+            var readable = serializedTexture.FindProperty("m_IsReadable");
+            if (readable == null || !readable.boolValue)
+                return;
+
+            readable.boolValue = false;
+            serializedTexture.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void ValidateComponents(

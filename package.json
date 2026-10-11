@@ -1,6 +1,6 @@
 {
   "name": "com.synthos.avatar-compressor",
-  "version": "1.1.0-beta.1",
+  "version": "1.1.0-beta.2",
   "displayName": "Avatar Compressor (Synthos Edition)",
   "description": "Avatar Compressor: Non-Destructive Avatar Compression Utilities. Runs at VRChat avatar build time and works with VRCFury.",
   "unity": "2022.3",

@@ -2015,7 +2015,8 @@ namespace dev.limitex.avatar.compressor.tests
                 "Already compressed BC5 source should preserve format"
             );
 
-            _createdObjects.Add(newTexture);
+            // Same size and format as the import: kept as imported, not recompressed.
+            Assert.AreSame(texture, newTexture);
         }
 
         [Test]
@@ -2052,7 +2053,8 @@ namespace dev.limitex.avatar.compressor.tests
                 "Already compressed DXT5 source should preserve format"
             );
 
-            _createdObjects.Add(newTexture);
+            // Same size and format as the import: kept as imported, not recompressed.
+            Assert.AreSame(texture, newTexture);
         }
 
         [Test]
@@ -2183,7 +2185,8 @@ namespace dev.limitex.avatar.compressor.tests
                 "Already compressed BC7 source should preserve format"
             );
 
-            _createdObjects.Add(newTexture);
+            // Same size and format as the import: kept as imported, not recompressed.
+            Assert.AreSame(texture, newTexture);
         }
 
         [Test]
@@ -2220,7 +2223,8 @@ namespace dev.limitex.avatar.compressor.tests
                 "Already compressed ASTC source should preserve format even on Desktop"
             );
 
-            _createdObjects.Add(newTexture);
+            // Same size and format as the import: kept as imported, not recompressed.
+            Assert.AreSame(texture, newTexture);
         }
 
         #endregion
