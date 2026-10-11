@@ -672,7 +672,7 @@ msgid "TextureCompressor:enum:skipReasonUnknownUncompressedProperty"
 msgstr "不明なプロパティの非圧縮テクスチャ（データ保護を参照）"
 
 msgid "TextureCompressor:label:sourceTextures"
-msgstr "ソーステクスチャ"
+msgstr "ソースと品質"
 
 msgid "TextureCompressor:prop:respectImportMaxSize"
 msgstr "インポートの Max Size を尊重"
@@ -694,3 +694,9 @@ msgstr "Unity が圧縮済みのインポートを再圧縮する代わりに、
 
 msgid "TextureCompressor:button:clearSourceCache"
 msgstr "ソースファイルのキャッシュを削除"
+
+msgid "TextureCompressor:prop:avoidCompressionArtifacts"
+msgstr "バンディングとブロックノイズを回避"
+
+msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
+msgstr "コンプレッサーが DXT1/DXT5（モバイルでは ASTC 6x6/8x8）を選ぶ場合、まずテクスチャの滑らかできれいな部分を試験的に圧縮します。グラデーションの段差や色の境界のブロックノイズが出る場合は、代わりに BC7（ASTC 4x4）を使用します。メモリは増えますが、きれいに表示されます。インポート形式の尊重で維持される形式と凍結された形式は変更されません。"

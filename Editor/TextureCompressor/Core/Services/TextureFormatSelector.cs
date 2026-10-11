@@ -81,6 +81,17 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
+        /// Returns true if the format comes from the compressor's own prediction: not pinned by a
+        /// frozen format and not kept from the import.
+        /// </summary>
+        public bool ChoosesFormat(TextureFormat sourceFormat, FrozenTextureFormat? frozenFormat)
+        {
+            if (frozenFormat.HasValue && frozenFormat.Value != FrozenTextureFormat.Auto)
+                return false;
+            return !(_respectImportFormat && TextureFormatInfo.IsCompressed(sourceFormat));
+        }
+
+        /// <summary>
         /// Converts FrozenTextureFormat enum to Unity TextureFormat.
         /// </summary>
         public static TextureFormat ConvertFrozenFormat(FrozenTextureFormat format)

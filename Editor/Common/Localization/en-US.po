@@ -673,7 +673,7 @@ msgid "TextureCompressor:enum:skipReasonUnknownUncompressedProperty"
 msgstr "Uncompressed on unknown property (see Data Protection)"
 
 msgid "TextureCompressor:label:sourceTextures"
-msgstr "Source Textures"
+msgstr "Source & Quality"
 
 msgid "TextureCompressor:prop:respectImportMaxSize"
 msgstr "Respect import Max Size"
@@ -695,3 +695,9 @@ msgstr "Compress textures once from full-quality copies of their image files (ca
 
 msgid "TextureCompressor:button:clearSourceCache"
 msgstr "Clear Source File Cache"
+
+msgid "TextureCompressor:prop:avoidCompressionArtifacts"
+msgstr "Avoid banding and blocky edges"
+
+msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
+msgstr "When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), it first test-compresses the texture's smooth and clean areas. If that shows stair-stepping in gradients or blocky color edges, it uses BC7 (ASTC 4x4) instead, which uses more memory but looks clean. Formats kept by Respect import format and frozen formats are never changed."

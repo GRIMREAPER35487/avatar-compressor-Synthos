@@ -118,6 +118,13 @@ namespace dev.limitex.avatar.compressor
         )]
         public bool RespectImportFormat = true;
 
+        [Tooltip(
+            "When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), test-compress the "
+                + "texture's smooth and clean areas first. If it would show stair-stepping or "
+                + "blocky color edges, use BC7 (ASTC 4x4) instead."
+        )]
+        public bool AvoidCompressionArtifacts = true;
+
         [Header("Size Filters")]
         [Tooltip("Only process textures larger than this size")]
         public int MinSourceSize = 256;

@@ -68,12 +68,14 @@ Add optimization components to your avatar's root GameObject, configure settings
 
 By default the compressor works from a full-quality copy of each texture's image file, so every texture is compressed exactly once. The copies are made the first time a texture is built and cached in `Library/AvatarCompressorCache`; your import settings are never changed. You can turn this off or clear the cache in **Edit > Preferences > Avatar Compressor**.
 
-Two options in the component's **Source Textures** section decide how much the avatar's import settings matter:
+Two options in the component's **Source & Quality** section decide how much the avatar's import settings matter:
 
 - **Respect import Max Size** (on): the texture's import Max Size is the starting size. Turn off to start from the source file instead (fit to Max Resolution), so textures imported smaller than their file can come out larger.
 - **Respect import format** (on): keep the compression format each texture was imported with. Turn off to let the compressor pick the format from each texture's detail and alpha.
 
 With both off, results no longer depend on how the textures were imported.
+
+The same section has **Avoid banding and blocky edges** (on). When the compressor would pick DXT1/DXT5 (ASTC 6x6/8x8 on Quest), it test-compresses the texture's smooth, clean areas first; if gradients would show stair-stepping or clean edges would turn blocky, it uses BC7 (ASTC 4x4) instead. Textures that get upgraded use more memory but stay clean.
 
 ## Recommended
 

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Avoid banding and blocky edges** (on by default) - When the compressor picks DXT1/DXT5 (ASTC 6x6/8x8 on mobile), it first test-compresses the texture's clean, smooth areas. If that shows stair-stepping across gradients or blocky colors along clean edges over a meaningful part of the texture, it uses BC7 (ASTC 4x4) instead. Noisy and detailed areas, which hide these artifacts, are not counted, and a small smooth patch does not upgrade a whole texture. Formats kept by "Respect import format" and frozen formats are never changed.
+
+### Fixed
+
+- With "Respect import Max Size" off, the size filters now check the source file's size, so a texture imported small from a large file is no longer skipped before the toggle applies.
+
 ## [1.1.0] - 2026-10-11 - Synthos Edition
 
 ### Changed

@@ -61,7 +61,10 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.SkipUnknownUncompressedTextures,
                 config.ExcludedPaths,
                 config.ExcludedTextures,
-                config.FrozenTextures
+                config.FrozenTextures,
+                config.RespectImportMaxSize || !TextureCompressorPreferences.UseSourceFiles
+                    ? null
+                    : texture => GetBaseSize(texture, config)
             );
 
             var processor = new TextureProcessor(
@@ -272,22 +275,33 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         );
                         recommendedSize = processor.CalculateTargetSize(baseSize, frozenAnalysis);
                         var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
-                        if (resizedTex != null)
+                        try
                         {
-                            hasAlpha = TextureFormatSelector.HasSignificantAlpha(resizedTex);
-                            Object.DestroyImmediate(resizedTex);
+                            hasAlpha = TextureFormatSelector.HasSignificantAlpha(
+                                resizedTex != null ? resizedTex : tex
+                            );
+                            targetFormat = formatSelector.ResolveTargetFormat(
+                                tex.format,
+                                isNormalMap,
+                                AnalysisConstants.DefaultComplexityScore,
+                                hasAlpha,
+                                frozenSettings.Format
+                            );
+                            targetFormat = AvoidArtifacts(
+                                config,
+                                formatSelector,
+                                tex,
+                                resizedTex,
+                                isNormalMap,
+                                targetFormat,
+                                frozenSettings.Format
+                            );
                         }
-                        else
+                        finally
                         {
-                            hasAlpha = TextureFormatSelector.HasSignificantAlpha(tex);
+                            if (resizedTex != null)
+                                Object.DestroyImmediate(resizedTex);
                         }
-                        targetFormat = formatSelector.ResolveTargetFormat(
-                            tex.format,
-                            isNormalMap,
-                            AnalysisConstants.DefaultComplexityScore,
-                            hasAlpha,
-                            frozenSettings.Format
-                        );
                     }
                     else
                     {
@@ -297,22 +311,33 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         // so that alpha regions lost during downscaling don't cause an
                         // unnecessary alpha-capable format (e.g. BC7 instead of DXT1).
                         var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
-                        if (resizedTex != null)
+                        try
                         {
-                            hasAlpha = TextureFormatSelector.HasSignificantAlpha(resizedTex);
-                            Object.DestroyImmediate(resizedTex);
+                            hasAlpha = TextureFormatSelector.HasSignificantAlpha(
+                                resizedTex != null ? resizedTex : tex
+                            );
+                            targetFormat = formatSelector.ResolveTargetFormat(
+                                tex.format,
+                                isNormalMap,
+                                analysis.NormalizedComplexity,
+                                hasAlpha,
+                                null
+                            );
+                            targetFormat = AvoidArtifacts(
+                                config,
+                                formatSelector,
+                                tex,
+                                resizedTex,
+                                isNormalMap,
+                                targetFormat,
+                                null
+                            );
                         }
-                        else
+                        finally
                         {
-                            hasAlpha = TextureFormatSelector.HasSignificantAlpha(tex);
+                            if (resizedTex != null)
+                                Object.DestroyImmediate(resizedTex);
                         }
-                        targetFormat = formatSelector.ResolveTargetFormat(
-                            tex.format,
-                            isNormalMap,
-                            analysis.NormalizedComplexity,
-                            hasAlpha,
-                            null
-                        );
                     }
 
                     long estimatedMemory = MemoryCalculator.CalculateCompressedMemory(
@@ -428,16 +453,41 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         /// </summary>
         private static Vector2Int GetBaseSize(Texture2D texture, TextureCompressor config)
         {
+            return TextureSourceCache.GetPlannedBaseSize(
+                texture,
+                config.RespectImportMaxSize,
+                TextureCompressorPreferences.UseSourceFiles,
+                config.MaxResolution
+            );
+        }
+
+        /// <summary>
+        /// Mirrors the build: upgrades a low-bitrate format the compressor picked when a test
+        /// compression of the texture's clean areas shows banding or blocky edges.
+        /// </summary>
+        private static TextureFormat AvoidArtifacts(
+            TextureCompressor config,
+            TextureFormatSelector formatSelector,
+            Texture2D texture,
+            Texture2D resized,
+            bool isNormalMap,
+            TextureFormat targetFormat,
+            FrozenTextureFormat? frozenFormat
+        )
+        {
             if (
-                !config.RespectImportMaxSize
-                && TextureCompressorPreferences.UseSourceFiles
-                && TextureSourceCache.TryGetSourceSize(texture, out var sourceSize)
+                resized != null
+                && !isNormalMap
+                && config.AvoidCompressionArtifacts
+                && formatSelector.ChoosesFormat(texture.format, frozenFormat)
+                && CompressionArtifactDetector.IsCandidateFormat(targetFormat)
+                && CompressionArtifactDetector.WouldShowArtifacts(resized, targetFormat)
             )
             {
-                return TextureSourceCache.FitWithin(sourceSize, config.MaxResolution);
+                return CompressionArtifactDetector.GetSaferFormat(targetFormat);
             }
 
-            return new Vector2Int(texture.width, texture.height);
+            return targetFormat;
         }
 
         private static int ComputeAnalysisHash(
@@ -501,6 +551,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 hash = hash * 31 + config.TargetPlatform.GetHashCode();
                 hash = hash * 31 + config.UseHighQualityFormatForHighComplexity.GetHashCode();
                 hash = hash * 31 + config.RespectImportFormat.GetHashCode();
+                hash = hash * 31 + config.AvoidCompressionArtifacts.GetHashCode();
+                hash = hash * 31 + config.RespectImportMaxSize.GetHashCode();
+                hash = hash * 31 + TextureCompressorPreferences.UseSourceFiles.GetHashCode();
                 hash = hash * 31 + config.gameObject.GetInstanceID();
 
                 // Include frozen textures in hash
