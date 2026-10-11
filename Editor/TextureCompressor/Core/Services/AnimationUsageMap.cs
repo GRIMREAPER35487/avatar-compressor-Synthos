@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using nadena.dev.ndmf;
+using nadena.dev.ndmf.animator;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,11 +9,27 @@ namespace dev.limitex.avatar.compressor.editor.texture
 {
     /// <summary>
     /// Records which material properties are touched by <em>any</em> animation in the avatar's
-    /// animator hierarchy, plus every texture referenced by an animation object (PPtr) curve.
-    /// The <see cref="AnimatedProperties"/> list is handed to an <see cref="IUnusedSlotOptimizer"/>
-    /// so a slot whose feature toggle is driven by animation is never cleared; the animated-texture
-    /// set protects textures that ship with the avatar through an animation curve regardless of slot state.
+    /// merged animator hierarchy, plus every texture referenced by an animation object (PPtr)
+    /// curve. The <see cref="AnimatedProperties"/> list is handed to an
+    /// <see cref="IUnusedSlotOptimizer"/> so a slot whose feature toggle is driven by animation is
+    /// never cleared; the animated-texture set protects textures that ship with the avatar through
+    /// an animation curve regardless of slot state.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The map is deliberately coarse: it collects the <em>set of animated material property
+    /// names</em> across the whole avatar, ignoring which renderer or material they belong to.
+    /// Animation curves bind to a renderer path + a <c>material.&lt;Property&gt;</c> name rather
+    /// than to a specific Material asset, so a per-material association cannot be recovered
+    /// reliably. Treating a property as "animated everywhere" if it is animated anywhere is the
+    /// safe (over-inclusive) choice, matching the safe-side default of the unused-slot feature.
+    /// </para>
+    /// <para>
+    /// Building requires NDMF's <see cref="AnimatorServicesContext"/>, which is only available
+    /// during an NDMF build. Outside that context (e.g. inspector preview), unused-slot detection
+    /// is disabled rather than guessing from static state.
+    /// </para>
+    /// </remarks>
     internal sealed class AnimationUsageMap
     {
         private const string MaterialBindingPrefix = "material.";
@@ -65,7 +82,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         /// <summary>
         /// Returns true if the given texture is referenced by an animation object (PPtr) curve
-        /// anywhere in the avatar.
+        /// anywhere in the avatar. Such a texture ships with the upload regardless of material
+        /// slot state, so clearing its slots would not remove it — it would only stop it from
+        /// being collected and compressed.
         /// </summary>
         public bool IsTextureAnimated(Texture2D texture)
         {
@@ -73,13 +92,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Builds the map from the avatar's animator hierarchy.
-        /// Returns <c>null</c> if scanning fails — callers treat a <c>null</c> map as
-        /// "cannot prove anything unused" and skip detection.
+        /// Builds the map from the avatar's merged animator hierarchy.
+        /// Returns <c>null</c> if the animator services are unavailable or scanning fails — callers
+        /// should treat a <c>null</c> map as "cannot prove anything unused" and skip detection.
         /// </summary>
-        public static AnimationUsageMap Build(GameObject avatarRoot)
+        public static AnimationUsageMap Build(BuildContext ctx)
         {
-            if (avatarRoot == null)
+            if (ctx == null)
                 return null;
 
             var properties = new HashSet<string>();
@@ -87,57 +106,31 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             try
             {
-                var clips = new HashSet<AnimationClip>();
+                ctx.ActivateExtensionContextRecursive<AnimatorServicesContext>();
+                var animatorServices = ctx.Extension<AnimatorServicesContext>();
 
-                // 1. Scan Animators
-                var animators = avatarRoot.GetComponentsInChildren<Animator>(true);
-                foreach (var animator in animators)
-                {
-                    if (animator != null && animator.runtimeAnimatorController != null)
-                    {
-                        foreach (var clip in MaterialCollector.GetAllAnimationClips(animator.runtimeAnimatorController))
-                        {
-                            if (clip != null)
-                                clips.Add(clip);
-                        }
-                    }
-                }
+                if (animatorServices?.ControllerContext == null)
+                    return null;
 
-                // 2. Scan VRCAvatarDescriptor controllers
-                var descriptors = avatarRoot.GetComponentsInChildren<Component>(true)
-                    .Where(c => c != null && (c.GetType().Name == "VRCAvatarDescriptor" || c is VRC.SDKBase.VRC_AvatarDescriptor));
-                foreach (var desc in descriptors)
+                foreach (var controller in animatorServices.ControllerContext.GetAllControllers())
                 {
-                    MaterialCollector.CollectClipsFromAvatarDescriptor(desc, clips);
-                }
-
-                // 3. Scan legacy Animation components
-                var legacyAnims = avatarRoot.GetComponentsInChildren<Animation>(true);
-                foreach (var anim in legacyAnims)
-                {
-                    if (anim != null)
-                    {
-                        foreach (AnimationState state in anim)
-                        {
-                            if (state.clip != null)
-                                clips.Add(state.clip);
-                        }
-                    }
-                }
-
-                foreach (var clip in clips)
-                {
-                    if (clip == null)
+                    if (controller == null)
                         continue;
 
-                    CollectMaterialProperties(AnimationUtility.GetCurveBindings(clip), properties);
-                    CollectFromObjectCurves(clip, properties, textures);
+                    foreach (var node in controller.AllReachableNodes())
+                    {
+                        if (node is VirtualClip clip)
+                        {
+                            CollectMaterialProperties(clip.GetFloatCurveBindings(), properties);
+                            CollectFromObjectCurves(clip, properties, textures);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning(
-                    $"[Avatar Compressor] Failed to scan animations for unused-slot detection: {ex.Message}. "
+                    $"[LAC Texture Compressor] Failed to scan animations for unused-slot detection: {ex.Message}. "
                         + "Unused-slot detection will be skipped (all slots treated as used)."
                 );
                 return null;
@@ -147,23 +140,22 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         private static void CollectFromObjectCurves(
-            AnimationClip clip,
+            VirtualClip clip,
             HashSet<string> properties,
             HashSet<Texture2D> textures
         )
         {
-            var bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
-            foreach (var binding in bindings)
+            foreach (var binding in clip.GetObjectCurveBindings())
             {
                 CollectMaterialProperty(binding, properties);
 
-                var keyframes = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                var keyframes = clip.GetObjectCurve(binding);
                 if (keyframes == null)
                     continue;
 
                 foreach (var keyframe in keyframes)
                 {
-                    if (keyframe.value is Texture2D texture && texture != null)
+                    if (keyframe.value is Texture2D texture)
                         textures.Add(texture);
                 }
             }
@@ -189,7 +181,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             string prop = name.Substring(MaterialBindingPrefix.Length);
 
-            // Strip vector/color component suffixes (e.g. "_Color.r" -> "_Color")
+            // Strip vector/color component suffixes (e.g. "_Color.r" -> "_Color") so that
+            // a single animated channel marks the whole property as animated.
             int dot = prop.IndexOf('.');
             if (dot > 0)
                 prop = prop.Substring(0, dot);
