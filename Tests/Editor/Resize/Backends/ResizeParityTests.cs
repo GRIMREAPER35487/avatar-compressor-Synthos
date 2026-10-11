@@ -12,7 +12,7 @@ namespace dev.limitex.avatar.compressor.tests
         private const float ChannelTolerance = 0.02f;
 
         private const string ShaderPath =
-            "Packages/dev.limitex.avatar-compressor/"
+            "Packages/com.synthos.avatar-compressor/"
             + "Editor/TextureCompressor/Resize/Shaders/AreaAverageResize.compute";
 
         private CpuAreaAverageResizer _cpuResizer;

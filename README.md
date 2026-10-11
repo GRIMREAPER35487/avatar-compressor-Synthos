@@ -4,15 +4,16 @@
 
 <br/>
 
-# Avatar Compressor
+# Avatar Compressor (Synthos Edition)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/limitex/avatar-compressor)](https://github.com/limitex/avatar-compressor/releases/latest)
-[![GitHub Downloads (latest)](https://img.shields.io/github/downloads/limitex/avatar-compressor/latest/total?label=downloads%40latest)](https://github.com/limitex/avatar-compressor/releases/latest)
-[![GitHub Downloads (total)](https://img.shields.io/github/downloads/limitex/avatar-compressor/total?label=downloads%40total)](https://github.com/limitex/avatar-compressor/releases)
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/limitex/avatar-compressor/gameci.yml?label=tests)](https://github.com/limitex/avatar-compressor/actions)
+[![GitHub release](https://img.shields.io/github/v/release/GRIMREAPER35487/avatar-compressor-Synthos)](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases/latest)
+[![GitHub Downloads (latest)](https://img.shields.io/github/downloads/GRIMREAPER35487/avatar-compressor-Synthos/latest/total?label=downloads%40latest)](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases/latest)
+[![GitHub Downloads (total)](https://img.shields.io/github/downloads/GRIMREAPER35487/avatar-compressor-Synthos/total?label=downloads%40total)](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases)
 
 A non-destructive avatar optimization utility for VRChat. Create lightweight avatars that more players can see.
+
+This is the Synthos Edition of [Limitex's Avatar Compressor](https://github.com/Limitex/avatar-compressor), rebuilt to run on the VRChat SDK build pipeline with VRCFury instead of NDMF.
 
 ## Features
 
@@ -33,33 +34,35 @@ Analyzes and compresses avatar textures based on their complexity.
 
 - Unity 2022.3.22f1 (VRChat specified version)
 - VRChat SDK Avatars 3.10.0 or later
-- NDMF 1.10.0 or later
+- [VRCFury](https://vrcfury.com/) (optional, fully supported)
+
+This edition does not use NDMF. It runs as a VRChat SDK build hook, after VRCFury has merged its clothing, props and controllers.
 
 ## Installation
 
 ### Via ALCOM (Recommended)
 
 1. Open [ALCOM](https://vrc-get.anatawa12.com/alcom/)
-2. Add the repository: `https://vpm.limitex.dev/`
-3. Add **Avatar Compressor** to your project
+2. Add the repository: `https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json`
+3. Add **Avatar Compressor (Synthos Edition)** to your project
 
 ### Via VRChat Creator Companion
 
 1. Open VRChat Creator Companion
-2. Add the repository: `https://vpm.limitex.dev/`
-3. Add **Avatar Compressor** to your project
+2. Add the repository: `https://grimreaper35487.github.io/Synthos-VRC-Packages/index.json`
+3. Add **Avatar Compressor (Synthos Edition)** to your project
 
 ### Manual Installation
 
-Download the latest release from [GitHub Releases](https://github.com/limitex/avatar-compressor/releases) and import the `.zip` file into your Unity project.
+Download the latest release from [GitHub Releases](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases) and import the `.zip` file into your Unity project.
 
 ## Usage
 
-Add optimization components to your avatar's root GameObject, configure settings, and build your avatar. All optimizations are applied automatically at build time via NDMF.
+Add optimization components to your avatar's root GameObject, configure settings, and build your avatar. All optimizations are applied automatically when the avatar is built or uploaded, in VRCFury Play Mode, and in VRCFury's "Build an Editor Test Copy". Your scene avatar and project assets are never modified: generated textures, materials and animation copies are written to `Assets/_AvatarCompressorTemp` and cleaned up automatically once nothing uses them.
 
 ## Recommended
 
-For best results, we recommend using this tool together with [Avatar Optimizer (AAO)](https://vpm.anatawa12.com/avatar-optimizer/). Avatar Optimizer provides additional optimization features such as mesh merging, bone reduction, and more. LAC runs before Avatar Optimizer in the build pipeline, ensuring optimal texture compression before other optimizations are applied.
+Use this together with VRCFury: Avatar Compressor runs after VRCFury in the build, so textures on VRCFury-merged clothing and props, and materials swapped by VRCFury toggles, are compressed too.
 
 ## License
 
@@ -67,4 +70,4 @@ For best results, we recommend using this tool together with [Avatar Optimizer (
 
 ## Author
 
-[Limitex](https://github.com/limitex)
+Original work by [Limitex](https://github.com/limitex). Synthos Edition maintained by [GRIMREAPER35487](https://github.com/GRIMREAPER35487).

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using dev.limitex.avatar.compressor;
+using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.texture;
-using nadena.dev.ndmf;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -1805,20 +1805,19 @@ namespace dev.limitex.avatar.compressor.tests
 
         #endregion
 
-        #region ObjectRegistry Resolution Tests
+        #region Replacement Registry Resolution Tests
 
         [Test]
         public void Collect_ReplacedTexture_ResolvesOriginalAssetPath()
         {
-            // Simulate: an upstream NDMF plugin replaced the original asset texture
-            // with a runtime copy. ObjectRegistry maps the runtime copy back to the original.
+            // Simulate: an earlier build step (e.g. a lilToon bake) replaced the original asset texture
+            // with a runtime copy. The replacement registry maps the runtime copy back to the original.
             var originalAssetTexture = CreateTexture(128, 128);
             var runtimeReplacement = CreateRuntimeTexture(128, 128);
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
-                ObjectRegistry.RegisterReplacedObject(originalAssetTexture, runtimeReplacement);
+                ReplacedObjectRegistry.Register(originalAssetTexture, runtimeReplacement);
 
                 var collector = new TextureCollector(64, 0, true, true, true, true, true);
 
@@ -1849,10 +1848,9 @@ namespace dev.limitex.avatar.compressor.tests
                 AssetDatabase.GetAssetPath(originalAssetTexture)
             );
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
-                ObjectRegistry.RegisterReplacedObject(originalAssetTexture, runtimeReplacement);
+                ReplacedObjectRegistry.Register(originalAssetTexture, runtimeReplacement);
 
                 var collector = new TextureCollector(64, 0, true, true, true, true, true);
 
@@ -1890,11 +1888,10 @@ namespace dev.limitex.avatar.compressor.tests
         [Test]
         public void Collect_ReplacedTexture_NotRegistered_SkipsAsRuntimeGenerated()
         {
-            // Runtime texture exists but is not registered in ObjectRegistry
+            // Runtime texture exists but is not registered in the replacement registry
             var runtimeTexture = CreateRuntimeTexture(128, 128);
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
                 var collector = new TextureCollector(64, 0, true, true, true, true, true);
 
@@ -1918,10 +1915,9 @@ namespace dev.limitex.avatar.compressor.tests
             var originalAssetTexture = CreateTexture(128, 128);
             var runtimeReplacement = CreateRuntimeTexture(128, 128);
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
-                ObjectRegistry.RegisterReplacedObject(originalAssetTexture, runtimeReplacement);
+                ReplacedObjectRegistry.Register(originalAssetTexture, runtimeReplacement);
 
                 // The original asset is in the test folder — exclude it
                 var collector = new TextureCollector(
@@ -1959,10 +1955,9 @@ namespace dev.limitex.avatar.compressor.tests
                 AssetDatabase.GetAssetPath(originalAssetTexture)
             );
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
-                ObjectRegistry.RegisterReplacedObject(originalAssetTexture, runtimeReplacement);
+                ReplacedObjectRegistry.Register(originalAssetTexture, runtimeReplacement);
 
                 var collector = new TextureCollector(
                     64,
@@ -1998,10 +1993,9 @@ namespace dev.limitex.avatar.compressor.tests
             var originalAssetTexture = CreateTexture(128, 128);
             var runtimeReplacement = CreateRuntimeTexture(128, 128);
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
-                ObjectRegistry.RegisterReplacedObject(originalAssetTexture, runtimeReplacement);
+                ReplacedObjectRegistry.Register(originalAssetTexture, runtimeReplacement);
 
                 var collector = new TextureCollector(64, 0, true, true, true, true, true);
 
@@ -2025,11 +2019,10 @@ namespace dev.limitex.avatar.compressor.tests
             var runtimeMain = CreateRuntimeTexture(128, 128);
             var runtimeNormal = CreateRuntimeTexture(128, 128);
 
-            var registry = new ObjectRegistry(null);
-            using (new ObjectRegistryScope(registry))
+            using (ReplacedObjectRegistry.BeginScope())
             {
-                ObjectRegistry.RegisterReplacedObject(originalMain, runtimeMain);
-                ObjectRegistry.RegisterReplacedObject(originalNormal, runtimeNormal);
+                ReplacedObjectRegistry.Register(originalMain, runtimeMain);
+                ReplacedObjectRegistry.Register(originalNormal, runtimeNormal);
 
                 var collector = new TextureCollector(64, 0, true, true, true, true, true);
 

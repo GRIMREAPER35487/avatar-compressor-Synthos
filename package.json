@@ -1,8 +1,8 @@
 {
   "name": "com.synthos.avatar-compressor",
-  "version": "1.0.1",
+  "version": "1.1.0-beta.1",
   "displayName": "Avatar Compressor (Synthos Edition)",
-  "description": "Avatar Compressor: Non-Destructive Avatar Compression Utilities",
+  "description": "Avatar Compressor: Non-Destructive Avatar Compression Utilities. Runs at VRChat avatar build time and works with VRCFury.",
   "unity": "2022.3",
   "unityRelease": "22f1",
   "dependencies": {},
@@ -13,7 +13,7 @@
     "texture",
     "vrchat",
     "optimization",
-    "ndmf"
+    "vrcfury"
   ],
   "author": {
     "name": "Limitex",
@@ -23,8 +23,7 @@
   "license": "MIT",
   "vpmDependencies" : {
     "com.vrchat.base" : ">=3.10.0",
-    "com.vrchat.avatars" : ">=3.10.0",
-    "nadena.dev.ndmf": ">=1.10.0"
+    "com.vrchat.avatars" : ">=3.10.0"
   },
   "legacyPackages": [
     "dev.limitex.avatar-compressor"

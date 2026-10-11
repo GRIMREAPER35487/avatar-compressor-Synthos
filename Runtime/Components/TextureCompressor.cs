@@ -84,14 +84,14 @@ namespace dev.limitex.avatar.compressor
                 + "menu-toggled features are never broken. Frozen textures and textures "
                 + "referenced by animation curves are never removed. Acts per material: "
                 + "exclusion filters control compression only and do not keep an unused slot's "
-                + "texture in the upload. Only runs during the NDMF build and is not reflected "
+                + "texture in the upload. Only runs during the avatar build and is not reflected "
                 + "in the inspector preview."
         )]
         public bool DetectUnusedTextures = true;
 
         [Header("lilToon Texture Baking")]
         [Tooltip(
-            "Bake lilToon texture adjustments during the NDMF build: main-color adjustments "
+            "Bake lilToon texture adjustments during the avatar build: main-color adjustments "
                 + "(hue/saturation/gradation and active 2nd/3rd layers) and the alpha mask into "
                 + "the main texture, and outline tone correction into the outline texture — so "
                 + "the adjusted textures ship instead of the adjustment textures and per-pixel "

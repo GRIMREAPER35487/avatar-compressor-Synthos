@@ -1,5 +1,5 @@
+using dev.limitex.avatar.compressor.editor.texture;
 using dev.limitex.avatar.compressor.editor.ui;
-using nadena.dev.ndmf.runtime;
 using UnityEditor;
 using UnityEngine;
 
@@ -48,7 +48,7 @@ namespace dev.limitex.avatar.compressor.editor
             if (component == null)
                 return;
 
-            if (!RuntimeUtil.IsAvatarRoot(component.transform))
+            if (!TextureCompressorBuildHook.IsAvatarRoot(component.transform))
             {
                 EditorGUILayout.HelpBox(
                     AvatarCompressorLocalization.Tr("Common:message:avatarRootWarning"),

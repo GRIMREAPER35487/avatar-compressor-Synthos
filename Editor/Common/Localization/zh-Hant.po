@@ -480,13 +480,13 @@ msgid "TextureCompressor:label:previewSavings"
 msgstr "節省："
 
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
-msgstr "移除未使用的紋理槽和 lilToon 紋理烘焙僅在 NDMF 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
+msgstr "移除未使用的紋理槽和 lilToon 紋理烘焙僅在 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
 
 msgid "TextureCompressor:message:previewBuildOnlyUnused"
-msgstr "移除未使用的紋理槽僅在 NDMF 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
+msgstr "移除未使用的紋理槽僅在 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
 
 msgid "TextureCompressor:message:previewBuildOnlyBake"
-msgstr "lilToon 紋理烘焙僅在 NDMF 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
+msgstr "lilToon 紋理烘焙僅在 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
 
 msgid "TextureCompressor:message:previewNoSearchResults"
 msgstr "沒有符合搜尋條件的紋理。"

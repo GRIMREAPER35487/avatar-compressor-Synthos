@@ -11,7 +11,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
     internal sealed class GpuAreaAverageResizer : ITextureResizer
     {
         private const string ShaderPath =
-            "Packages/dev.limitex.avatar-compressor/"
+            "Packages/com.synthos.avatar-compressor/"
             + "Editor/TextureCompressor/Resize/Shaders/AreaAverageResize.compute";
 
         private const string KernelHorizontalName = "AreaAverageHorizontal";

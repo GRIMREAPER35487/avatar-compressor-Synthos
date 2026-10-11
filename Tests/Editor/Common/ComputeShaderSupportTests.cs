@@ -9,7 +9,7 @@ namespace dev.limitex.avatar.compressor.tests
     internal class ComputeShaderSupportTests
     {
         private const string ResizeShaderPath =
-            "Packages/dev.limitex.avatar-compressor/"
+            "Packages/com.synthos.avatar-compressor/"
             + "Editor/TextureCompressor/Resize/Shaders/AreaAverageResize.compute";
 
         private static void RequireShaderAsset()
@@ -24,7 +24,7 @@ namespace dev.limitex.avatar.compressor.tests
         public void TryLoadCompiledShader_MissingAsset_ReturnsFalseAndNullShader()
         {
             bool result = ComputeShaderSupport.TryLoadCompiledShader(
-                "Packages/dev.limitex.avatar-compressor/DoesNotExist.compute",
+                "Packages/com.synthos.avatar-compressor/DoesNotExist.compute",
                 out var shader
             );
 
