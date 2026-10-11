@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-11
 
 ### Added
 
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The build log's "Complete" summary now uses the same size calculation as the preview (what the textures take once uploaded) instead of the editor's memory figure, which read about double. Textures kept as imported now count at their size instead of as zero, so the reduction is no longer overstated.
 - The preview's size line compares sizes instead of the divisor: it no longer says "unchanged" when Max Resolution shrinks a texture at 1x, and shows textures resized from a larger source file as enlarged.
 - With "Respect import Max Size" off, the size filters now check the source file's size, so a texture imported small from a large file is no longer skipped before the toggle applies.
 
