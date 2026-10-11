@@ -252,7 +252,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private AnimationClip RemapClip(AnimationClip clip)
         {
             var target = clip;
-            if (!BuildAssetStore.IsBuildOwned(clip))
+            if (!_store.IsBuildOwned(clip))
             {
                 target = Object.Instantiate(clip);
                 target.name = clip.name;
@@ -303,7 +303,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 return blendTree;
 
             var target = blendTree;
-            if (!BuildAssetStore.IsBuildOwned(blendTree))
+            if (!_store.IsBuildOwned(blendTree))
             {
                 target = Object.Instantiate(blendTree);
                 target.name = blendTree.name;
@@ -340,7 +340,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private T GetWritable<T>(T controller)
             where T : RuntimeAnimatorController
         {
-            if (BuildAssetStore.IsBuildOwned(controller))
+            if (_store.IsBuildOwned(controller))
                 return controller;
 
             var copy = _store.CopyAsset(controller);
