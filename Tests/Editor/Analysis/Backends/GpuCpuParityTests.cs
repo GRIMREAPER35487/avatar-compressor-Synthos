@@ -23,7 +23,7 @@ namespace dev.limitex.avatar.compressor.tests
         // decoded values at full precision directly from the source texture.
         private const float SRGBScoreTolerance = 0.03f;
         private const string ShaderPath =
-            "Packages/dev.limitex.avatar-compressor/"
+            "Packages/com.synthos.avatar-compressor/"
             + "Editor/TextureCompressor/Analysis/Shaders/TextureAnalysis.compute";
 
         private TextureProcessor _processor;

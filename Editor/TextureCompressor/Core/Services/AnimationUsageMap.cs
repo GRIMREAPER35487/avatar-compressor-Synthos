@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using nadena.dev.ndmf;
-using nadena.dev.ndmf.animator;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,7 +7,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
 {
     /// <summary>
     /// Records which material properties are touched by <em>any</em> animation in the avatar's
-    /// merged animator hierarchy, plus every texture referenced by an animation object (PPtr)
+    /// animators (after VRCFury has merged its controllers), plus every texture referenced by an animation object (PPtr)
     /// curve. The <see cref="AnimatedProperties"/> list is handed to an
     /// <see cref="IUnusedSlotOptimizer"/> so a slot whose feature toggle is driven by animation is
     /// never cleared; the animated-texture set protects textures that ship with the avatar through
@@ -25,9 +23,10 @@ namespace dev.limitex.avatar.compressor.editor.texture
     /// safe (over-inclusive) choice, matching the safe-side default of the unused-slot feature.
     /// </para>
     /// <para>
-    /// Building requires NDMF's <see cref="AnimatorServicesContext"/>, which is only available
-    /// during an NDMF build. Outside that context (e.g. inspector preview), unused-slot detection
-    /// is disabled rather than guessing from static state.
+    /// The map is built during the avatar build, after VRCFury has merged every controller into
+    /// the avatar descriptor. Outside a build (e.g. inspector preview) controllers that VRCFury
+    /// would add are not visible yet, so unused-slot detection is disabled rather than guessing
+    /// from incomplete state.
     /// </para>
     /// </remarks>
     internal sealed class AnimationUsageMap
@@ -92,13 +91,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Builds the map from the avatar's merged animator hierarchy.
-        /// Returns <c>null</c> if the animator services are unavailable or scanning fails — callers
-        /// should treat a <c>null</c> map as "cannot prove anything unused" and skip detection.
+        /// Builds the map from every animation clip on the avatar.
+        /// Returns <c>null</c> if scanning fails — callers should treat a <c>null</c> map as
+        /// "cannot prove anything unused" and skip detection.
         /// </summary>
-        public static AnimationUsageMap Build(BuildContext ctx)
+        public static AnimationUsageMap Build(GameObject avatarRoot)
         {
-            if (ctx == null)
+            if (avatarRoot == null)
                 return null;
 
             var properties = new HashSet<string>();
@@ -106,25 +105,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             try
             {
-                ctx.ActivateExtensionContextRecursive<AnimatorServicesContext>();
-                var animatorServices = ctx.Extension<AnimatorServicesContext>();
-
-                if (animatorServices?.ControllerContext == null)
-                    return null;
-
-                foreach (var controller in animatorServices.ControllerContext.GetAllControllers())
+                foreach (var clip in AvatarAnimators.GetClips(avatarRoot))
                 {
-                    if (controller == null)
+                    if (clip == null)
                         continue;
 
-                    foreach (var node in controller.AllReachableNodes())
-                    {
-                        if (node is VirtualClip clip)
-                        {
-                            CollectMaterialProperties(clip.GetFloatCurveBindings(), properties);
-                            CollectFromObjectCurves(clip, properties, textures);
-                        }
-                    }
+                    CollectMaterialProperties(AnimationUtility.GetCurveBindings(clip), properties);
+                    CollectFromObjectCurves(clip, properties, textures);
                 }
             }
             catch (Exception ex)
@@ -140,16 +127,16 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         private static void CollectFromObjectCurves(
-            VirtualClip clip,
+            AnimationClip clip,
             HashSet<string> properties,
             HashSet<Texture2D> textures
         )
         {
-            foreach (var binding in clip.GetObjectCurveBindings())
+            foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
             {
                 CollectMaterialProperty(binding, properties);
 
-                var keyframes = clip.GetObjectCurve(binding);
+                var keyframes = AnimationUtility.GetObjectReferenceCurve(clip, binding);
                 if (keyframes == null)
                     continue;
 

@@ -481,13 +481,13 @@ msgid "TextureCompressor:label:previewSavings"
 msgstr "Savings:"
 
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
-msgstr "Unused texture slot removal and lilToon texture baking run only during the NDMF build and are not reflected in this preview, so actual build sizes may differ from the estimate shown."
+msgstr "Unused texture slot removal and lilToon texture baking run only during the avatar build and are not reflected in this preview, so actual build sizes may differ from the estimate shown."
 
 msgid "TextureCompressor:message:previewBuildOnlyUnused"
-msgstr "Unused texture slot removal runs only during the NDMF build and is not reflected in this preview, so actual build sizes may differ from the estimate shown."
+msgstr "Unused texture slot removal runs only during the avatar build and is not reflected in this preview, so actual build sizes may differ from the estimate shown."
 
 msgid "TextureCompressor:message:previewBuildOnlyBake"
-msgstr "lilToon texture baking runs only during the NDMF build and is not reflected in this preview, so actual build sizes may differ from the estimate shown."
+msgstr "lilToon texture baking runs only during the avatar build and is not reflected in this preview, so actual build sizes may differ from the estimate shown."
 
 msgid "TextureCompressor:message:previewNoSearchResults"
 msgstr "No textures match the search."

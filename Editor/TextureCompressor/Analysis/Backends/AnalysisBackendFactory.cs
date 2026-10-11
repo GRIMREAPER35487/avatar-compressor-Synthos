@@ -9,7 +9,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
     internal static class AnalysisBackendFactory
     {
         private const string ShaderPath =
-            "Packages/dev.limitex.avatar-compressor/"
+            "Packages/com.synthos.avatar-compressor/"
             + "Editor/TextureCompressor/Analysis/Shaders/TextureAnalysis.compute";
 
         /// <summary>

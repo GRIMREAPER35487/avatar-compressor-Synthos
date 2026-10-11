@@ -480,13 +480,13 @@ msgid "TextureCompressor:label:previewSavings"
 msgstr "削減量："
 
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
-msgstr "未使用テクスチャスロットの削除と lilToon テクスチャのベイクは NDMF ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
+msgstr "未使用テクスチャスロットの削除と lilToon テクスチャのベイクは ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
 
 msgid "TextureCompressor:message:previewBuildOnlyUnused"
-msgstr "未使用テクスチャスロットの削除は NDMF ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
+msgstr "未使用テクスチャスロットの削除は ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
 
 msgid "TextureCompressor:message:previewBuildOnlyBake"
-msgstr "lilToon テクスチャのベイクは NDMF ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
+msgstr "lilToon テクスチャのベイクは ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
 
 msgid "TextureCompressor:message:previewNoSearchResults"
 msgstr "検索に一致するテクスチャはありません。"

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using nadena.dev.ndmf;
 using UnityEditor;
 using UnityEngine;
 
@@ -63,19 +62,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Resolves the original asset for an object via ObjectRegistry replacement chain.
-        /// If another NDMF plugin replaced the object, the registry maps it back to the original.
+        /// Resolves the original asset for an object via the build's replacement registry.
+        /// Build-time replacements (e.g. baked textures) map back to the asset they came from.
         /// </summary>
         internal static Object ResolveOriginalObject(Object obj)
         {
-            var registry = ObjectRegistry.ActiveRegistry;
-            if (registry != null)
-            {
-                var reference = registry.GetReference(obj, create: false);
-                if (reference?.Object != null && reference.Object != obj)
-                    return reference.Object;
-            }
-            return obj;
+            return ReplacedObjectRegistry.Resolve(obj);
         }
 
         /// <summary>
@@ -239,7 +231,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         /// <summary>
         /// Evaluates whether a texture should be processed and populates the TextureInfo accordingly.
-        /// Resolves the original asset via ObjectRegistry for textures replaced by upstream NDMF plugins.
+        /// Resolves the original asset via the replacement registry for build-time replacement textures.
         /// </summary>
         private void EvaluateProcessability(
             TextureInfo info,
@@ -247,9 +239,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
             string propertyName
         )
         {
-            // Resolve original asset via ObjectRegistry replacement chain.
-            // If another NDMF plugin replaced the texture, the replacement has no asset path;
-            // ObjectRegistry follows the chain back to the original asset.
+            // Resolve original asset via the replacement registry.
+            // A build-time replacement (e.g. a lilToon bake) has no asset path;
+            // the registry follows the chain back to the original asset.
             Object resolvedObj = ResolveOriginalObject(texture);
 
             string assetPath = AssetDatabase.GetAssetPath(resolvedObj);

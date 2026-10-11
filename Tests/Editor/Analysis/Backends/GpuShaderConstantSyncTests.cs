@@ -16,7 +16,7 @@ namespace dev.limitex.avatar.compressor.tests
         public void SetUp()
         {
             var hlslPath = Path.GetFullPath(
-                "Packages/dev.limitex.avatar-compressor/"
+                "Packages/com.synthos.avatar-compressor/"
                     + "Editor/TextureCompressor/Analysis/Shaders/TextureAnalysisCommon.hlsl"
             );
             Assert.IsTrue(File.Exists(hlslPath), $"HLSL file not found at: {hlslPath}");

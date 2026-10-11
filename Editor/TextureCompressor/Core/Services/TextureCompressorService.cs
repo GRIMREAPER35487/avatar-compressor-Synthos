@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using nadena.dev.ndmf;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -121,10 +120,10 @@ namespace dev.limitex.avatar.compressor.editor.texture
         /// <b>WARNING:</b> This method modifies the Renderer components on the provided GameObject
         /// by replacing their material references with cloned materials. While the original
         /// material asset files (.mat) are NOT modified, the scene will be marked as dirty
-        /// if called outside of an NDMF build context.
+        /// if called outside of the avatar build.
         /// </para>
         /// <para>
-        /// For production use, prefer using the NDMF plugin (TextureCompressorPass) which
+        /// For production use, prefer the VRChat SDK build hook (TextureCompressorBuildHook) which
         /// operates on a cloned avatar and properly handles animation-referenced materials.
         /// </para>
         /// </remarks>
@@ -139,8 +138,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Warns if materials appear to be asset files, which indicates usage outside NDMF build context.
-        /// In NDMF build context, materials should already be cloned/runtime objects.
+        /// Warns if materials appear to be asset files, which indicates usage outside the build hook.
         /// </summary>
         private void WarnIfNotInBuildContext(GameObject root)
         {
@@ -161,9 +159,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
                         _buildContextWarningShown = true;
                         Debug.LogWarning(
                             $"[{Name}] Material '{material.name}' is an asset file ({assetPath}). "
-                                + "This suggests usage outside NDMF build context. "
+                                + "This suggests usage outside the avatar build. "
                                 + "While original asset files will NOT be modified, the Renderer's material "
-                                + "references will be changed. For non-destructive workflow, use the NDMF plugin."
+                                + "references will be changed. For a non-destructive workflow, let the avatar build run the compressor."
                         );
                         return;
                     }
@@ -369,7 +367,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     );
                 }
 
-                // Enable mipmap streaming to avoid NDMF warnings
+                // Enable mipmap streaming (VRChat SDK warns about textures without it)
                 using var serializedTexture = new SerializedObject(resizedTexture);
                 var streamingMipmaps = serializedTexture.FindProperty("m_StreamingMipmaps");
                 if (streamingMipmaps != null)
@@ -386,7 +384,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     );
                 }
 
-                ObjectRegistry.RegisterReplacedObject(originalTexture, resizedTexture);
+                ReplacedObjectRegistry.Register(originalTexture, resizedTexture);
 
                 foreach (var reference in textureInfo.References)
                 {

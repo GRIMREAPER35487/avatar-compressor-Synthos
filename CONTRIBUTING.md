@@ -18,7 +18,7 @@ Runtime/
 
 Editor/
 ├── <Feature>/
-│   ├── Plugin/          # NDMF integration
+│   ├── Build/           # VRChat SDK build hook and build-time asset handling
 │   ├── Core/            # Processing logic
 │   ├── Analysis/        # Analysis algorithms
 │   └── UI/              # Inspector components
@@ -56,8 +56,8 @@ CI will automatically check formatting with `dotnet csharpier check .`.
 
 ## Key Conventions
 
-- **NDMF tracking:** Always call `ObjectRegistry.RegisterReplacedObject()` when replacing assets
-- **NDMF extensions:** Use `WithRequiredExtensions` to declare required extension contexts (e.g., `AnimatorServicesContext`)
+- **Replacement tracking:** Always call `ReplacedObjectRegistry.Register()` when replacing an asset with a build-time copy, so later steps can resolve the original
+- **Never edit project assets during a build:** Persist generated objects with `BuildAssetStore`, and only edit assets in place when `BuildAssetStore.IsBuildOwned()` is true (copy them otherwise)
 
 ## Running Tests
 

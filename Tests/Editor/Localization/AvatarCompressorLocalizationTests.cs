@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.texture;
 using dev.limitex.avatar.compressor.editor.texture.ui;
-using nadena.dev.ndmf.localization;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -17,7 +16,7 @@ namespace dev.limitex.avatar.compressor.tests
     internal sealed class AvatarCompressorLocalizationTests
     {
         private const string LocalizationFolder =
-            "Packages/dev.limitex.avatar-compressor/Editor/Common/Localization";
+            "Packages/com.synthos.avatar-compressor/Editor/Common/Localization";
 
         private static readonly string[] BundledLocales =
         {
@@ -33,13 +32,13 @@ namespace dev.limitex.avatar.compressor.tests
         [SetUp]
         public void SetUp()
         {
-            _originalLanguage = LanguagePrefs.Language;
+            _originalLanguage = AvatarCompressorLocalization.CurrentLanguage;
         }
 
         [TearDown]
         public void TearDown()
         {
-            LanguagePrefs.Language = _originalLanguage;
+            AvatarCompressorLocalization.CurrentLanguage = _originalLanguage;
         }
 
         [Test]
@@ -119,7 +118,7 @@ namespace dev.limitex.avatar.compressor.tests
         [TestCase("ko-KR", "일반")]
         public void LanguagePrefs_SelectsRequestedLocalization(string language, string expected)
         {
-            LanguagePrefs.Language = language;
+            AvatarCompressorLocalization.CurrentLanguage = language;
 
             Assert.AreEqual(expected, AvatarCompressorLocalization.Tr("Common:label:general"));
         }
@@ -127,7 +126,7 @@ namespace dev.limitex.avatar.compressor.tests
         [TestCaseSource(nameof(BundledLocales))]
         public void NotAvailableMarker_RemainsLanguageIndependent(string language)
         {
-            LanguagePrefs.Language = language;
+            AvatarCompressorLocalization.CurrentLanguage = language;
 
             Assert.AreEqual("N/A", AvatarCompressorLocalization.Tr("Common:label:notAvailable"));
         }
@@ -135,7 +134,7 @@ namespace dev.limitex.avatar.compressor.tests
         [Test]
         public void EnumMappings_CoverEveryDisplayedValue()
         {
-            LanguagePrefs.Language = "en-US";
+            AvatarCompressorLocalization.CurrentLanguage = "en-US";
 
             AssertEnumLocalized<AnalysisStrategyType>();
             AssertEnumLocalized<CompressionPlatform>();
@@ -175,7 +174,7 @@ namespace dev.limitex.avatar.compressor.tests
             string expectedName
         )
         {
-            LanguagePrefs.Language = "zh-Hans";
+            AvatarCompressorLocalization.CurrentLanguage = "zh-Hans";
 
             Assert.AreEqual(expectedName, PresetSection.GetPresetDisplayName(preset));
         }

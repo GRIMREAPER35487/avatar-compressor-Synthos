@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using nadena.dev.ndmf;
+using UnityEditor;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor.editor.texture
@@ -11,7 +11,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
     internal static class MaterialCloner
     {
         /// <summary>
-        /// Clones materials from the given references and updates Renderer references.
+        /// Clones materials from the given references and updates Renderer and Component references.
         /// </summary>
         /// <param name="references">Material references to process</param>
         /// <returns>Dictionary mapping original materials to cloned materials</returns>
@@ -30,8 +30,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 GetOrCloneMaterial(reference.Material, clonedMaterials);
             }
 
-            // Second pass: update Renderer references
+            // Second pass: update Renderer and Component references
             UpdateRendererReferences(referenceList, clonedMaterials);
+            UpdateComponentReferences(referenceList, clonedMaterials);
 
             return clonedMaterials;
         }
@@ -84,6 +85,55 @@ namespace dev.limitex.avatar.compressor.editor.texture
             }
         }
 
+        private static void UpdateComponentReferences(
+            IEnumerable<MaterialReference> references,
+            Dictionary<Material, Material> clonedMaterials
+        )
+        {
+            var components = references
+                .Where(r =>
+                    r != null
+                    && r.SourceType == MaterialSourceType.Component
+                    && r.SourceObject is Component
+                )
+                .Select(r => (Component)r.SourceObject)
+                .Distinct();
+
+            foreach (var component in components)
+            {
+                if (component == null)
+                    continue;
+
+                try
+                {
+                    using var serializedObject = new SerializedObject(component);
+                    var iterator = serializedObject.GetIterator();
+                    bool hasChanges = false;
+
+                    while (iterator.NextVisible(true))
+                    {
+                        if (
+                            iterator.propertyType == SerializedPropertyType.ObjectReference
+                            && iterator.objectReferenceValue is Material material
+                            && material != null
+                            && clonedMaterials.TryGetValue(material, out var clonedMat)
+                        )
+                        {
+                            iterator.objectReferenceValue = clonedMat;
+                            hasChanges = true;
+                        }
+                    }
+
+                    if (hasChanges)
+                        serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                }
+                catch
+                {
+                    // Ignore components that can't be serialized
+                }
+            }
+        }
+
         private static Material GetOrCloneMaterial(
             Material originalMat,
             Dictionary<Material, Material> clonedMaterials
@@ -97,10 +147,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
             clonedMat = Object.Instantiate(originalMat);
             clonedMat.name = originalMat.name + "_clone";
 
-            // Register the material replacement in ObjectRegistry so that subsequent NDMF plugins
-            // can track which original material was cloned. This maintains proper reference
-            // tracking across the build pipeline for tools like TexTransTool and Avatar Optimizer.
-            ObjectRegistry.RegisterReplacedObject(originalMat, clonedMat);
+            ReplacedObjectRegistry.Register(originalMat, clonedMat);
             clonedMaterials[originalMat] = clonedMat;
 
             return clonedMat;

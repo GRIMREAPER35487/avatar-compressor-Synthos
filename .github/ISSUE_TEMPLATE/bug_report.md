@@ -35,7 +35,7 @@ Please complete the following information:
 - **Unity Version:** (e.g., 2022.3.22f1)
 - **VRChat SDK Version:** (e.g., 3.10.0)
 - **Avatar Compressor Version:** (e.g., v0.1.0)
-- **NDMF Version:** (e.g., 1.10.0)
+- **VRCFury Version (if installed):** (e.g., 1.1200.0)
 - **OS:** (e.g., Windows 11)
 
 ## Additional context
