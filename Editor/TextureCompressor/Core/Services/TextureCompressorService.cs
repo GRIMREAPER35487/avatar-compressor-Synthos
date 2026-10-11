@@ -299,25 +299,28 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 var analysis = resolved.Value.Analysis;
                 var formatOverride = resolved.Value.FormatOverride;
 
+                bool isFrozen = formatOverride != null;
+                TexelDensityInfo? density =
+                    densities != null && densities.TryGetValue(originalTexture, out var measured)
+                        ? measured
+                        : (TexelDensityInfo?)null;
+
                 // Frozen textures keep their explicit divisor.
-                if (
-                    formatOverride == null
-                    && densities != null
-                    && densities.TryGetValue(originalTexture, out var density)
-                )
+                if (!isFrozen && density.HasValue)
                 {
                     var limited = TexelDensityAnalyzer.ApplyLimit(
                         analysis,
                         baseSize,
-                        density,
+                        density.Value,
                         _processor
                     );
                     if (enableLogging && limited.RecommendedDivisor != analysis.RecommendedDivisor)
                     {
                         Debug.Log(
-                            $"[{Name}] {originalTexture.name}: {density.DensityAt(baseSize):F0} "
-                                + $"px/cm on the {(density.FromHead ? "head" : "body")} (needs "
-                                + $"{density.TargetDensity:F0}), divisor "
+                            $"[{Name}] {originalTexture.name}: "
+                                + $"{density.Value.DensityAt(baseSize):F0} px/cm on the "
+                                + $"{(density.Value.FromHead ? "head" : "body")} (needs "
+                                + $"{density.Value.TargetDensity:F0}), divisor "
                                 + $"{analysis.RecommendedDivisor}x -> {limited.RecommendedDivisor}x"
                         );
                     }
@@ -327,6 +330,29 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 bool isNormalMap = textureInfo.IsNormalMap;
                 var importedSize = new Vector2Int(originalTexture.width, originalTexture.height);
                 var targetSize = _processor.CalculateTargetSize(baseSize, analysis);
+
+                // From a larger source file, the import size is still the default: only grow
+                // past it when the extra pixels would be visible.
+                string upscaleNote = null;
+                if (!isFrozen && !_config.RespectImportMaxSize)
+                {
+                    targetSize = UpscaleGate.Apply(
+                        targetSize,
+                        importedSize,
+                        analysis.NormalizedComplexity,
+                        _config.LowComplexityThreshold,
+                        density,
+                        out var decision
+                    );
+                    upscaleNote = UpscaleGate.Describe(decision, importedSize, density);
+                }
+                string densityNote = density.HasValue
+                    ? $" | On avatar: {density.Value.DensityAt(targetSize):F0} px/cm on the "
+                        + $"{(density.Value.FromHead ? "head" : "body")}, needs "
+                        + $"{density.Value.TargetDensity:F0}"
+                    : "";
+                if (upscaleNote != null)
+                    densityNote += " | " + upscaleNote;
 
                 // Unity's import is already a single compression of the source file. If the
                 // result would have the same size and format, keep it: recompressing would only
@@ -338,7 +364,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     && _formatSelector.KeepsImportFormat(sourceFormat, formatOverride)
                 )
                 {
-                    LogUnchanged(originalTexture, enableLogging);
+                    LogUnchanged(originalTexture, enableLogging, densityNote);
                     continue;
                 }
 
@@ -413,7 +439,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 )
                 {
                     UnityEngine.Object.DestroyImmediate(resizedTexture);
-                    LogUnchanged(originalTexture, enableLogging);
+                    LogUnchanged(originalTexture, enableLogging, densityNote);
                     continue;
                 }
 
@@ -483,7 +509,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                             + $"{originalTexture.width}x{originalTexture.height} -> "
                             + $"{resizedTexture.width}x{resizedTexture.height} ({resizedTexture.format}){frozenInfo} "
                             + $"(Complexity: {analysis.NormalizedComplexity:P0}, "
-                            + $"Divisor: {analysis.RecommendedDivisor}x)"
+                            + $"Divisor: {analysis.RecommendedDivisor}x){densityNote}"
                     );
                 }
 
@@ -675,13 +701,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 : NormalMapSourceLayoutDetector.DetectDXTnmLike(source);
         }
 
-        private void LogUnchanged(Texture2D texture, bool enableLogging)
+        private void LogUnchanged(Texture2D texture, bool enableLogging, string note = "")
         {
             if (enableLogging)
             {
                 Debug.Log(
                     $"[{Name}] {texture.name}: {texture.width}x{texture.height} ({texture.format}) "
-                        + "already optimal, kept as imported"
+                        + $"already optimal, kept as imported{note}"
                 );
             }
         }
