@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace dev.limitex.avatar.compressor.editor.texture
 {
@@ -12,6 +14,11 @@ namespace dev.limitex.avatar.compressor.editor.texture
     {
         private readonly int _minSourceSize;
         private readonly int _skipIfSmallerThan;
+
+        // Size the size filters check. Defaults to the imported size; when not respecting the
+        // import Max Size it is the source size, so a texture imported small from a large file is
+        // not filtered out before the toggle can apply.
+        private readonly Func<Texture2D, Vector2Int> _filterSize;
         private readonly bool _processMainTextures;
         private readonly bool _processNormalMaps;
         private readonly bool _processEmissionMaps;
@@ -31,9 +38,11 @@ namespace dev.limitex.avatar.compressor.editor.texture
             bool skipUnknownUncompressedTextures,
             IEnumerable<string> excludedPathPrefixes = null,
             IEnumerable<Texture2D> excludedTextures = null,
-            IEnumerable<FrozenTextureSettings> frozenTextures = null
+            IEnumerable<FrozenTextureSettings> frozenTextures = null,
+            Func<Texture2D, Vector2Int> filterSize = null
         )
         {
+            _filterSize = filterSize;
             _minSourceSize = minSourceSize;
             _skipIfSmallerThan = skipIfSmallerThan;
             _processMainTextures = processMainTextures;
@@ -305,7 +314,11 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 return;
             }
 
-            int maxDim = Mathf.Max(texture.width, texture.height);
+            var filterSize =
+                _filterSize != null
+                    ? _filterSize(texture)
+                    : new Vector2Int(texture.width, texture.height);
+            int maxDim = Mathf.Max(filterSize.x, filterSize.y);
             if (maxDim < _minSourceSize || maxDim <= _skipIfSmallerThan)
             {
                 info.IsProcessed = false;

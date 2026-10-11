@@ -79,7 +79,16 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 config.SkipUnknownUncompressedTextures,
                 config.ExcludedPaths,
                 config.ExcludedTextures,
-                config.FrozenTextures
+                config.FrozenTextures,
+                config.RespectImportMaxSize || sourceCache == null
+                    ? null
+                    : texture =>
+                        TextureSourceCache.GetPlannedBaseSize(
+                            texture,
+                            false,
+                            true,
+                            config.MaxResolution
+                        )
             );
 
             _processor = new TextureProcessor(
@@ -338,6 +347,27 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     hasAlpha,
                     formatOverride
                 );
+
+                // A low-detail score can still mean a smooth gradient, which is exactly where
+                // DXT1/ASTC 8x8 band. Test-compress the clean areas before committing to them.
+                if (
+                    !isNormalMap
+                    && _config.AvoidCompressionArtifacts
+                    && _formatSelector.ChoosesFormat(sourceFormat, formatOverride)
+                    && CompressionArtifactDetector.IsCandidateFormat(targetFormat)
+                    && CompressionArtifactDetector.WouldShowArtifacts(resizedTexture, targetFormat)
+                )
+                {
+                    var saferFormat = CompressionArtifactDetector.GetSaferFormat(targetFormat);
+                    if (enableLogging)
+                    {
+                        Debug.Log(
+                            $"[{Name}] {originalTexture.name}: {targetFormat} would band or show "
+                                + $"blocky edges, using {saferFormat}"
+                        );
+                    }
+                    targetFormat = saferFormat;
+                }
 
                 if (
                     !isNormalMap

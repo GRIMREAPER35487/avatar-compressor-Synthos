@@ -71,8 +71,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         }
 
         /// <summary>
-        /// Draws the source texture options: whether the creator's import Max Size and
-        /// compression format are kept or the compressor decides.
+        /// Draws the source and quality options: whether the creator's import Max Size and
+        /// compression format are kept or the compressor decides, and the banding safeguard.
         /// </summary>
         public static void DrawSourceTextures(TextureCompressor config, ref bool showSection)
         {
@@ -100,12 +100,20 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 ),
                 config.RespectImportFormat
             );
+            bool avoidArtifacts = EditorGUILayout.ToggleLeft(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:avoidCompressionArtifacts",
+                    "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
+                ),
+                config.AvoidCompressionArtifacts
+            );
 
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(config, "Change Source Texture Options");
+                Undo.RecordObject(config, "Change Source and Quality Options");
                 config.RespectImportMaxSize = respectSize;
                 config.RespectImportFormat = respectFormat;
+                config.AvoidCompressionArtifacts = avoidArtifacts;
                 EditorUtility.SetDirty(config);
             }
         }

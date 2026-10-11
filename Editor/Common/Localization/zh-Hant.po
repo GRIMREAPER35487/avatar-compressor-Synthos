@@ -672,7 +672,7 @@ msgid "TextureCompressor:enum:skipReasonUnknownUncompressedProperty"
 msgstr "未知屬性上的未壓縮紋理（參見資料保護）"
 
 msgid "TextureCompressor:label:sourceTextures"
-msgstr "來源紋理"
+msgstr "來源與品質"
 
 msgid "TextureCompressor:prop:respectImportMaxSize"
 msgstr "遵循匯入的最大尺寸"
@@ -694,3 +694,9 @@ msgstr "從圖片檔案的高品質副本（快取於 Library/AvatarCompressorCa
 
 msgid "TextureCompressor:button:clearSourceCache"
 msgstr "清除來源檔案快取"
+
+msgid "TextureCompressor:prop:avoidCompressionArtifacts"
+msgstr "避免色帶與區塊狀邊緣"
+
+msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
+msgstr "當壓縮器選擇 DXT1/DXT5（行動裝置為 ASTC 6x6/8x8）時，會先對紋理平滑、乾淨的區域進行試壓縮。若漸層出現階梯狀色帶或顏色邊緣出現區塊雜訊，則改用 BC7（ASTC 4x4），佔用更多記憶體但畫面乾淨。由「遵循匯入的壓縮格式」保留的格式與凍結的格式不會被更改。"

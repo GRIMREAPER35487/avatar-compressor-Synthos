@@ -1357,6 +1357,8 @@ namespace dev.limitex.avatar.compressor.tests
         public void Compress_OpaqueTexture_Desktop_CompressesToDXT1()
         {
             var config = CreateConfig();
+            // Tests the format predictor; the banding safeguard has its own tests.
+            config.AvoidCompressionArtifacts = false;
             config.MinSourceSize = 64;
             config.SkipIfSmallerThan = 0;
             config.TargetPlatform = CompressionPlatform.Desktop;
@@ -1642,6 +1644,8 @@ namespace dev.limitex.avatar.compressor.tests
         public void Compress_WithFrozenFormatAuto_UsesNormalSelection()
         {
             var config = CreateConfig();
+            // Tests the format predictor; the banding safeguard has its own tests.
+            config.AvoidCompressionArtifacts = false;
             config.MinSourceSize = 64;
             config.SkipIfSmallerThan = 0;
             config.TargetPlatform = CompressionPlatform.Desktop;
@@ -1777,6 +1781,8 @@ namespace dev.limitex.avatar.compressor.tests
         public void Compress_WithNullFrozenFormat_UsesDefaultSelection()
         {
             var config = CreateConfig();
+            // Tests the format predictor; the banding safeguard has its own tests.
+            config.AvoidCompressionArtifacts = false;
             config.MinSourceSize = 64;
             config.SkipIfSmallerThan = 0;
             config.TargetPlatform = CompressionPlatform.Desktop;

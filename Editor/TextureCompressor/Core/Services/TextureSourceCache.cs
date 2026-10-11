@@ -80,6 +80,30 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
+        /// The size a texture will be scaled from, decided without importing anything: the
+        /// imported size, or — when not respecting the import Max Size and source files are
+        /// used — the source file's size fit to <paramref name="maxResolution"/>.
+        /// </summary>
+        public static Vector2Int GetPlannedBaseSize(
+            Texture2D texture,
+            bool respectImportMaxSize,
+            bool useSourceFiles,
+            int maxResolution
+        )
+        {
+            if (
+                !respectImportMaxSize
+                && useSourceFiles
+                && TryGetSourceSize(texture, out var sourceSize)
+            )
+            {
+                return FitWithin(sourceSize, maxResolution);
+            }
+
+            return new Vector2Int(texture.width, texture.height);
+        }
+
+        /// <summary>
         /// Scales a size down (never up) so its longest edge fits within <paramref name="max"/>,
         /// keeping the aspect ratio.
         /// </summary>
