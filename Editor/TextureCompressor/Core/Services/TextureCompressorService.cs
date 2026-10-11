@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using nadena.dev.ndmf;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -138,7 +139,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Warns if materials appear to be asset files, which indicates usage outside build context.
+        /// Warns if materials appear to be asset files, which indicates usage outside NDMF build context.
+        /// In NDMF build context, materials should already be cloned/runtime objects.
         /// </summary>
         private void WarnIfNotInBuildContext(GameObject root)
         {
@@ -159,8 +161,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
                         _buildContextWarningShown = true;
                         Debug.LogWarning(
                             $"[{Name}] Material '{material.name}' is an asset file ({assetPath}). "
+                                + "This suggests usage outside NDMF build context. "
                                 + "While original asset files will NOT be modified, the Renderer's material "
-                                + "references will be replaced with compressed clones."
+                                + "references will be changed. For non-destructive workflow, use the NDMF plugin."
                         );
                         return;
                     }
@@ -382,6 +385,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                             + "property 'm_StreamingMipmaps' not found. This may indicate a Unity version difference."
                     );
                 }
+
+                ObjectRegistry.RegisterReplacedObject(originalTexture, resizedTexture);
 
                 foreach (var reference in textureInfo.References)
                 {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using nadena.dev.ndmf;
 using UnityEditor;
 using UnityEngine;
 
@@ -62,10 +63,18 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
-        /// Resolves the original asset for an object.
+        /// Resolves the original asset for an object via ObjectRegistry replacement chain.
+        /// If another NDMF plugin replaced the object, the registry maps it back to the original.
         /// </summary>
         internal static Object ResolveOriginalObject(Object obj)
         {
+            var registry = ObjectRegistry.ActiveRegistry;
+            if (registry != null)
+            {
+                var reference = registry.GetReference(obj, create: false);
+                if (reference?.Object != null && reference.Object != obj)
+                    return reference.Object;
+            }
             return obj;
         }
 

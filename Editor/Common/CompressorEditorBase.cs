@@ -1,4 +1,5 @@
 using dev.limitex.avatar.compressor.editor.ui;
+using nadena.dev.ndmf.runtime;
 using UnityEditor;
 using UnityEngine;
 
@@ -47,7 +48,7 @@ namespace dev.limitex.avatar.compressor.editor
             if (component == null)
                 return;
 
-            if (!IsAvatarRoot(component.transform))
+            if (!RuntimeUtil.IsAvatarRoot(component.transform))
             {
                 EditorGUILayout.HelpBox(
                     AvatarCompressorLocalization.Tr("Common:message:avatarRootWarning"),
@@ -55,14 +56,6 @@ namespace dev.limitex.avatar.compressor.editor
                 );
                 EditorGUILayout.Space(5);
             }
-        }
-
-        private static bool IsAvatarRoot(Transform t)
-        {
-            if (t == null) return false;
-            return t.parent == null
-                || t.GetComponent<VRC.SDKBase.VRC_AvatarDescriptor>() != null
-                || t.GetComponent("VRCAvatarDescriptor") != null;
         }
     }
 }

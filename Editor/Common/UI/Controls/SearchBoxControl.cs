@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using dev.limitex.avatar.compressor.editor;
+using nadena.dev.ndmf.localization;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -117,7 +118,7 @@ namespace dev.limitex.avatar.compressor.editor.ui
             if (!IsSearching)
                 return items.Count;
 
-            string activeLanguage = AvatarCompressorLocalization.CurrentLanguage;
+            string activeLanguage = LanguagePrefs.Language;
 
             if (
                 SearchText == _cachedCountSearchText
