@@ -194,6 +194,49 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
+        /// Returns <paramref name="analysis"/> with its divisor lowered (down to
+        /// <paramref name="minDivisor"/>) while the result would be below the target density.
+        /// Only for textures with real detail: on a near-flat texture, blur does not show.
+        /// </summary>
+        /// <remarks>
+        /// Smooth surfaces like skin score low on detail, yet they cover most of the avatar and
+        /// are looked at up close. When such a surface is already less sharp than it needs to
+        /// be, shrinking it further only makes visible blur worse.
+        /// </remarks>
+        public static TextureAnalysisResult ApplyFloor(
+            TextureAnalysisResult analysis,
+            Vector2Int baseSize,
+            TexelDensityInfo density,
+            int minDivisor,
+            float lowComplexityThreshold,
+            TextureProcessor processor
+        )
+        {
+            if (analysis.NormalizedComplexity < lowComplexityThreshold)
+                return analysis;
+
+            int floor = Math.Max(1, minDivisor);
+            int divisor = analysis.RecommendedDivisor;
+            while (
+                divisor > floor
+                && density.DensityAt(new Vector2Int(baseSize.x / divisor, baseSize.y / divisor))
+                    < density.TargetDensity
+            )
+            {
+                divisor = Math.Max(floor, divisor / 2);
+            }
+
+            if (divisor == analysis.RecommendedDivisor)
+                return analysis;
+
+            return new TextureAnalysisResult(
+                analysis.NormalizedComplexity,
+                divisor,
+                processor.CalculateNewDimensions(baseSize.x, baseSize.y, divisor)
+            );
+        }
+
+        /// <summary>
         /// Returns true if a texture assigned to <paramref name="propertyName"/> on
         /// <paramref name="material"/> is sampled with UV0 across the surface.
         /// </summary>

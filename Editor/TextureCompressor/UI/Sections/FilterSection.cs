@@ -117,9 +117,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
             float faceDistance = config.FaceViewDistance;
             float bodyDistance = config.BodyViewDistance;
+            bool keepDetail = config.KeepVisibleDetail;
             using (new EditorGUI.DisabledScope(!limitBySize))
             {
                 EditorGUI.indentLevel++;
+                keepDetail = EditorGUILayout.ToggleLeft(
+                    AvatarCompressorLocalization.Content(
+                        "TextureCompressor:prop:keepVisibleDetail",
+                        "TextureCompressor:prop:keepVisibleDetail:tooltip"
+                    ),
+                    keepDetail
+                );
                 faceDistance = EditorGUILayout.FloatField(
                     AvatarCompressorLocalization.Content(
                         "TextureCompressor:prop:faceViewDistance",
@@ -144,6 +152,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.RespectImportFormat = respectFormat;
                 config.AvoidCompressionArtifacts = avoidArtifacts;
                 config.LimitByOnAvatarSize = limitBySize;
+                config.KeepVisibleDetail = keepDetail;
                 config.FaceViewDistance = Mathf.Max(1f, faceDistance);
                 config.BodyViewDistance = Mathf.Max(1f, bodyDistance);
                 EditorUtility.SetDirty(config);

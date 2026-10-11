@@ -730,3 +730,9 @@ msgstr "頭部"
 
 msgid "TextureCompressor:label:densityBody"
 msgstr "体"
+
+msgid "TextureCompressor:prop:keepVisibleDetail"
+msgstr "見える部分のディテールを保持"
+
+msgid "TextureCompressor:prop:keepVisibleDetail:tooltip"
+msgstr "表面がすでに視認距離に必要な鮮明さを下回っている詳細なテクスチャ（アバターの大部分を覆う肌や服など）は縮小しません。最小除数は引き続き適用されます。AO マップや単色など詳細の少ないテクスチャは引き続き縮小されます。"

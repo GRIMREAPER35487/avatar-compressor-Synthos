@@ -324,6 +324,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                                 density,
                                 processor
                             );
+                            if (config.KeepVisibleDetail)
+                            {
+                                analysis = TexelDensityAnalyzer.ApplyFloor(
+                                    analysis,
+                                    baseSize,
+                                    density,
+                                    config.MinDivisor,
+                                    config.LowComplexityThreshold,
+                                    processor
+                                );
+                            }
                         }
                         divisor = analysis.RecommendedDivisor;
                         recommendedSize = processor.CalculateTargetSize(baseSize, analysis);
@@ -592,6 +603,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 hash = hash * 31 + TextureCompressorPreferences.UseSourceFiles.GetHashCode();
                 hash = hash * 31 + config.gameObject.GetInstanceID();
                 hash = hash * 31 + config.LimitByOnAvatarSize.GetHashCode();
+                hash = hash * 31 + config.KeepVisibleDetail.GetHashCode();
                 hash = hash * 31 + config.FaceViewDistance.GetHashCode();
                 hash = hash * 31 + config.BodyViewDistance.GetHashCode();
 

@@ -325,6 +325,37 @@ namespace dev.limitex.avatar.compressor.editor.texture
                         );
                     }
                     analysis = limited;
+
+                    if (_config.KeepVisibleDetail)
+                    {
+                        var floored = TexelDensityAnalyzer.ApplyFloor(
+                            analysis,
+                            baseSize,
+                            density.Value,
+                            _config.MinDivisor,
+                            _config.LowComplexityThreshold,
+                            _processor
+                        );
+                        if (
+                            enableLogging
+                            && floored.RecommendedDivisor != analysis.RecommendedDivisor
+                        )
+                        {
+                            var shrunk = new Vector2Int(
+                                baseSize.x / analysis.RecommendedDivisor,
+                                baseSize.y / analysis.RecommendedDivisor
+                            );
+                            Debug.Log(
+                                $"[{Name}] {originalTexture.name}: divisor "
+                                    + $"{analysis.RecommendedDivisor}x would leave "
+                                    + $"{density.Value.DensityAt(shrunk):F0} px/cm on the "
+                                    + $"{(density.Value.FromHead ? "head" : "body")} (needs "
+                                    + $"{density.Value.TargetDensity:F0}), keeping detail: "
+                                    + $"divisor {floored.RecommendedDivisor}x"
+                            );
+                        }
+                        analysis = floored;
+                    }
                 }
                 var sourceFormat = originalTexture.format;
                 bool isNormalMap = textureInfo.IsNormalMap;

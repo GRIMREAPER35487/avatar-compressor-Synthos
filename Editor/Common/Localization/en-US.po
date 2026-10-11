@@ -731,3 +731,9 @@ msgstr "head"
 
 msgid "TextureCompressor:label:densityBody"
 msgstr "body"
+
+msgid "TextureCompressor:prop:keepVisibleDetail"
+msgstr "Keep detail where it is visible"
+
+msgid "TextureCompressor:prop:keepVisibleDetail:tooltip"
+msgstr "Do not shrink a detailed texture whose surface is already less sharp than the view distance needs, typically skin and clothing that cover most of the avatar. Min Divisor still applies. Low-detail textures such as AO maps or flat colors are still reduced."
