@@ -306,6 +306,60 @@ namespace dev.limitex.avatar.compressor.tests
             Assert.That(minDivisor.RecommendedDivisor, Is.EqualTo(2));
         }
 
+        [Test]
+        public void IsLimitedByMaxResolution_CappedDetailedUnderTarget_SuggestsLargerSize()
+        {
+            // 2048 gives 11 px/cm where 48 is needed; the 4096 source would give 22.
+            var density = new TexelDensityInfo(
+                2048.0 * 2048.0 * (48.0 / 11.0) * (48.0 / 11.0),
+                48f,
+                false
+            );
+
+            bool limited = TexelDensityAnalyzer.IsLimitedByMaxResolution(
+                new Vector2Int(2048, 2048),
+                new Vector2Int(4096, 4096),
+                2048,
+                density,
+                0.24f,
+                0.1f,
+                out var wanted
+            );
+
+            Assert.That(limited, Is.True);
+            Assert.That(wanted, Is.EqualTo(new Vector2Int(4096, 4096)));
+        }
+
+        [TestCase(1024, 4096, 0.24f, 11f)] // not at the cap
+        [TestCase(2048, 2048, 0.24f, 11f)] // no larger image available
+        [TestCase(2048, 4096, 0.04f, 11f)] // low detail
+        [TestCase(2048, 4096, 0.24f, 60f)] // already sharp enough
+        public void IsLimitedByMaxResolution_OtherCases_NoWarning(
+            int result,
+            int full,
+            float complexity,
+            float densityAtResult
+        )
+        {
+            var density = new TexelDensityInfo(
+                (double)result * result * (48.0 / densityAtResult) * (48.0 / densityAtResult),
+                48f,
+                false
+            );
+
+            bool limited = TexelDensityAnalyzer.IsLimitedByMaxResolution(
+                new Vector2Int(result, result),
+                new Vector2Int(full, full),
+                2048,
+                density,
+                complexity,
+                0.1f,
+                out _
+            );
+
+            Assert.That(limited, Is.False);
+        }
+
         [TestCase(true, 1024)]
         [TestCase(false, 512)]
         public void Compress_LargeDetailedSurface_KeepsSizeOnlyWithFloor(

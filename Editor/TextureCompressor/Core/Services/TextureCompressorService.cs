@@ -385,6 +385,32 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 if (upscaleNote != null)
                     densityNote += " | " + upscaleNote;
 
+                if (
+                    !isFrozen
+                    && density.HasValue
+                    && TexelDensityAnalyzer.IsLimitedByMaxResolution(
+                        targetSize,
+                        GetFullSize(originalTexture),
+                        _config.MaxResolution,
+                        density.Value,
+                        analysis.NormalizedComplexity,
+                        _config.LowComplexityThreshold,
+                        out var wanted
+                    )
+                )
+                {
+                    Debug.LogWarning(
+                        $"[{Name}] {originalTexture.name}: Max Resolution {_config.MaxResolution} "
+                            + $"keeps it at {targetSize.x}x{targetSize.y}, "
+                            + $"{density.Value.DensityAt(targetSize):F0} px/cm on the "
+                            + $"{(density.Value.FromHead ? "head" : "body")} (needs "
+                            + $"{density.Value.TargetDensity:F0}). {wanted.x}x{wanted.y} would give "
+                            + $"{density.Value.DensityAt(wanted):F0} px/cm for about "
+                            + $"{(float)wanted.x * wanted.y / ((float)targetSize.x * targetSize.y):F0}x "
+                            + "the memory; raise Max Resolution to keep more detail."
+                    );
+                }
+
                 // Unity's import is already a single compression of the source file. If the
                 // result would have the same size and format, keep it: recompressing would only
                 // lose quality. Normal maps always run through the layout conversion, which also
@@ -675,6 +701,25 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             string guid = AssetDatabase.AssetPathToGUID(assetPath);
             return !string.IsNullOrEmpty(guid) && _frozenLookup.ContainsKey(guid);
+        }
+
+        /// <summary>
+        /// The largest image available for a texture: its source file (up to the size the
+        /// source cache reads) when resizing from sources without respecting the import Max
+        /// Size, otherwise the imported texture.
+        /// </summary>
+        private Vector2Int GetFullSize(Texture2D texture)
+        {
+            var imported = new Vector2Int(texture.width, texture.height);
+            if (
+                _config.RespectImportMaxSize
+                || _sourceCache == null
+                || !_sourceCache.TryGetCachedSize(texture, out var sourceSize)
+            )
+            {
+                return imported;
+            }
+            return sourceSize;
         }
 
         private static IEnumerable<Renderer> GetRenderers(List<MaterialReference> references)

@@ -384,6 +384,24 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         }
                     }
 
+                    Vector2Int? maxResolutionWanted = null;
+                    if (
+                        !isFrozen
+                        && densities.TryGetValue(tex, out var limitDensity)
+                        && TexelDensityAnalyzer.IsLimitedByMaxResolution(
+                            recommendedSize,
+                            GetFullSize(tex, config),
+                            config.MaxResolution,
+                            limitDensity,
+                            analysis.NormalizedComplexity,
+                            config.LowComplexityThreshold,
+                            out var wanted
+                        )
+                    )
+                    {
+                        maxResolutionWanted = wanted;
+                    }
+
                     long estimatedMemory = MemoryCalculator.CalculateCompressedMemory(
                         recommendedSize.x,
                         recommendedSize.y,
@@ -413,6 +431,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             ? measured
                             : (TexelDensityInfo?)null,
                         BaseSize = baseSize,
+                        MaxResolutionWanted = maxResolutionWanted,
                     };
 
                     if (isFrozen)
@@ -499,6 +518,24 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         /// Max Resolution when not respecting the import Max Size. Read from the importer, so the
         /// preview never imports anything.
         /// </summary>
+        /// <summary>
+        /// Mirrors the build: the largest image available, the source file (up to the size the
+        /// source cache reads) when not respecting the import Max Size, else the imported size.
+        /// </summary>
+        private static Vector2Int GetFullSize(Texture2D texture, TextureCompressor config)
+        {
+            var imported = new Vector2Int(texture.width, texture.height);
+            if (
+                config.RespectImportMaxSize
+                || !TextureCompressorPreferences.UseSourceFiles
+                || !TextureSourceCache.TryGetSourceSize(texture, out var sourceSize)
+            )
+            {
+                return imported;
+            }
+            return TextureSourceCache.FitWithin(sourceSize, TextureSourceCache.MaxSourceSize);
+        }
+
         private static Vector2Int GetBaseSize(Texture2D texture, TextureCompressor config)
         {
             return TextureSourceCache.GetPlannedBaseSize(

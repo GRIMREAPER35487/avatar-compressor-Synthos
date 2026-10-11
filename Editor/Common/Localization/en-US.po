@@ -737,3 +737,9 @@ msgstr "Keep detail where it is visible"
 
 msgid "TextureCompressor:prop:keepVisibleDetail:tooltip"
 msgstr "Do not shrink a detailed texture whose surface is already less sharp than the view distance needs, typically skin and clothing that cover most of the avatar. Min Divisor still applies. Low-detail textures such as AO maps or flat colors are still reduced."
+
+msgid "TextureCompressor:message:previewEnlarged"
+msgstr "{0}x{1} → {2}x{3} (from source){4}"
+
+msgid "TextureCompressor:message:previewMaxResolutionLimit"
+msgstr "Max Resolution limits this texture below the sharpness it needs. {0}x{1} would give {2} px/cm for about {3}x the memory; raise Max Resolution to keep more detail."
