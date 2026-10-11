@@ -237,6 +237,44 @@ namespace dev.limitex.avatar.compressor.editor.texture
         }
 
         /// <summary>
+        /// Returns true when Max Resolution is what keeps a detailed texture below its target
+        /// density: the result sits at the cap, a larger image is available, and the surface is
+        /// still less sharp than it needs to be. <paramref name="wanted"/> is the smallest size
+        /// (up to <paramref name="fullSize"/>) that meets the target.
+        /// </summary>
+        public static bool IsLimitedByMaxResolution(
+            Vector2Int result,
+            Vector2Int fullSize,
+            int maxResolution,
+            TexelDensityInfo density,
+            float complexity,
+            float lowComplexityThreshold,
+            out Vector2Int wanted
+        )
+        {
+            wanted = result;
+            if (
+                complexity < lowComplexityThreshold
+                || Mathf.Max(result.x, result.y) < maxResolution
+                || Mathf.Max(fullSize.x, fullSize.y) <= Mathf.Max(result.x, result.y)
+                || density.DensityAt(result) >= density.TargetDensity
+            )
+            {
+                return false;
+            }
+
+            while (
+                wanted.x * 2 <= fullSize.x
+                && wanted.y * 2 <= fullSize.y
+                && density.DensityAt(wanted) < density.TargetDensity
+            )
+            {
+                wanted *= 2;
+            }
+            return wanted != result;
+        }
+
+        /// <summary>
         /// Returns true if a texture assigned to <paramref name="propertyName"/> on
         /// <paramref name="material"/> is sampled with UV0 across the surface.
         /// </summary>

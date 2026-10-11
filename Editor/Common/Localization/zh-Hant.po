@@ -736,3 +736,9 @@ msgstr "保留可見處的細節"
 
 msgid "TextureCompressor:prop:keepVisibleDetail:tooltip"
 msgstr "若紋理有細節且其表面已經低於觀看距離所需的清晰度（通常是覆蓋模型大部分的皮膚與衣服），則不再縮小。最小除數仍然適用。AO 貼圖或純色等細節較少的紋理仍會縮小。"
+
+msgid "TextureCompressor:message:previewEnlarged"
+msgstr "{0}x{1} → {2}x{3}（來自原始檔）{4}"
+
+msgid "TextureCompressor:message:previewMaxResolutionLimit"
+msgstr "最大解析度使此紋理低於所需的清晰度。{0}x{1} 可達到 {2} px/cm，記憶體約為 {3} 倍；若要保留更多細節，請提高最大解析度。"

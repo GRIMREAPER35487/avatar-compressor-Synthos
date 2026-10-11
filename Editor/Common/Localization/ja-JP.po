@@ -736,3 +736,9 @@ msgstr "見える部分のディテールを保持"
 
 msgid "TextureCompressor:prop:keepVisibleDetail:tooltip"
 msgstr "表面がすでに視認距離に必要な鮮明さを下回っている詳細なテクスチャ（アバターの大部分を覆う肌や服など）は縮小しません。最小除数は引き続き適用されます。AO マップや単色など詳細の少ないテクスチャは引き続き縮小されます。"
+
+msgid "TextureCompressor:message:previewEnlarged"
+msgstr "{0}x{1} → {2}x{3}（ソースから）{4}"
+
+msgid "TextureCompressor:message:previewMaxResolutionLimit"
+msgstr "最大解像度により、このテクスチャは必要な鮮明さを下回っています。{0}x{1} なら {2} px/cm になり、メモリは約 {3} 倍です。ディテールを保つには最大解像度を上げてください。"

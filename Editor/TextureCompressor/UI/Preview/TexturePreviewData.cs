@@ -31,5 +31,11 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
         /// <summary>Size the density is measured at before and after compression.</summary>
         public Vector2Int BaseSize { get; set; }
+
+        /// <summary>
+        /// Size the texture would need to reach its target density when Max Resolution is
+        /// what holds it back; null otherwise.
+        /// </summary>
+        public Vector2Int? MaxResolutionWanted { get; set; }
     }
 }

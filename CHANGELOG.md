@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Limit by on-avatar size** (on by default) - Measures how large the surface each texture covers is on the avatar and shrinks textures that are sharper than anyone could see (a 2048 texture on an earring). The head is sized for a face view distance of 15 cm and the rest for a body view distance of 30 cm, both adjustable. Only ever makes textures smaller than the detail analysis would; frozen textures, matcaps, ramps, gradients, decals and animation-only textures are not limited. The preview shows pixels per cm.
 - **Keep detail where it is visible** (on by default, under "Limit by on-avatar size") - A detailed texture whose surface is already less sharp than the view distance needs is not shrunk further by the detail analysis. Fixes body skin and clothing being halved because smooth surfaces score low on detail. Min Divisor still applies; low-detail textures (AO, flat colors) are still reduced.
+- **Max Resolution warning** - When Max Resolution is what keeps a detailed texture below the sharpness its surface needs (and a larger image is available), the build log and the preview say so, with the size that would reach it and its memory cost.
 
 ### Changed
 
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The preview's size line compares sizes instead of the divisor: it no longer says "unchanged" when Max Resolution shrinks a texture at 1x, and shows textures resized from a larger source file as enlarged.
 - With "Respect import Max Size" off, the size filters now check the source file's size, so a texture imported small from a large file is no longer skipped before the toggle applies.
 
 ## [1.1.0] - 2026-10-11 - Synthos Edition

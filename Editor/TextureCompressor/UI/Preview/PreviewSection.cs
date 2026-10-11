@@ -419,7 +419,30 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             string manualIndicator = data.IsFrozen
                 ? AvatarCompressorLocalization.Tr("TextureCompressor:label:previewManualSuffix")
                 : "";
-            if (data.RecommendedDivisor > 1)
+            // Compare sizes, not the divisor: Max Resolution can shrink a texture at 1x, the
+            // texture can be resized from a larger source file, and limits can keep it at its
+            // imported size whatever the divisor says.
+            if (data.RecommendedSize == data.OriginalSize)
+            {
+                sizeText = AvatarCompressorLocalization.Tr(
+                    "TextureCompressor:message:previewUnchanged",
+                    data.OriginalSize.x,
+                    data.OriginalSize.y,
+                    manualIndicator
+                );
+            }
+            else if (data.RecommendedSize.x > data.OriginalSize.x)
+            {
+                sizeText = AvatarCompressorLocalization.Tr(
+                    "TextureCompressor:message:previewEnlarged",
+                    data.OriginalSize.x,
+                    data.OriginalSize.y,
+                    data.RecommendedSize.x,
+                    data.RecommendedSize.y,
+                    manualIndicator
+                );
+            }
+            else
             {
                 sizeText = AvatarCompressorLocalization.Tr(
                     "TextureCompressor:message:previewResized",
@@ -427,16 +450,10 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     data.OriginalSize.y,
                     data.RecommendedSize.x,
                     data.RecommendedSize.y,
-                    data.RecommendedDivisor,
-                    manualIndicator
-                );
-            }
-            else
-            {
-                sizeText = AvatarCompressorLocalization.Tr(
-                    "TextureCompressor:message:previewUnchanged",
-                    data.OriginalSize.x,
-                    data.OriginalSize.y,
+                    Mathf.Max(
+                        1,
+                        Mathf.RoundToInt(data.OriginalSize.x / (float)data.RecommendedSize.x)
+                    ),
                     manualIndicator
                 );
             }
@@ -467,6 +484,25 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     GUILayout.MinWidth(0)
                 );
                 EditorGUILayout.EndHorizontal();
+
+                if (data.MaxResolutionWanted.HasValue)
+                {
+                    var wanted = data.MaxResolutionWanted.Value;
+                    EditorGUILayout.HelpBox(
+                        AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:message:previewMaxResolutionLimit",
+                            wanted.x,
+                            wanted.y,
+                            density.DensityAt(wanted).ToString("F0"),
+                            (
+                                (float)wanted.x
+                                * wanted.y
+                                / ((float)data.RecommendedSize.x * data.RecommendedSize.y)
+                            ).ToString("F0")
+                        ),
+                        MessageType.Warning
+                    );
+                }
             }
 
             // Format
