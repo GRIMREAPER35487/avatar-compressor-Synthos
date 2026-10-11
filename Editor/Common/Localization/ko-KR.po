@@ -699,4 +699,4 @@ msgid "TextureCompressor:prop:avoidCompressionArtifacts"
 msgstr "밴딩과 블록 노이즈 방지"
 
 msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
-msgstr "압축기가 DXT1/DXT5(모바일에서는 ASTC 6x6/8x8)를 고르면, 먼저 텍스처의 매끄럽고 깨끗한 부분을 시험 압축합니다. 그라데이션의 계단 현상이나 색 경계의 블록 노이즈가 생기면 대신 BC7(ASTC 4x4)을 사용합니다. 메모리는 더 들지만 깔끔하게 보입니다. 임포트 압축 형식 유지로 유지되는 형식과 고정된 형식은 바뀌지 않습니다."
+msgstr "압축기가 DXT1/DXT5(모바일에서는 ASTC 6x6/8x8)를 고르면, 먼저 텍스처의 매끄럽고 깨끗한 부분을 시험 압축합니다. 그라데이션의 계단 현상이나 색 경계의 블록 노이즈가 생기면 대신 BC7(모바일에서는 깔끔하게 보이는 다음으로 촘촘한 ASTC 블록 크기, 최대 4x4)을 사용합니다. 메모리는 더 들지만 깔끔하게 보입니다. 임포트 압축 형식 유지로 유지되는 형식과 고정된 형식은 바뀌지 않습니다."

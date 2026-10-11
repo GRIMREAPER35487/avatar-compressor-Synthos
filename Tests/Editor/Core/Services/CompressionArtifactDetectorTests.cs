@@ -17,6 +17,7 @@ namespace dev.limitex.avatar.compressor.tests
             TextureFormat.DXT5,
             TextureFormat.BC7,
             TextureFormat.ASTC_4x4,
+            TextureFormat.ASTC_5x5,
             TextureFormat.ASTC_6x6,
             TextureFormat.ASTC_8x8,
         };
@@ -57,7 +58,7 @@ namespace dev.limitex.avatar.compressor.tests
         }
 
         [Test]
-        public void GetSaferFormat_MapsToHighQualityFormatOfSamePlatform()
+        public void GetSaferFormat_StepsThroughLadderOfSamePlatform()
         {
             Assert.That(
                 CompressionArtifactDetector.GetSaferFormat(TextureFormat.DXT1),
@@ -69,9 +70,88 @@ namespace dev.limitex.avatar.compressor.tests
             );
             Assert.That(
                 CompressionArtifactDetector.GetSaferFormat(TextureFormat.ASTC_8x8),
+                Is.EqualTo(TextureFormat.ASTC_6x6)
+            );
+            Assert.That(
+                CompressionArtifactDetector.GetSaferFormat(TextureFormat.ASTC_6x6),
+                Is.EqualTo(TextureFormat.ASTC_5x5)
+            );
+            Assert.That(
+                CompressionArtifactDetector.GetSaferFormat(TextureFormat.ASTC_5x5),
                 Is.EqualTo(TextureFormat.ASTC_4x4)
             );
             Assert.That(CompressionArtifactDetector.IsCandidateFormat(TextureFormat.BC7), Is.False);
+            Assert.That(
+                CompressionArtifactDetector.IsCandidateFormat(TextureFormat.ASTC_4x4),
+                Is.False
+            );
+        }
+
+        [TestCase("noise", TextureFormat.ASTC_8x8, TextureFormat.ASTC_8x8)]
+        [TestCase("flat", TextureFormat.DXT1, TextureFormat.DXT1)]
+        [TestCase("skinGradient", TextureFormat.DXT1, TextureFormat.BC7)]
+        [TestCase("skinGradient", TextureFormat.BC7, TextureFormat.BC7)]
+        public void ChooseCleanFormat_KeepsCleanFormatsAndUpgradesBandedOnes(
+            string sample,
+            TextureFormat format,
+            TextureFormat expected
+        )
+        {
+            var texture = CreateSample(sample);
+            try
+            {
+                Assert.That(
+                    CompressionArtifactDetector.ChooseCleanFormat(texture, format),
+                    Is.EqualTo(expected)
+                );
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        [TestCase("hueGradient", TextureFormat.ASTC_8x8)]
+        [TestCase("animeFlatColors", TextureFormat.ASTC_6x6)]
+        public void ChooseCleanFormat_Astc_StopsAtFirstCleanStep(
+            string sample,
+            TextureFormat start
+        )
+        {
+            var texture = CreateSample(sample);
+            try
+            {
+                var chosen = CompressionArtifactDetector.ChooseCleanFormat(texture, start);
+
+                // Every skipped step had artifacts; the chosen step is clean unless it is the
+                // untested final fallback.
+                for (
+                    var step = start;
+                    step != chosen;
+                    step = CompressionArtifactDetector.GetSaferFormat(step)
+                )
+                {
+                    Assert.That(
+                        CompressionArtifactDetector.WouldShowArtifacts(texture, step),
+                        Is.True,
+                        $"skipped clean {step}"
+                    );
+                }
+                if (chosen != TextureFormat.ASTC_4x4)
+                {
+                    Assert.That(
+                        CompressionArtifactDetector.WouldShowArtifacts(texture, chosen),
+                        Is.False,
+                        $"chose banded {chosen}"
+                    );
+                }
+                Assert.That(chosen, Is.Not.EqualTo(start));
+                Debug.Log($"[Ladder] {sample}: {start} -> {chosen}");
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
         }
 
         [Test]

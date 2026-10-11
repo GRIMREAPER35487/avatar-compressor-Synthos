@@ -6,9 +6,9 @@ using UnityEngine;
 namespace dev.limitex.avatar.compressor.editor.texture
 {
     /// <summary>
-    /// Predicts whether a low-bitrate block format (DXT1/DXT5, ASTC 6x6/8x8) would show visible
-    /// artifacts on a texture: stair-stepping (banding) across smooth color changes, or blocky
-    /// wrong colors along clean edges.
+    /// Predicts whether a low-bitrate block format (DXT1/DXT5, ASTC 5x5/6x6/8x8) would show
+    /// visible artifacts on a texture: stair-stepping (banding) across smooth color changes, or
+    /// blocky wrong colors along clean edges.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -115,18 +115,46 @@ namespace dev.limitex.avatar.compressor.editor.texture
         {
             return format == TextureFormat.DXT1
                 || format == TextureFormat.DXT5
+                || format == TextureFormat.ASTC_5x5
                 || format == TextureFormat.ASTC_6x6
                 || format == TextureFormat.ASTC_8x8;
         }
 
         /// <summary>
-        /// Returns the high-quality format used instead of a candidate format.
+        /// Returns the next higher-quality format to try after a candidate format shows
+        /// artifacts. DXT5 uses the same color encoding as DXT1, so DXT1/DXT5 go straight to
+        /// BC7; ASTC steps down one block size at a time (8x8, 6x6, 5x5, 4x4).
         /// </summary>
         public static TextureFormat GetSaferFormat(TextureFormat format)
         {
-            return format == TextureFormat.DXT1 || format == TextureFormat.DXT5
-                ? TextureFormat.BC7
-                : TextureFormat.ASTC_4x4;
+            switch (format)
+            {
+                case TextureFormat.DXT1:
+                case TextureFormat.DXT5:
+                    return TextureFormat.BC7;
+                case TextureFormat.ASTC_8x8:
+                    return TextureFormat.ASTC_6x6;
+                case TextureFormat.ASTC_6x6:
+                    return TextureFormat.ASTC_5x5;
+                default:
+                    return TextureFormat.ASTC_4x4;
+            }
+        }
+
+        /// <summary>
+        /// Returns <paramref name="format"/> if it compresses <paramref name="texture"/> without
+        /// visible artifacts, otherwise the cheapest higher-quality format that does (ending at
+        /// BC7 or ASTC 4x4, which are not tested). Non-candidate formats are returned unchanged.
+        /// The texture must be readable.
+        /// </summary>
+        public static TextureFormat ChooseCleanFormat(Texture2D texture, TextureFormat format)
+        {
+            if (!IsCandidateFormat(format) || !TryBuildMosaic(texture, out var mosaic))
+                return format;
+
+            while (IsCandidateFormat(format) && Measure(mosaic, format).HasArtifacts)
+                format = GetSaferFormat(format);
+            return format;
         }
 
         /// <summary>
@@ -144,6 +172,43 @@ namespace dev.limitex.avatar.compressor.editor.texture
         /// </summary>
         internal static Measurement Measure(Texture2D texture, TextureFormat format)
         {
+            return TryBuildMosaic(texture, out var mosaic) ? Measure(mosaic, format) : default;
+        }
+
+        /// <summary>The clean tiles of a texture, packed side by side.</summary>
+        private readonly struct Mosaic
+        {
+            public readonly Color32[] Pixels;
+            public readonly int Width;
+            public readonly int Height;
+            public readonly int TileCount;
+            public readonly int Columns;
+            public readonly float CleanArea;
+            public readonly bool Linear;
+
+            public Mosaic(
+                Color32[] pixels,
+                int width,
+                int height,
+                int tileCount,
+                int columns,
+                float cleanArea,
+                bool linear
+            )
+            {
+                Pixels = pixels;
+                Width = width;
+                Height = height;
+                TileCount = tileCount;
+                Columns = columns;
+                CleanArea = cleanArea;
+                Linear = linear;
+            }
+        }
+
+        private static bool TryBuildMosaic(Texture2D texture, out Mosaic mosaic)
+        {
+            mosaic = default;
             if (
                 texture == null
                 || !texture.isReadable
@@ -151,7 +216,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 || texture.height < TileSize
             )
             {
-                return default;
+                return false;
             }
 
             int width = texture.width;
@@ -159,7 +224,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             var tiles = SelectTiles(pixels, width, texture.height, out int cleanTiles);
             if (tiles.Count == 0)
-                return default;
+                return false;
 
             int totalTiles = (width / TileSize) * (texture.height / TileSize);
             float cleanArea = cleanTiles / (float)totalTiles;
@@ -186,24 +251,45 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 }
             }
 
-            var mosaic = new Texture2D(
+            mosaic = new Mosaic(
+                mosaicPixels,
                 mosaicWidth,
                 rows * TileSize,
+                tiles.Count,
+                columns,
+                cleanArea,
+                !texture.isDataSRGB
+            );
+            return true;
+        }
+
+        private static Measurement Measure(in Mosaic mosaic, TextureFormat format)
+        {
+            var texture = new Texture2D(
+                mosaic.Width,
+                mosaic.Height,
                 TextureFormat.RGBA32,
                 false,
-                !texture.isDataSRGB
+                mosaic.Linear
             );
             try
             {
-                mosaic.SetPixels32(mosaicPixels);
-                mosaic.Apply(false);
-                EditorUtility.CompressTexture(mosaic, format, TextureCompressionQuality.Best);
-                var decoded = mosaic.GetPixels32();
-                return Compare(mosaicPixels, decoded, mosaicWidth, tiles.Count, columns, cleanArea);
+                texture.SetPixels32(mosaic.Pixels);
+                texture.Apply(false);
+                EditorUtility.CompressTexture(texture, format, TextureCompressionQuality.Best);
+                var decoded = texture.GetPixels32();
+                return Compare(
+                    mosaic.Pixels,
+                    decoded,
+                    mosaic.Width,
+                    mosaic.TileCount,
+                    mosaic.Columns,
+                    mosaic.CleanArea
+                );
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(mosaic);
+                UnityEngine.Object.DestroyImmediate(texture);
             }
         }
 
