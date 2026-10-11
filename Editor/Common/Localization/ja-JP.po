@@ -742,3 +742,9 @@ msgstr "{0}x{1} → {2}x{3}（ソースから）{4}"
 
 msgid "TextureCompressor:message:previewMaxResolutionLimit"
 msgstr "最大解像度により、このテクスチャは必要な鮮明さを下回っています。{0}x{1} なら {2} px/cm になり、メモリは約 {3} 倍です。ディテールを保つには最大解像度を上げてください。"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize"
+msgstr "サイズフィルターでソースのサイズを確認"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
+msgstr "インポート時の最大サイズの尊重がオフのときのみ有効です。オンの場合、最小ソースサイズと「これ以下はスキップ」はソースファイルのサイズで判定するため、大きなファイルから小さくインポートされたテクスチャも処理されます。オフの場合はインポートサイズで判定するため、そのようなテクスチャはスキップされ、インポートされたまま残ります。"

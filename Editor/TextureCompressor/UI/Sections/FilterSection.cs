@@ -93,6 +93,19 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 ),
                 config.RespectImportMaxSize
             );
+            bool filtersUseSource = config.SizeFiltersUseSourceSize;
+            using (new EditorGUI.DisabledScope(respectSize))
+            {
+                EditorGUI.indentLevel++;
+                filtersUseSource = EditorGUILayout.ToggleLeft(
+                    AvatarCompressorLocalization.Content(
+                        "TextureCompressor:prop:sizeFiltersUseSourceSize",
+                        "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
+                    ),
+                    filtersUseSource
+                );
+                EditorGUI.indentLevel--;
+            }
             bool respectFormat = EditorGUILayout.ToggleLeft(
                 AvatarCompressorLocalization.Content(
                     "TextureCompressor:prop:respectImportFormat",
@@ -149,6 +162,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             {
                 Undo.RecordObject(config, "Change Source and Quality Options");
                 config.RespectImportMaxSize = respectSize;
+                config.SizeFiltersUseSourceSize = filtersUseSource;
                 config.RespectImportFormat = respectFormat;
                 config.AvoidCompressionArtifacts = avoidArtifacts;
                 config.LimitByOnAvatarSize = limitBySize;

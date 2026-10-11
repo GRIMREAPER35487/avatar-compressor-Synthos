@@ -743,3 +743,9 @@ msgstr "{0}x{1} → {2}x{3} (from source){4}"
 
 msgid "TextureCompressor:message:previewMaxResolutionLimit"
 msgstr "Max Resolution limits this texture below the sharpness it needs. {0}x{1} would give {2} px/cm for about {3}x the memory; raise Max Resolution to keep more detail."
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize"
+msgstr "Size filters check source size"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
+msgstr "Only with Respect import Max Size off. When on, Min Source Size and Skip If Smaller Than check the source file, so a texture imported small from a large file is still processed. When off, they check the imported size, so those textures are skipped and left exactly as imported."

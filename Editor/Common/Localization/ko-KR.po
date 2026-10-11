@@ -742,3 +742,9 @@ msgstr "{0}x{1} → {2}x{3}(소스에서){4}"
 
 msgid "TextureCompressor:message:previewMaxResolutionLimit"
 msgstr "최대 해상도 때문에 이 텍스처가 필요한 선명도보다 낮습니다. {0}x{1}이면 {2} px/cm가 되고 메모리는 약 {3}배입니다. 디테일을 유지하려면 최대 해상도를 높이세요."
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize"
+msgstr "크기 필터에서 소스 크기 확인"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
+msgstr "임포트 최대 크기 유지가 꺼져 있을 때만 적용됩니다. 켜면 최소 소스 크기와 "이보다 작으면 건너뛰기"가 소스 파일 크기로 판단하므로, 큰 파일에서 작게 임포트된 텍스처도 처리됩니다. 끄면 임포트 크기로 판단하므로 그런 텍스처는 건너뛰고 임포트된 그대로 둡니다."

@@ -98,6 +98,61 @@ namespace dev.limitex.avatar.compressor.tests
             }
         }
 
+        [TestCase(true, true)]
+        [TestCase(false, false)]
+        public void Compress_SmallImportOfLargeFile_ProcessedOnlyWhenFiltersUseSourceSize(
+            bool filtersUseSource,
+            bool expectProcessed
+        )
+        {
+            // A detailed 1024 file imported at 256; the filters skip anything under 512. When
+            // processed it grows back toward the source size, so the result differs.
+            string path = $"{TestFolder}/Large.png";
+            var file = new Texture2D(1024, 1024, TextureFormat.RGBA32, false);
+            var pixels = new Color32[1024 * 1024];
+            for (int y = 0; y < 1024; y++)
+            {
+                for (int x = 0; x < 1024; x++)
+                {
+                    byte v = (byte)((x ^ y) * 4);
+                    pixels[y * 1024 + x] = new Color32(v, (byte)(255 - v), (byte)(x * 8), 255);
+                }
+            }
+            file.SetPixels32(pixels);
+            File.WriteAllBytes(path, file.EncodeToPNG());
+            Object.DestroyImmediate(file);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.maxTextureSize = 256;
+            importer.SaveAndReimport();
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+
+            var config = CreateConfig();
+            config.MinSourceSize = 512;
+            config.SkipIfSmallerThan = 512;
+            config.RespectImportMaxSize = false;
+            config.SizeFiltersUseSourceSize = filtersUseSource;
+
+            var material = new Material(Shader.Find("Standard")) { mainTexture = texture };
+            _root = new GameObject("Root");
+            _root.AddComponent<MeshRenderer>().sharedMaterial = material;
+
+            new TextureCompressorService(
+                config,
+                AnalysisBackendPreference.Auto,
+                ResizeBackendPreference.CPU,
+                sourceCache: new TextureSourceCache()
+            ).Compress(_root, false);
+
+            var result = (Texture2D)_root.GetComponent<MeshRenderer>().sharedMaterial.mainTexture;
+            Assert.That(result != texture, Is.EqualTo(expectProcessed));
+
+            if (result != texture)
+                Object.DestroyImmediate(result);
+            Object.DestroyImmediate(_root.GetComponent<MeshRenderer>().sharedMaterial);
+            Object.DestroyImmediate(material);
+        }
+
         private static TextureInfo Collect(
             Material material,
             System.Func<Texture2D, Vector2Int> filterSize
