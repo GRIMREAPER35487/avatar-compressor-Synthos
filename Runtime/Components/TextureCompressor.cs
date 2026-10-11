@@ -170,6 +170,14 @@ namespace dev.limitex.avatar.compressor
         [Tooltip("Skip textures smaller than or equal to this size")]
         public int SkipIfSmallerThan = 128;
 
+        [Tooltip(
+            "Textures caught by the size filters keep their imported size but still get their "
+                + "compression format chosen (from detail and alpha, with the banding check), "
+                + "even when Respect import format is on. When off, they are left exactly as "
+                + "imported."
+        )]
+        public bool ReformatFilteredTextures = false;
+
         [Header("Excluded Textures")]
         [Tooltip("Specific textures to exclude from compression")]
         public List<Texture2D> ExcludedTextures = new List<Texture2D>();

@@ -19,6 +19,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private readonly TextureCollector _collector;
         private readonly TextureProcessor _processor;
         private readonly TextureFormatSelector _formatSelector;
+
+        // Chooses formats for textures kept only for a format change (never keeps the import).
+        private readonly TextureFormatSelector _formatOnlySelector;
         private readonly ComplexityCalculator _complexityCalc;
         private readonly TextureAnalyzer _analyzer;
         private readonly NormalMapPreprocessor _normalMapPreprocessor;
@@ -90,7 +93,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                             false,
                             true,
                             config.MaxResolution
-                        )
+                        ),
+                config.ReformatFilteredTextures
             );
 
             _processor = new TextureProcessor(
@@ -98,6 +102,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 config.MaxResolution,
                 config.ForcePowerOfTwo,
                 resizeBackendPreference
+            );
+
+            _formatOnlySelector = new TextureFormatSelector(
+                config.TargetPlatform,
+                config.UseHighQualityFormatForHighComplexity,
+                config.HighComplexityThreshold,
+                respectImportFormat: false
             );
 
             _formatSelector = new TextureFormatSelector(
@@ -302,10 +313,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 var formatOverride = resolved.Value.FormatOverride;
 
                 bool isFrozen = formatOverride != null;
+                bool formatOnly = textureInfo.FormatOnly;
+                var formatSelector = formatOnly ? _formatOnlySelector : _formatSelector;
                 TexelDensityInfo? density =
-                    densities != null && densities.TryGetValue(originalTexture, out var measured)
+                    formatOnly ? null
+                    : densities != null && densities.TryGetValue(originalTexture, out var measured)
                         ? measured
-                        : (TexelDensityInfo?)null;
+                    : (TexelDensityInfo?)null;
 
                 // Frozen textures keep their explicit divisor.
                 if (!isFrozen && density.HasValue)
@@ -366,8 +380,17 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
                 // From a larger source file, the import size is still the default: only grow
                 // past it when the extra pixels would be visible.
+                // Caught by the size filters: keep the imported size, only the format changes.
+                if (formatOnly)
+                {
+                    targetSize = new Vector2Int(
+                        TextureProcessor.EnsureMultipleOf4(importedSize.x),
+                        TextureProcessor.EnsureMultipleOf4(importedSize.y)
+                    );
+                }
+
                 string upscaleNote = null;
-                if (!isFrozen && !_config.RespectImportMaxSize)
+                if (!isFrozen && !formatOnly && !_config.RespectImportMaxSize)
                 {
                     targetSize = UpscaleGate.Apply(
                         targetSize,
@@ -420,7 +443,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 if (
                     !isNormalMap
                     && targetSize == importedSize
-                    && _formatSelector.KeepsImportFormat(sourceFormat, formatOverride)
+                    && formatSelector.KeepsImportFormat(sourceFormat, formatOverride)
                 )
                 {
                     LogUnchanged(originalTexture, enableLogging, densityNote);
@@ -459,7 +482,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 // when the compressed texture has no meaningful alpha (DXT1 at 4bpp suffices).
                 bool hasAlpha = TextureFormatSelector.HasSignificantAlpha(resizedTexture);
 
-                var targetFormat = _formatSelector.ResolveTargetFormat(
+                var targetFormat = formatSelector.ResolveTargetFormat(
                     sourceFormat,
                     isNormalMap,
                     analysis.NormalizedComplexity,
@@ -473,7 +496,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 if (
                     !isNormalMap
                     && _config.AvoidCompressionArtifacts
-                    && _formatSelector.ChoosesFormat(sourceFormat, formatOverride)
+                    && formatSelector.ChoosesFormat(sourceFormat, formatOverride)
                 )
                 {
                     var cleanFormat = CompressionArtifactDetector.ChooseCleanFormat(
@@ -563,6 +586,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                         formatOverride.HasValue && formatOverride.Value != FrozenTextureFormat.Auto
                             ? " [FROZEN]"
                             : "";
+                    if (formatOnly)
+                        frozenInfo += " [FORMAT ONLY]";
                     Debug.Log(
                         $"[{Name}] {originalTexture.name}{(fromSource ? " [SOURCE]" : "")}: "
                             + $"{originalTexture.width}x{originalTexture.height} -> "

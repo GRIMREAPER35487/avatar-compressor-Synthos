@@ -180,6 +180,14 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 compactMode,
                 "TextureCompressor:prop:skipIfSmaller:tooltip"
             );
+            DrawPropertyWithModifiedIndicator(
+                config,
+                serializedObject,
+                nameof(TextureCompressor.ReformatFilteredTextures),
+                "TextureCompressor:prop:reformatFilteredTextures",
+                compactMode,
+                "TextureCompressor:prop:reformatFilteredTextures:tooltip"
+            );
 
             DrawSectionSpacing(compactMode);
 

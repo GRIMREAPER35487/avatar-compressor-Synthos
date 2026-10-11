@@ -748,3 +748,9 @@ msgstr "尺寸过滤检查源文件尺寸"
 
 msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
 msgstr "仅在关闭“遵循导入的最大尺寸”时有效。开启时，最小源尺寸和“小于此值则跳过”按源文件尺寸判断，因此从大文件以小尺寸导入的纹理仍会被处理。关闭时按导入尺寸判断，这类纹理会被跳过并保持导入时的状态。"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures"
+msgstr "仍优化被过滤纹理的格式"
+
+msgid "TextureCompressor:prop:reformatFilteredTextures:tooltip"
+msgstr "被尺寸过滤命中的纹理保持导入尺寸，但仍会根据细节和透明度选择压缩格式（含色带检查），并从高质量源文件只压缩一次。即使开启“遵循导入的压缩格式”也会生效。关闭时保持导入时的状态。"

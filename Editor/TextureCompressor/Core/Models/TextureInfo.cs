@@ -40,6 +40,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
         public bool IsProcessed { get; set; } = true;
         public SkipReason SkipReason { get; set; } = SkipReason.None;
         public string AssetGuid { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Caught by the size filters but kept for a format change only: the texture keeps
+        /// its imported size and the format is chosen for it.
+        /// </summary>
+        public bool FormatOnly { get; set; }
         public List<MaterialTextureReference> References { get; } =
             new List<MaterialTextureReference>();
     }

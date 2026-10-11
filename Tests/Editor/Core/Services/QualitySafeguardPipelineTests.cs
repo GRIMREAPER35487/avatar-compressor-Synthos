@@ -153,6 +153,61 @@ namespace dev.limitex.avatar.compressor.tests
             Object.DestroyImmediate(material);
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Compress_FilteredTexture_KeepsSizeAndChangesFormatOnlyWhenReformatOn(
+            bool reformat
+        )
+        {
+            // A 1024 file imported uncompressed at 256; the filters catch anything under 512.
+            string path = $"{TestFolder}/Small.png";
+            var file = new Texture2D(1024, 1024, TextureFormat.RGBA32, false);
+            File.WriteAllBytes(path, file.EncodeToPNG());
+            Object.DestroyImmediate(file);
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.maxTextureSize = 256;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            Assert.That(texture.format, Is.EqualTo(TextureFormat.RGBA32));
+
+            var config = CreateConfig();
+            config.MinSourceSize = 512;
+            config.SkipIfSmallerThan = 512;
+            config.RespectImportMaxSize = false;
+            config.SizeFiltersUseSourceSize = false;
+            config.RespectImportFormat = true;
+            config.ReformatFilteredTextures = reformat;
+
+            var material = new Material(Shader.Find("Standard")) { mainTexture = texture };
+            _root = new GameObject("Root");
+            _root.AddComponent<MeshRenderer>().sharedMaterial = material;
+
+            new TextureCompressorService(
+                config,
+                AnalysisBackendPreference.Auto,
+                ResizeBackendPreference.CPU,
+                sourceCache: new TextureSourceCache()
+            ).Compress(_root, false);
+
+            var result = (Texture2D)_root.GetComponent<MeshRenderer>().sharedMaterial.mainTexture;
+            if (reformat)
+            {
+                Assert.That(result, Is.Not.SameAs(texture));
+                Assert.That(result.width, Is.EqualTo(256));
+                Assert.That(result.format, Is.Not.EqualTo(TextureFormat.RGBA32));
+                Object.DestroyImmediate(result);
+            }
+            else
+            {
+                Assert.That(result, Is.SameAs(texture));
+            }
+
+            Object.DestroyImmediate(_root.GetComponent<MeshRenderer>().sharedMaterial);
+            Object.DestroyImmediate(material);
+        }
+
         private static TextureInfo Collect(
             Material material,
             System.Func<Texture2D, Vector2Int> filterSize

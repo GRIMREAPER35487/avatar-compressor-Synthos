@@ -19,6 +19,10 @@ namespace dev.limitex.avatar.compressor.editor.texture
         // import Max Size it is the source size, so a texture imported small from a large file is
         // not filtered out before the toggle can apply.
         private readonly Func<Texture2D, Vector2Int> _filterSize;
+
+        // Textures the size filters catch are kept for a format change at their imported size
+        // instead of being skipped.
+        private readonly bool _reformatFilteredTextures;
         private readonly bool _processMainTextures;
         private readonly bool _processNormalMaps;
         private readonly bool _processEmissionMaps;
@@ -39,10 +43,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
             IEnumerable<string> excludedPathPrefixes = null,
             IEnumerable<Texture2D> excludedTextures = null,
             IEnumerable<FrozenTextureSettings> frozenTextures = null,
-            Func<Texture2D, Vector2Int> filterSize = null
+            Func<Texture2D, Vector2Int> filterSize = null,
+            bool reformatFilteredTextures = false
         )
         {
             _filterSize = filterSize;
+            _reformatFilteredTextures = reformatFilteredTextures;
             _minSourceSize = minSourceSize;
             _skipIfSmallerThan = skipIfSmallerThan;
             _processMainTextures = processMainTextures;
@@ -319,11 +325,16 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     ? _filterSize(texture)
                     : new Vector2Int(texture.width, texture.height);
             int maxDim = Mathf.Max(filterSize.x, filterSize.y);
+            info.FormatOnly = false;
             if (maxDim < _minSourceSize || maxDim <= _skipIfSmallerThan)
             {
-                info.IsProcessed = false;
-                info.SkipReason = SkipReason.TooSmall;
-                return;
+                if (!_reformatFilteredTextures)
+                {
+                    info.IsProcessed = false;
+                    info.SkipReason = SkipReason.TooSmall;
+                    return;
+                }
+                info.FormatOnly = true;
             }
 
             var propertySkipReason = GetPropertyDependentSkipReason(texture, propertyName);
