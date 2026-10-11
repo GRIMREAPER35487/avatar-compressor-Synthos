@@ -742,3 +742,9 @@ msgstr "{0}x{1} → {2}x{3}（来自源文件）{4}"
 
 msgid "TextureCompressor:message:previewMaxResolutionLimit"
 msgstr "最大分辨率使此纹理低于所需的清晰度。{0}x{1} 可达到 {2} px/cm，内存约为 {3} 倍；若要保留更多细节，请提高最大分辨率。"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize"
+msgstr "尺寸过滤检查源文件尺寸"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
+msgstr "仅在关闭“遵循导入的最大尺寸”时有效。开启时，最小源尺寸和“小于此值则跳过”按源文件尺寸判断，因此从大文件以小尺寸导入的纹理仍会被处理。关闭时按导入尺寸判断，这类纹理会被跳过并保持导入时的状态。"

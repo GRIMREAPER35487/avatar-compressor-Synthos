@@ -742,3 +742,9 @@ msgstr "{0}x{1} → {2}x{3}（來自原始檔）{4}"
 
 msgid "TextureCompressor:message:previewMaxResolutionLimit"
 msgstr "最大解析度使此紋理低於所需的清晰度。{0}x{1} 可達到 {2} px/cm，記憶體約為 {3} 倍；若要保留更多細節，請提高最大解析度。"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize"
+msgstr "尺寸篩選檢查原始檔尺寸"
+
+msgid "TextureCompressor:prop:sizeFiltersUseSourceSize:tooltip"
+msgstr "僅在關閉「遵循匯入的最大尺寸」時有效。開啟時，最小來源尺寸與「小於此值則略過」依原始檔尺寸判斷，因此從大檔案以小尺寸匯入的紋理仍會被處理。關閉時依匯入尺寸判斷，這類紋理會被略過並保持匯入時的狀態。"

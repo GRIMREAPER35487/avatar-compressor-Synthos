@@ -80,7 +80,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 config.ExcludedPaths,
                 config.ExcludedTextures,
                 config.FrozenTextures,
-                config.RespectImportMaxSize || sourceCache == null
+                config.RespectImportMaxSize
+                || sourceCache == null
+                || !config.SizeFiltersUseSourceSize
                     ? null
                     : texture =>
                         TextureSourceCache.GetPlannedBaseSize(

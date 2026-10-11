@@ -112,6 +112,14 @@ namespace dev.limitex.avatar.compressor
         public bool RespectImportMaxSize = true;
 
         [Tooltip(
+            "With Respect import Max Size off, the size filters (Min Source Size, Skip If Smaller "
+                + "Than) check the source file's size, so a texture imported small from a large "
+                + "file is still processed. When off, they check the imported size, so such "
+                + "textures are skipped and left exactly as imported."
+        )]
+        public bool SizeFiltersUseSourceSize = true;
+
+        [Tooltip(
             "Keep the compression format the texture was imported with for this platform. When "
                 + "off, the format is chosen from each texture's detail and alpha, which can make "
                 + "detailed textures larger and simple ones smaller."
