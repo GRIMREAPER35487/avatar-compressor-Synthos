@@ -25,5 +25,11 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         public bool HasAlpha { get; set; }
         public bool IsFrozen { get; set; }
         public FrozenTextureSettings FrozenSettings { get; set; }
+
+        /// <summary>On-avatar density of the texture, when it could be measured.</summary>
+        public TexelDensityInfo? Density { get; set; }
+
+        /// <summary>Size the density is measured at before and after compression.</summary>
+        public Vector2Int BaseSize { get; set; }
     }
 }

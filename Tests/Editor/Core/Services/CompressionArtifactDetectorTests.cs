@@ -113,10 +113,7 @@ namespace dev.limitex.avatar.compressor.tests
 
         [TestCase("hueGradient", TextureFormat.ASTC_8x8)]
         [TestCase("animeFlatColors", TextureFormat.ASTC_6x6)]
-        public void ChooseCleanFormat_Astc_StopsAtFirstCleanStep(
-            string sample,
-            TextureFormat start
-        )
+        public void ChooseCleanFormat_Astc_StopsAtFirstCleanStep(string sample, TextureFormat start)
         {
             var texture = CreateSample(sample);
             try

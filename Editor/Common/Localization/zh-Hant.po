@@ -700,3 +700,33 @@ msgstr "避免色帶與區塊狀邊緣"
 
 msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
 msgstr "當壓縮器選擇 DXT1/DXT5（行動裝置為 ASTC 6x6/8x8）時，會先對紋理平滑、乾淨的區域進行試壓縮。若漸層出現階梯狀色帶或顏色邊緣出現區塊雜訊，則改用 BC7（行動裝置則逐級改用更細的 ASTC 區塊大小，直到畫面乾淨，最細為 4x4），佔用更多記憶體但畫面乾淨。由「遵循匯入的壓縮格式」保留的格式與凍結的格式不會被更改。"
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize"
+msgstr "依模型上的尺寸限制"
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize:tooltip"
+msgstr "依紋理在模型上覆蓋的面積，縮小清晰到無人能分辨的紋理（例如耳環上的 2048 紋理）。頭部依臉部觀看距離計算，其餘部分依身體觀看距離計算。只會讓紋理比細節分析的結果更小，絕不會更大。MatCap、Ramp、漸層以及僅透過動畫使用的紋理不受限制。"
+
+msgid "TextureCompressor:prop:faceViewDistance"
+msgstr "臉部觀看距離（cm）"
+
+msgid "TextureCompressor:prop:faceViewDistance:tooltip"
+msgstr "頭部（臉、眼睛、頭髮）可以被多近地觀看。數值越小保留的細節越多。15 cm 相當於把臉貼近鏡子。"
+
+msgid "TextureCompressor:prop:bodyViewDistance"
+msgstr "身體觀看距離（cm）"
+
+msgid "TextureCompressor:prop:bodyViewDistance:tooltip"
+msgstr "模型其餘部分可以被多近地觀看。數值越小保留的細節越多。30 cm 相當於看自己的手或近距離拍照。"
+
+msgid "TextureCompressor:label:previewOnAvatar"
+msgstr "模型上："
+
+msgid "TextureCompressor:message:previewDensity"
+msgstr "{0} → {1} px/cm（{3}需要 {2}）"
+
+msgid "TextureCompressor:label:densityHead"
+msgstr "頭部"
+
+msgid "TextureCompressor:label:densityBody"
+msgstr "身體"

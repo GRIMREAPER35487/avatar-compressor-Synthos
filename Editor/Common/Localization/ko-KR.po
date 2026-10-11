@@ -700,3 +700,33 @@ msgstr "밴딩과 블록 노이즈 방지"
 
 msgid "TextureCompressor:prop:avoidCompressionArtifacts:tooltip"
 msgstr "압축기가 DXT1/DXT5(모바일에서는 ASTC 6x6/8x8)를 고르면, 먼저 텍스처의 매끄럽고 깨끗한 부분을 시험 압축합니다. 그라데이션의 계단 현상이나 색 경계의 블록 노이즈가 생기면 대신 BC7(모바일에서는 깔끔하게 보이는 다음으로 촘촘한 ASTC 블록 크기, 최대 4x4)을 사용합니다. 메모리는 더 들지만 깔끔하게 보입니다. 임포트 압축 형식 유지로 유지되는 형식과 고정된 형식은 바뀌지 않습니다."
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize"
+msgstr "아바타 위 크기로 제한"
+
+msgid "TextureCompressor:prop:limitByOnAvatarSize:tooltip"
+msgstr "아바타에서 덮는 면의 크기로 판단해, 아무도 구분할 수 없을 만큼 선명한 텍스처를 줄입니다(예: 귀걸이에 2048 텍스처). 머리는 얼굴 시청 거리, 나머지는 몸 시청 거리를 기준으로 합니다. 세부 분석 결과보다 작게만 만들고 크게 만들지는 않습니다. 매트캡, 램프, 그라데이션, 애니메이션에서만 쓰이는 텍스처는 제한하지 않습니다."
+
+msgid "TextureCompressor:prop:faceViewDistance"
+msgstr "얼굴 시청 거리(cm)"
+
+msgid "TextureCompressor:prop:faceViewDistance:tooltip"
+msgstr "머리(얼굴, 눈, 머리카락)를 얼마나 가까이서 볼 수 있는지. 작을수록 디테일을 더 유지합니다. 15 cm는 거울에 얼굴을 바짝 댄 거리입니다."
+
+msgid "TextureCompressor:prop:bodyViewDistance"
+msgstr "몸 시청 거리(cm)"
+
+msgid "TextureCompressor:prop:bodyViewDistance:tooltip"
+msgstr "아바타의 나머지 부분을 얼마나 가까이서 볼 수 있는지. 작을수록 디테일을 더 유지합니다. 30 cm는 자기 손이나 클로즈업 사진을 보는 거리입니다."
+
+msgid "TextureCompressor:label:previewOnAvatar"
+msgstr "아바타 위:"
+
+msgid "TextureCompressor:message:previewDensity"
+msgstr "{0} → {1} px/cm ({3}에서 {2} 필요)"
+
+msgid "TextureCompressor:label:densityHead"
+msgstr "머리"
+
+msgid "TextureCompressor:label:densityBody"
+msgstr "몸"

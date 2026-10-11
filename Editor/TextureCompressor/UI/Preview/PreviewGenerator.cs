@@ -213,6 +213,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 }
             }
 
+            var densities = config.LimitByOnAvatarSize
+                ? TexelDensityAnalyzer.Analyze(
+                    config
+                        .gameObject.GetComponentsInChildren<Renderer>(true)
+                        .Where(r => !ComponentUtils.IsEditorOnly(r.gameObject)),
+                    processedTextures,
+                    config.FaceViewDistance,
+                    config.BodyViewDistance
+                )
+                : new Dictionary<Texture2D, TexelDensityInfo>();
+
             var processedList = new List<TexturePreviewData>();
             var frozenList = new List<TexturePreviewData>();
             var skippedList = new List<TexturePreviewData>();
@@ -305,6 +316,15 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     }
                     else
                     {
+                        if (densities.TryGetValue(tex, out var density))
+                        {
+                            analysis = TexelDensityAnalyzer.ApplyLimit(
+                                analysis,
+                                baseSize,
+                                density,
+                                processor
+                            );
+                        }
                         divisor = analysis.RecommendedDivisor;
                         recommendedSize = processor.CalculateTargetSize(baseSize, analysis);
                         // Match the build pipeline: detect alpha on the resized texture
@@ -365,6 +385,10 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         HasAlpha = hasAlpha,
                         IsFrozen = isFrozen,
                         FrozenSettings = frozenSettings,
+                        Density = densities.TryGetValue(tex, out var measured)
+                            ? measured
+                            : (TexelDensityInfo?)null,
+                        BaseSize = baseSize,
                     };
 
                     if (isFrozen)
@@ -554,6 +578,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 hash = hash * 31 + config.RespectImportMaxSize.GetHashCode();
                 hash = hash * 31 + TextureCompressorPreferences.UseSourceFiles.GetHashCode();
                 hash = hash * 31 + config.gameObject.GetInstanceID();
+                hash = hash * 31 + config.LimitByOnAvatarSize.GetHashCode();
+                hash = hash * 31 + config.FaceViewDistance.GetHashCode();
+                hash = hash * 31 + config.BodyViewDistance.GetHashCode();
 
                 // Include frozen textures in hash
                 foreach (var frozen in config.FrozenTextures)

@@ -77,6 +77,15 @@ With both off, results no longer depend on how the textures were imported.
 
 The same section has **Avoid banding and blocky edges** (on). When the compressor would pick DXT1/DXT5 (ASTC 6x6/8x8 on Quest), it test-compresses the texture's smooth, clean areas first; if gradients would show stair-stepping or clean edges would turn blocky, it uses BC7 instead. On Quest it steps through finer ASTC block sizes (8x8, 6x6, 5x5, 4x4) and uses the first one that stays clean, so a texture only pays for as much quality as it needs. Textures that get upgraded use more memory but stay clean.
 
+## On-Avatar Size
+
+**Limit by on-avatar size** (on) looks at how large the surface each texture covers is on the avatar and shrinks textures that are sharper than anyone could see, like a 2048 texture on an earring. Each triangle using the texture is measured in the avatar's current pose, and the texture keeps enough pixels for:
+
+- the head (face, eyes, hair, anything the Head bone moves) viewed from **Face view distance** (15 cm: a face pressed up to a mirror), and
+- the rest of the avatar viewed from **Body view distance** (30 cm: looking at your hands or a close-up photo).
+
+It only ever makes a texture smaller than the detail analysis would, never larger, and frozen textures keep their settings. Matcaps, ramps, gradients, decals, flipbooks, textures on other UV sets and textures only used through animations are not limited. The preview shows each texture's pixels per cm before and after.
+
 ## Recommended
 
 Use this together with VRCFury: Avatar Compressor runs after VRCFury in the build, so textures on VRCFury-merged clothing and props, and materials swapped by VRCFury toggles, are compressed too.

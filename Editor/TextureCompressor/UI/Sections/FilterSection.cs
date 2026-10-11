@@ -107,6 +107,35 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 ),
                 config.AvoidCompressionArtifacts
             );
+            bool limitBySize = EditorGUILayout.ToggleLeft(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:limitByOnAvatarSize",
+                    "TextureCompressor:prop:limitByOnAvatarSize:tooltip"
+                ),
+                config.LimitByOnAvatarSize
+            );
+
+            float faceDistance = config.FaceViewDistance;
+            float bodyDistance = config.BodyViewDistance;
+            using (new EditorGUI.DisabledScope(!limitBySize))
+            {
+                EditorGUI.indentLevel++;
+                faceDistance = EditorGUILayout.FloatField(
+                    AvatarCompressorLocalization.Content(
+                        "TextureCompressor:prop:faceViewDistance",
+                        "TextureCompressor:prop:faceViewDistance:tooltip"
+                    ),
+                    faceDistance
+                );
+                bodyDistance = EditorGUILayout.FloatField(
+                    AvatarCompressorLocalization.Content(
+                        "TextureCompressor:prop:bodyViewDistance",
+                        "TextureCompressor:prop:bodyViewDistance:tooltip"
+                    ),
+                    bodyDistance
+                );
+                EditorGUI.indentLevel--;
+            }
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -114,6 +143,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.RespectImportMaxSize = respectSize;
                 config.RespectImportFormat = respectFormat;
                 config.AvoidCompressionArtifacts = avoidArtifacts;
+                config.LimitByOnAvatarSize = limitBySize;
+                config.FaceViewDistance = Mathf.Max(1f, faceDistance);
+                config.BodyViewDistance = Mathf.Max(1f, bodyDistance);
                 EditorUtility.SetDirty(config);
             }
         }
