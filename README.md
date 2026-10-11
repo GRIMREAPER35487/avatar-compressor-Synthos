@@ -70,7 +70,7 @@ By default the compressor works from a full-quality copy of each texture's image
 
 Two options in the component's **Source & Quality** section decide how much the avatar's import settings matter:
 
-- **Respect import Max Size** (on): the texture's import Max Size is the starting size. Turn off to start from the source file instead (fit to Max Resolution), so textures imported smaller than their file can come out larger.
+- **Respect import Max Size** (on): the texture's import Max Size is the starting size. Turn off to start from the source file instead (fit to Max Resolution). The imported size stays the default: a texture only comes out larger than it was imported when it has real detail and, where its on-avatar size can be measured, the imported size is below the target sharpness for that surface. The build log says why each texture grew or stayed.
 - **Respect import format** (on): keep the compression format each texture was imported with. Turn off to let the compressor pick the format from each texture's detail and alpha.
 
 With both off, results no longer depend on how the textures were imported.

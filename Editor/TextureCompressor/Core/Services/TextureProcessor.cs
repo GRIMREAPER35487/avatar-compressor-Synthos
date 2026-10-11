@@ -56,7 +56,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         /// Ensures a dimension is a multiple of 4 for DXT/BC compression compatibility.
         /// </summary>
         /// <returns>The dimension rounded up to the nearest multiple of 4, minimum 4 (e.g., 150→152, 4→4, 2→4)</returns>
-        private static int EnsureMultipleOf4(int dimension)
+        internal static int EnsureMultipleOf4(int dimension)
         {
             return Mathf.Max(4, ((dimension + 3) / 4) * 4);
         }

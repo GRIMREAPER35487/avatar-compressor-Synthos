@@ -327,6 +327,19 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         }
                         divisor = analysis.RecommendedDivisor;
                         recommendedSize = processor.CalculateTargetSize(baseSize, analysis);
+                        if (!config.RespectImportMaxSize)
+                        {
+                            recommendedSize = UpscaleGate.Apply(
+                                recommendedSize,
+                                new Vector2Int(tex.width, tex.height),
+                                analysis.NormalizedComplexity,
+                                config.LowComplexityThreshold,
+                                densities.TryGetValue(tex, out var measuredDensity)
+                                    ? measuredDensity
+                                    : (TexelDensityInfo?)null,
+                                out _
+                            );
+                        }
                         // Match the build pipeline: detect alpha on the resized texture
                         // so that alpha regions lost during downscaling don't cause an
                         // unnecessary alpha-capable format (e.g. BC7 instead of DXT1).

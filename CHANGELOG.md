@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Limit by on-avatar size** (on by default) - Measures how large the surface each texture covers is on the avatar and shrinks textures that are sharper than anyone could see (a 2048 texture on an earring). The head is sized for a face view distance of 15 cm and the rest for a body view distance of 30 cm, both adjustable. Only ever makes textures smaller than the detail analysis would; frozen textures, matcaps, ramps, gradients, decals and animation-only textures are not limited. The preview shows pixels per cm.
 
+### Changed
+
+- With "Respect import Max Size" off, a texture only comes out larger than its imported size when it has real detail (complexity at or above the low threshold) and its on-avatar size shows the imported size is not sharp enough. Flat textures and textures on small surfaces stay at the creator's import size instead of doubling.
+- The build log now shows each texture's on-avatar sharpness (px/cm and what it needs) and why a texture grew past or stayed at its imported size.
+
 ### Fixed
 
 - With "Respect import Max Size" off, the size filters now check the source file's size, so a texture imported small from a large file is no longer skipped before the toggle applies.
