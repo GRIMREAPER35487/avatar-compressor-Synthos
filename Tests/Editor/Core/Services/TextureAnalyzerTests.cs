@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor.texture;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor.tests

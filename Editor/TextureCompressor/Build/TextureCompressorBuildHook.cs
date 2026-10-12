@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using dev.limitex.avatar.compressor.editor.texture.integrations;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
@@ -91,7 +92,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     animationUsageMap,
                     unusedSlotOptimizer,
                     lilToonBaker,
-                    TextureCompressorPreferences.UseSourceFiles ? new TextureSourceCache() : null
+                    TextureCompressorPreferences.UseSourceFiles
+                        ? new TextureSourceCache(BuildAssetStore.RootFolder + "/_SourceImport")
+                        : null
                 );
                 var (processedTextures, clonedMaterials) = service.CompressWithMappings(
                     materialReferences,

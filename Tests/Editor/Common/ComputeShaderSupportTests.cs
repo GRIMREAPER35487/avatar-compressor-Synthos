@@ -1,5 +1,6 @@
 using dev.limitex.avatar.compressor.editor;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,8 +10,8 @@ namespace dev.limitex.avatar.compressor.tests
     internal class ComputeShaderSupportTests
     {
         private const string ResizeShaderPath =
-            "Packages/com.synthos.avatar-compressor/"
-            + "Editor/TextureCompressor/Resize/Shaders/AreaAverageResize.compute";
+            "Packages/com.synthos.texture-analysis/"
+            + "Editor/Resize/Shaders/AreaAverageResize.compute";
 
         private static void RequireShaderAsset()
         {

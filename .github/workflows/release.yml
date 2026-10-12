@@ -29,8 +29,20 @@ jobs:
           echo "PKG_NAME=$PKG_NAME" >> $GITHUB_OUTPUT
           echo "ZIP_NAME=${PKG_NAME}-${VERSION}.zip" >> $GITHUB_OUTPUT
           echo "TAG_NAME=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "SHARED_ZIP_NAME=$(jq -r .name TextureAnalysis/package.json)-${VERSION}.zip" >> $GITHUB_OUTPUT
 
-      - name: Create release zip
+      # Both packages are released together with the same version, and the avatar compressor
+      # requires at least that version of the shared package.
+      - name: Set package versions
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          jq --arg v "$VERSION" '.version = $v' TextureAnalysis/package.json > tmp.json
+          mv tmp.json TextureAnalysis/package.json
+          jq --arg v "$VERSION" '.version = $v | .vpmDependencies["com.synthos.texture-analysis"] = ">=" + $v' package.json > tmp.json
+          mv tmp.json package.json
+
+      - name: Create release zips
         run: |
           mkdir -p build
           zip -r "build/${{ steps.version.outputs.ZIP_NAME }}" . \
@@ -39,16 +51,22 @@ jobs:
             -x ".config/*" \
             -x ".vscode/*" \
             -x "build/*" \
+            -x "TextureAnalysis/*" \
             -x ".gitignore" \
             -x "Tests/*" \
             -x "Tests.meta" \
             -x "*.old" \
             -x "*.old.meta"
+          (cd TextureAnalysis && zip -r "../build/${{ steps.version.outputs.SHARED_ZIP_NAME }}" . \
+            -x "*.old" \
+            -x "*.old.meta")
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/${{ steps.version.outputs.ZIP_NAME }}
+          files: |
+            build/${{ steps.version.outputs.ZIP_NAME }}
+            build/${{ steps.version.outputs.SHARED_ZIP_NAME }}
           tag_name: ${{ steps.version.outputs.TAG_NAME }}
           generate_release_notes: true
           draft: false

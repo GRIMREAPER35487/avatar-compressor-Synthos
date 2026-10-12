@@ -5,7 +5,9 @@
         "dev.limitex.avatar-compressor",
         "dev.limitex.avatar-compressor.editor",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Synthos.TextureAnalysis",
+        "Synthos.TextureAnalysis.Editor"
     ],
     "includePlatforms": [
         "Editor"

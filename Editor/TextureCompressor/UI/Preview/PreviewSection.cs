@@ -1,6 +1,7 @@
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.ui;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 

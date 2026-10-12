@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Synthos.TextureAnalysis;
 
 namespace dev.limitex.avatar.compressor.editor
 {

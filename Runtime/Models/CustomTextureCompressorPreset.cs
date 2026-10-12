@@ -1,3 +1,4 @@
+using Synthos.TextureAnalysis;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor

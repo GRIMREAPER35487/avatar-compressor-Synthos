@@ -35,6 +35,7 @@ Analyzes and compresses avatar textures based on their complexity.
 - Unity 2022.3.22f1 (VRChat specified version)
 - VRChat SDK Avatars 3.10.0 or later
 - [VRCFury](https://vrcfury.com/) 1.1298.0 or later
+- Synthos Texture Analysis (installed automatically, same version as this package)
 
 This edition does not use NDMF. It runs as a VRChat SDK build hook, after VRCFury has merged its clothing, props and controllers.
 
@@ -58,7 +59,7 @@ VRCFury is installed automatically as a dependency, but its package repository m
 
 ### Manual Installation
 
-Install [VRCFury](https://vrcfury.com/download) first, then download the latest release from [GitHub Releases](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases) and import the `.zip` file into your Unity project.
+Install [VRCFury](https://vrcfury.com/download) first, then download the latest release from [GitHub Releases](https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/releases). Each release has two `.zip` files: `com.synthos.avatar-compressor` and `com.synthos.texture-analysis`. Import both into your Unity project.
 
 ## Usage
 

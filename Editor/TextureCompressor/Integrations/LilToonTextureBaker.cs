@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 using UnityEngine.Rendering;
 

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor.texture;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,8 +24,8 @@ namespace dev.limitex.avatar.compressor.tests
         // decoded values at full precision directly from the source texture.
         private const float SRGBScoreTolerance = 0.03f;
         private const string ShaderPath =
-            "Packages/com.synthos.avatar-compressor/"
-            + "Editor/TextureCompressor/Analysis/Shaders/TextureAnalysis.compute";
+            "Packages/com.synthos.texture-analysis/"
+            + "Editor/Analysis/Shaders/TextureAnalysis.compute";
 
         private TextureProcessor _processor;
         private ComputeShader _shader;

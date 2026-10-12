@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor.texture;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 
 namespace dev.limitex.avatar.compressor.tests
 {
@@ -16,8 +17,8 @@ namespace dev.limitex.avatar.compressor.tests
         public void SetUp()
         {
             var hlslPath = Path.GetFullPath(
-                "Packages/com.synthos.avatar-compressor/"
-                    + "Editor/TextureCompressor/Analysis/Shaders/TextureAnalysisCommon.hlsl"
+                "Packages/com.synthos.texture-analysis/"
+                    + "Editor/Analysis/Shaders/TextureAnalysisCommon.hlsl"
             );
             Assert.IsTrue(File.Exists(hlslPath), $"HLSL file not found at: {hlslPath}");
             _hlslDefines = ParseHlslDefines(hlslPath);

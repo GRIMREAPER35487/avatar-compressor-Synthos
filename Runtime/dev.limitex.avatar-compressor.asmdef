@@ -2,7 +2,8 @@
     "name": "dev.limitex.avatar-compressor",
     "rootNamespace": "dev.limitex.avatar.compressor",
     "references": [
-        "VRC.SDKBase"
+        "VRC.SDKBase",
+        "Synthos.TextureAnalysis"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

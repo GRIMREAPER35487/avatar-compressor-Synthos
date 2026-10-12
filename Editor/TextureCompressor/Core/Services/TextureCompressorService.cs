@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using dev.limitex.avatar.compressor.editor.ui;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 

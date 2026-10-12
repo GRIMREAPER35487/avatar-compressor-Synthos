@@ -1,4 +1,5 @@
 using dev.limitex.avatar.compressor.editor.texture;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor.tests

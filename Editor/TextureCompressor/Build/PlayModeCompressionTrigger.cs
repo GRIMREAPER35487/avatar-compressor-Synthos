@@ -1,4 +1,5 @@
 using System;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;

@@ -2,6 +2,7 @@ using System;
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor.texture;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 
 namespace dev.limitex.avatar.compressor.tests
 {
