@@ -15,8 +15,24 @@ namespace dev.limitex.avatar.compressor.editor.texture
         {
             var inputs = new Dictionary<Texture2D, TextureAnalysisInput>(textures.Count);
             foreach (var kvp in textures)
-                inputs[kvp.Key] = new TextureAnalysisInput(kvp.Value.IsNormalMap);
+                inputs[kvp.Key] = new TextureAnalysisInput(
+                    kvp.Value.IsNormalMap,
+                    AlphaIsTransparency(kvp.Value)
+                );
             return inputs;
+        }
+
+        /// <summary>
+        /// True when any material shows the texture's alpha as see-through.
+        /// </summary>
+        public static bool AlphaIsTransparency(TextureInfo info)
+        {
+            foreach (var reference in info.References)
+            {
+                if (AlphaCoverage.IsCoverage(reference.Material, reference.PropertyName))
+                    return true;
+            }
+            return false;
         }
 
         public static Dictionary<Texture2D, float> AnalyzeBatch(

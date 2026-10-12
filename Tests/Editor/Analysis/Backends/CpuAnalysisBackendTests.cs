@@ -405,12 +405,9 @@ namespace dev.limitex.avatar.compressor.tests
         public void AnalyzeBatch_TransparentTexture_AppliesSparseTexturePenalty()
         {
             var texture = TrackTexture(CreateTransparentTexture(64, 64));
-            var textures = new Dictionary<Texture2D, TextureInfo>
+            var textures = new Dictionary<Texture2D, TextureAnalysisInput>
             {
-                {
-                    texture,
-                    new TextureInfo { IsNormalMap = false, IsEmission = false }
-                },
+                { texture, new TextureAnalysisInput(false, alphaIsTransparency: true) },
             };
 
             var result = _backend.AnalyzeBatch(textures);

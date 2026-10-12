@@ -147,6 +147,7 @@ namespace Synthos.TextureAnalysis
                             sampledWidth,
                             sampledHeight,
                             info.IsNormalMap,
+                            info.AlphaIsTransparency,
                             resultBuffer,
                             intermediateBuffer
                         );
@@ -205,6 +206,7 @@ namespace Synthos.TextureAnalysis
             int sampledWidth,
             int sampledHeight,
             bool isNormalMap,
+            bool alphaIsTransparency,
             ComputeBuffer resultBuffer,
             ComputeBuffer intermediateBuffer
         )
@@ -214,6 +216,7 @@ namespace Synthos.TextureAnalysis
             _shader.SetInt("_SourceWidth", texture.width);
             _shader.SetInt("_SourceHeight", texture.height);
             _shader.SetInt("_IsNormalMap", isNormalMap ? 1 : 0);
+            _shader.SetInt("_AlphaIsTransparency", alphaIsTransparency ? 1 : 0);
             _shader.SetInt("_StrategyType", GetStrategyIndex());
 
             // Fast strategy constants
