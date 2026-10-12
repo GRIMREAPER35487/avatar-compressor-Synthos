@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;

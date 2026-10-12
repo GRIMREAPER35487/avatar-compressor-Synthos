@@ -1,5 +1,6 @@
 using dev.limitex.avatar.compressor.editor;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 using UnityEngine.Rendering;
 

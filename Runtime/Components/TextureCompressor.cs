@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 using VRC.SDKBase;
 
@@ -426,26 +427,5 @@ namespace dev.limitex.avatar.compressor
         Aggressive,
         Maximum,
         Custom,
-    }
-
-    /// <summary>
-    /// Strategy type for complexity analysis.
-    /// </summary>
-    internal enum AnalysisStrategyType
-    {
-        Fast,
-        HighAccuracy,
-        Perceptual,
-        Combined,
-    }
-
-    /// <summary>
-    /// Target platform for texture compression format selection.
-    /// </summary>
-    internal enum CompressionPlatform
-    {
-        Auto, // Detect from build target
-        Desktop, // DXT/BC formats (PC VRChat)
-        Mobile, // ASTC formats (Quest/Android)
     }
 }

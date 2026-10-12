@@ -1,0 +1,252 @@
+using UnityEditor;
+using UnityEngine;
+
+namespace Synthos.TextureAnalysis
+{
+    /// <summary>
+    /// Service for selecting texture compression formats based on platform and texture properties.
+    /// Provides format prediction without performing actual compression.
+    /// </summary>
+    internal sealed class TextureFormatSelector
+    {
+        private readonly CompressionPlatform _targetPlatform;
+        private readonly bool _useHighQualityFormatForHighComplexity;
+        private readonly float _highQualityComplexityThreshold;
+        private readonly bool _respectImportFormat;
+
+        public TextureFormatSelector(
+            CompressionPlatform targetPlatform = CompressionPlatform.Auto,
+            bool useHighQualityFormatForHighComplexity = true,
+            float highQualityComplexityThreshold = 0.7f,
+            bool respectImportFormat = true
+        )
+        {
+            _targetPlatform = targetPlatform;
+            _useHighQualityFormatForHighComplexity = useHighQualityFormatForHighComplexity;
+            _highQualityComplexityThreshold = highQualityComplexityThreshold;
+            _respectImportFormat = respectImportFormat;
+        }
+
+        /// <summary>
+        /// Predicts the compression format that would be used for a texture without actually compressing it.
+        /// Useful for preview functionality.
+        /// </summary>
+        /// <param name="isNormalMap">Whether this texture is a normal map</param>
+        /// <param name="complexity">Normalized complexity value (0-1)</param>
+        /// <param name="hasAlpha">Whether the texture has significant alpha</param>
+        /// <returns>The predicted compression format</returns>
+        public TextureFormat PredictFormat(bool isNormalMap, float complexity, bool hasAlpha)
+        {
+            var platform = ResolvePlatform(_targetPlatform);
+
+            if (platform == CompressionPlatform.Mobile)
+            {
+                return SelectMobileFormat(isNormalMap, complexity, hasAlpha);
+            }
+            else
+            {
+                return SelectDesktopFormat(isNormalMap, complexity, hasAlpha);
+            }
+        }
+
+        /// <summary>
+        /// Resolves the target format for a texture, applying the full priority chain:
+        /// frozen format override → already compressed import (when respecting the import
+        /// format) → prediction from analysis.
+        /// </summary>
+        public TextureFormat ResolveTargetFormat(
+            TextureFormat sourceFormat,
+            bool isNormalMap,
+            float complexity,
+            bool hasAlpha,
+            FrozenTextureFormat? frozenFormat
+        )
+        {
+            if (frozenFormat.HasValue && frozenFormat.Value != FrozenTextureFormat.Auto)
+                return ConvertFrozenFormat(frozenFormat.Value);
+            if (_respectImportFormat && TextureFormatInfo.IsCompressed(sourceFormat))
+                return sourceFormat;
+            return PredictFormat(isNormalMap, complexity, hasAlpha);
+        }
+
+        /// <summary>
+        /// Returns true if <see cref="ResolveTargetFormat"/> is certain to return the import
+        /// format, without needing alpha or complexity information.
+        /// </summary>
+        public bool KeepsImportFormat(TextureFormat sourceFormat, FrozenTextureFormat? frozenFormat)
+        {
+            if (frozenFormat.HasValue && frozenFormat.Value != FrozenTextureFormat.Auto)
+                return ConvertFrozenFormat(frozenFormat.Value) == sourceFormat;
+            return _respectImportFormat && TextureFormatInfo.IsCompressed(sourceFormat);
+        }
+
+        /// <summary>
+        /// Returns true if the format comes from the compressor's own prediction: not pinned by a
+        /// frozen format and not kept from the import.
+        /// </summary>
+        public bool ChoosesFormat(TextureFormat sourceFormat, FrozenTextureFormat? frozenFormat)
+        {
+            if (frozenFormat.HasValue && frozenFormat.Value != FrozenTextureFormat.Auto)
+                return false;
+            return !(_respectImportFormat && TextureFormatInfo.IsCompressed(sourceFormat));
+        }
+
+        /// <summary>
+        /// Converts FrozenTextureFormat enum to Unity TextureFormat.
+        /// </summary>
+        public static TextureFormat ConvertFrozenFormat(FrozenTextureFormat format)
+        {
+            return format switch
+            {
+                FrozenTextureFormat.DXT1 => TextureFormat.DXT1,
+                FrozenTextureFormat.DXT5 => TextureFormat.DXT5,
+                FrozenTextureFormat.BC5 => TextureFormat.BC5,
+                FrozenTextureFormat.BC7 => TextureFormat.BC7,
+                FrozenTextureFormat.ASTC_4x4 => TextureFormat.ASTC_4x4,
+                FrozenTextureFormat.ASTC_6x6 => TextureFormat.ASTC_6x6,
+                FrozenTextureFormat.ASTC_8x8 => TextureFormat.ASTC_8x8,
+                _ => throw new System.ArgumentException($"Unsupported frozen format: {format}"),
+            };
+        }
+
+        /// <summary>
+        /// Resolves the target platform from settings or auto-detects from build target.
+        /// </summary>
+        public static CompressionPlatform ResolvePlatform(CompressionPlatform setting)
+        {
+            if (setting != CompressionPlatform.Auto)
+            {
+                return setting;
+            }
+
+            var target = EditorUserBuildSettings.activeBuildTarget;
+            return (target == BuildTarget.Android || target == BuildTarget.iOS)
+                ? CompressionPlatform.Mobile
+                : CompressionPlatform.Desktop;
+        }
+
+        /// <summary>
+        /// Selects compression format for Desktop (PC VRChat) - DXT/BC formats.
+        /// </summary>
+        private TextureFormat SelectDesktopFormat(bool isNormalMap, float complexity, bool hasAlpha)
+        {
+            if (isNormalMap)
+            {
+                // If normal map has alpha channel, use BC7 to preserve it
+                if (hasAlpha)
+                {
+                    return TextureFormat.BC7;
+                }
+                // BC5 is optimal for normal maps without alpha (2 channels, high quality)
+                return TextureFormat.BC5;
+            }
+            else if (
+                _useHighQualityFormatForHighComplexity
+                && complexity >= _highQualityComplexityThreshold
+            )
+            {
+                // BC7 for high complexity textures (highest quality, 8 bpp)
+                return TextureFormat.BC7;
+            }
+            else if (hasAlpha)
+            {
+                // DXT5 for textures with alpha channel (8 bpp)
+                return TextureFormat.DXT5;
+            }
+            else
+            {
+                // DXT1 for opaque textures (4 bpp, most efficient)
+                return TextureFormat.DXT1;
+            }
+        }
+
+        /// <summary>
+        /// Selects compression format for Mobile (Quest/Android) - ASTC formats.
+        /// Uses complexity and alpha-based block size selection.
+        /// </summary>
+        private TextureFormat SelectMobileFormat(bool isNormalMap, float complexity, bool hasAlpha)
+        {
+            if (isNormalMap)
+            {
+                // ASTC 4x4 for normal maps (highest quality)
+                return TextureFormat.ASTC_4x4;
+            }
+
+            // Alpha textures need higher quality to preserve transparency edges
+            if (hasAlpha)
+            {
+                if (
+                    _useHighQualityFormatForHighComplexity
+                    && complexity >= _highQualityComplexityThreshold
+                )
+                {
+                    // High complexity with alpha: ASTC 4x4 (8 bpp, highest quality)
+                    return TextureFormat.ASTC_4x4;
+                }
+                else
+                {
+                    // Alpha textures: ASTC 6x6 minimum to preserve alpha edges
+                    return TextureFormat.ASTC_6x6;
+                }
+            }
+
+            // Opaque textures: complexity-based ASTC block size selection
+            if (
+                _useHighQualityFormatForHighComplexity
+                && complexity >= _highQualityComplexityThreshold
+            )
+            {
+                // High complexity: ASTC 4x4 (8 bpp, highest quality)
+                return TextureFormat.ASTC_4x4;
+            }
+            else if (
+                complexity
+                >= _highQualityComplexityThreshold * AnalysisConstants.MediumComplexityRatio
+            )
+            {
+                // Medium complexity: ASTC 6x6 (3.56 bpp, balanced)
+                return TextureFormat.ASTC_6x6;
+            }
+            else
+            {
+                // Low complexity opaque: ASTC 8x8 (2 bpp, most efficient)
+                return TextureFormat.ASTC_8x8;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the texture has significant alpha (non-fully-opaque pixels).
+        /// Uses sampling for performance.
+        /// </summary>
+        public static bool HasSignificantAlpha(Texture2D texture)
+        {
+            // Assume alpha exists for null or non-readable textures to preserve quality.
+            if (texture == null || !texture.isReadable)
+                return true;
+
+            try
+            {
+                var pixels = texture.GetPixels32();
+                int sampleCount = Mathf.Min(pixels.Length, AnalysisConstants.MaxAlphaSampleCount);
+                int step = Mathf.Max(1, pixels.Length / sampleCount);
+
+                for (int i = 0; i < pixels.Length; i += step)
+                {
+                    if (pixels[i].a < AnalysisConstants.SignificantAlphaThreshold)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch (System.Exception e)
+            {
+                // Assume alpha exists on error to preserve quality
+                Debug.LogWarning(
+                    $"[TextureAnalysis] Alpha detection failed, assuming alpha exists: {e.Message}"
+                );
+                return true;
+            }
+        }
+    }
+}

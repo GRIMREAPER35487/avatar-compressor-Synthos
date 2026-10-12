@@ -1,0 +1,22 @@
+{
+  "name": "com.synthos.texture-analysis",
+  "version": "1.3.0-beta.1",
+  "displayName": "Synthos Texture Analysis",
+  "description": "Shared texture analysis used by Synthos tools: detail scoring, resizing and compression format choice. Installed automatically as a dependency.",
+  "unity": "2022.3",
+  "unityRelease": "22f1",
+  "dependencies": {},
+  "keywords": [
+    "texture",
+    "compression",
+    "optimization",
+    "vrchat"
+  ],
+  "author": {
+    "name": "Synthos",
+    "url": "https://github.com/GRIMREAPER35487"
+  },
+  "license": "MIT",
+  "documentationUrl": "https://github.com/GRIMREAPER35487/avatar-compressor-Synthos/tree/main/TextureAnalysis#readme",
+  "vpmDependencies": {}
+}

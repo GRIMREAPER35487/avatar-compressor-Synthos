@@ -6,6 +6,7 @@ using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.texture;
 using dev.limitex.avatar.compressor.editor.texture.ui;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 

@@ -1,5 +1,6 @@
 using dev.limitex.avatar.compressor;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 
 namespace dev.limitex.avatar.compressor.tests
 {

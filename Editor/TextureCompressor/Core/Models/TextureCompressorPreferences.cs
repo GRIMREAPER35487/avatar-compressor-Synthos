@@ -1,34 +1,9 @@
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor.editor.texture
 {
-    /// <summary>
-    /// Backend selection for texture analysis.
-    /// </summary>
-    internal enum AnalysisBackendPreference
-    {
-        /// <summary>Use GPU if available, otherwise fall back to CPU.</summary>
-        Auto,
-
-        /// <summary>Always use CPU backend.</summary>
-        [InspectorName("Software")]
-        CPU,
-    }
-
-    /// <summary>
-    /// Backend selection for texture resize (Area Averaging).
-    /// </summary>
-    internal enum ResizeBackendPreference
-    {
-        /// <summary>Use GPU if available, otherwise fall back to CPU.</summary>
-        Auto,
-
-        /// <summary>Always use CPU backend.</summary>
-        [InspectorName("Software")]
-        CPU,
-    }
-
     /// <summary>
     /// Texture Compressor editor preferences, shown as a section of the
     /// shared Avatar Compressor preferences window.

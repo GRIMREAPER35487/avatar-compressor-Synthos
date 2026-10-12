@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using dev.limitex.avatar.compressor.editor.texture;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,8 +13,8 @@ namespace dev.limitex.avatar.compressor.tests
         private const float ChannelTolerance = 0.02f;
 
         private const string ShaderPath =
-            "Packages/com.synthos.avatar-compressor/"
-            + "Editor/TextureCompressor/Resize/Shaders/AreaAverageResize.compute";
+            "Packages/com.synthos.texture-analysis/"
+            + "Editor/Resize/Shaders/AreaAverageResize.compute";
 
         private CpuAreaAverageResizer _cpuResizer;
         private GpuAreaAverageResizer _gpuResizer;

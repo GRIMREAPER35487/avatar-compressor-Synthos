@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 

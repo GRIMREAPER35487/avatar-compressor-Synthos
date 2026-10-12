@@ -1,6 +1,7 @@
 using System;
 using dev.limitex.avatar.compressor.editor.texture;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 using Object = UnityEngine.Object;
 

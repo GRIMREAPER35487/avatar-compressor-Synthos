@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;

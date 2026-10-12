@@ -1,23 +1,9 @@
 using System.Collections.Generic;
+using Synthos.TextureAnalysis;
 using UnityEngine.Serialization;
 
 namespace dev.limitex.avatar.compressor
 {
-    /// <summary>
-    /// Format options for frozen textures.
-    /// </summary>
-    internal enum FrozenTextureFormat
-    {
-        Auto, // Use automatic format selection
-        DXT1, // RGB only, 4 bpp (Desktop)
-        DXT5, // RGBA, 8 bpp (Desktop)
-        BC5, // Normal maps, 8 bpp (Desktop)
-        BC7, // Highest quality, 8 bpp (Desktop)
-        ASTC_4x4, // Mobile highest quality, 8 bpp
-        ASTC_6x6, // Mobile balanced, 3.56 bpp
-        ASTC_8x8, // Mobile efficient, 2 bpp
-    }
-
     /// <summary>
     /// Settings for a frozen texture with user-specified compression overrides.
     /// </summary>

@@ -1,0 +1,17 @@
+using UnityEngine;
+
+namespace Synthos.TextureAnalysis
+{
+    /// <summary>
+    /// Processed pixel data ready for complexity analysis.
+    /// </summary>
+    internal struct ProcessedPixelData
+    {
+        public Color[] OpaquePixels;
+        public float[] Grayscale;
+        public int Width;
+        public int Height;
+        public int OpaqueCount;
+        public bool IsNormalMap;
+    }
+}

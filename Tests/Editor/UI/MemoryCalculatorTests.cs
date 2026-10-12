@@ -1,5 +1,6 @@
 using dev.limitex.avatar.compressor.editor.ui;
 using NUnit.Framework;
+using Synthos.TextureAnalysis;
 using UnityEngine;
 
 namespace dev.limitex.avatar.compressor.tests
