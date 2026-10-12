@@ -74,7 +74,8 @@ namespace Synthos.TextureAnalysis
                     pixels,
                     texture.width,
                     texture.height,
-                    info.IsNormalMap
+                    info.IsNormalMap,
+                    info.AlphaIsTransparency
                 );
 
                 var analyzer = info.IsNormalMap ? _normalMapAnalyzer : _standardAnalyzer;
@@ -168,7 +169,8 @@ namespace Synthos.TextureAnalysis
             Color[] pixels,
             int width,
             int height,
-            bool isNormalMap
+            bool isNormalMap,
+            bool alphaIsTransparency
         )
         {
             PixelSampler.SampleIfNeeded(
@@ -193,6 +195,13 @@ namespace Synthos.TextureAnalysis
                     OpaqueCount = totalSampledPixels,
                     IsNormalMap = true,
                 };
+            }
+
+            // Alpha that is not see-through is data: every pixel is visible and scored.
+            if (!alphaIsTransparency)
+            {
+                for (int i = 0; i < sampledPixels.Length; i++)
+                    sampledPixels[i].a = 1f;
             }
 
             AlphaExtractor.ExtractOpaquePixels(

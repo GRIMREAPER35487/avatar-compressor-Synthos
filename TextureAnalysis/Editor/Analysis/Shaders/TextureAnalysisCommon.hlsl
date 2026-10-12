@@ -50,6 +50,7 @@ uint _Height;       // Sampled analysis height
 uint _SourceWidth;  // Original texture width (for nearest-neighbor sampling)
 uint _SourceHeight; // Original texture height
 uint _IsNormalMap;
+uint _AlphaIsTransparency; // 0: alpha is data, every pixel is visible and scored
 
 // Result buffer: [0]=score
 RWStructuredBuffer<float> _ResultBuffer;
@@ -111,7 +112,11 @@ float4 SamplePixel(uint sx, uint sy)
     float yStep = (float)_SourceHeight / (float)_Height;
     int srcX = min((int)(sx * xStep), (int)_SourceWidth - 1);
     int srcY = min((int)(sy * yStep), (int)_SourceHeight - 1);
-    return _InputTexture.Load(int3(srcX, srcY, 0));
+    float4 pixel = _InputTexture.Load(int3(srcX, srcY, 0));
+    // Matches CpuAnalysisBackend.PreprocessPixels. Normal maps keep alpha (DXT5nm X).
+    if (!_IsNormalMap && !_AlphaIsTransparency)
+        pixel.a = 1.0;
+    return pixel;
 }
 
 // Rec.709 luminance

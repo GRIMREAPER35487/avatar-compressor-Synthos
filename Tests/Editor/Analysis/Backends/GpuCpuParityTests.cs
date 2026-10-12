@@ -169,6 +169,26 @@ namespace dev.limitex.avatar.compressor.tests
             );
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void BothBackends_HiddenNoise_ScoresWithinTolerance(bool alphaIsTransparency)
+        {
+            var texture = TrackTexture(AlphaCoverageTests.CreateHiddenNoiseTexture(64, 64));
+            var textures = new Dictionary<Texture2D, TextureAnalysisInput>
+            {
+                { texture, new TextureAnalysisInput(false, alphaIsTransparency) },
+            };
+
+            var cpuResult = CreateCpuBackend(AnalysisStrategyType.Combined).AnalyzeBatch(textures);
+            var gpuResult = CreateGpuBackend(AnalysisStrategyType.Combined).AnalyzeBatch(textures);
+
+            Assert.That(
+                gpuResult[texture],
+                Is.EqualTo(cpuResult[texture]).Within(ScoreTolerance),
+                $"Alpha as transparency {alphaIsTransparency}: scores diverged between GPU and CPU"
+            );
+        }
+
         [Test]
         public void BothBackends_VariedNormalMap_ScoresWithinTolerance()
         {

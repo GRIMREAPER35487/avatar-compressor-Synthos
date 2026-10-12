@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Texture analysis moved to a shared package** - Detail scoring, resizing, format choice and source file loading now live in **Synthos Texture Analysis** (`com.synthos.texture-analysis`), so Synthos Scene Optimizer can use the same code. VCC installs it automatically with the same version as this package. Compression results are unchanged.
 
+### Fixed
+
+- **Detail under transparent pixels is no longer ignored when alpha is not transparency** - Pixels with alpha near 0 were left out of the detail score on every texture. Now that only happens for the main texture of a cutout or transparent material, where those pixels really are invisible. On other textures, alpha usually holds smoothness, a mask or other data while the color shows in full, so every pixel is scored. Such textures may now keep a larger size where detail used to be missed.
+
 ## [1.2.0] - 2026-10-11
 
 ### Added

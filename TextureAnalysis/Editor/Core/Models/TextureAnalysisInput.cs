@@ -7,9 +7,17 @@ namespace Synthos.TextureAnalysis
     {
         public readonly bool IsNormalMap;
 
-        public TextureAnalysisInput(bool isNormalMap)
+        /// <summary>
+        /// True when alpha is see-through on screen (see <see cref="AlphaCoverage"/>), so
+        /// transparent pixels are left out of the score. Otherwise alpha holds other data, such
+        /// as smoothness or a mask, and every pixel is scored.
+        /// </summary>
+        public readonly bool AlphaIsTransparency;
+
+        public TextureAnalysisInput(bool isNormalMap, bool alphaIsTransparency = false)
         {
             IsNormalMap = isNormalMap;
+            AlphaIsTransparency = alphaIsTransparency;
         }
     }
 }
