@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Normal maps scored almost no detail** - Imported normal maps are stored packed (X in alpha, Y in green, red always full), but the detail score decoded them as plain RGB: X was ignored and every normal leaned the same way, so normal maps scored near 0% and always got the largest divisor. They are now decoded the way Unity's shaders do (packed, BC5 and RGB layouts). Normal maps keep more of their size where they have real relief.
 - **Detail under transparent pixels is no longer ignored when alpha is not transparency** - Pixels with alpha near 0 were left out of the detail score on every texture. Now that only happens for the main texture of a cutout or transparent material, where those pixels really are invisible. On other textures, alpha usually holds smoothness, a mask or other data while the color shows in full, so every pixel is scored. Such textures may now keep a larger size where detail used to be missed.
 
 ## [1.2.0] - 2026-10-11

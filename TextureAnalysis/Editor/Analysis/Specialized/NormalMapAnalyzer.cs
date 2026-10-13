@@ -67,9 +67,16 @@ namespace Synthos.TextureAnalysis
             return Mathf.Clamp01(avgVariation * AnalysisConstants.NormalMapVariationMultiplier);
         }
 
-        private Vector3 DecodeNormal(Color c)
+        /// <summary>
+        /// Unity's UnpackNormalmapRGorAG: imported normal maps are stored DXTnm (X in alpha, Y in green, red 1) or
+        /// BC5 (X in red, Y in green, alpha 1); plain RGB normal maps have alpha 1. Z is rebuilt from X and Y.
+        /// </summary>
+        internal static Vector3 DecodeNormal(Color c)
         {
-            Vector3 n = new Vector3(c.r * 2f - 1f, c.g * 2f - 1f, c.b * 2f - 1f);
+            float x = c.r * c.a * 2f - 1f;
+            float y = c.g * 2f - 1f;
+            float z = Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Clamp01(x * x + y * y)));
+            Vector3 n = new Vector3(x, y, z);
             float len = n.magnitude;
             return len > AnalysisConstants.Epsilon ? n / len : new Vector3(0f, 0f, 1f);
         }
