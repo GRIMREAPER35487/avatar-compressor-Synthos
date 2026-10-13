@@ -193,6 +193,26 @@ namespace dev.limitex.avatar.compressor.tests
             Assert.That(result.Score, Is.InRange(0f, 1f));
         }
 
+        [Test]
+        public void NormalMapAnalyzer_DXTnmPacked_ScoresLikeRGB()
+        {
+            // Imported normal maps are read packed as DXTnm: X in alpha, Y in green, red 1
+            var analyzer = new NormalMapAnalyzer();
+            var rgb = CreateVariedNormalMapData(64, 64);
+            var packed = CreateVariedNormalMapData(64, 64);
+            for (int i = 0; i < packed.OpaquePixels.Length; i++)
+            {
+                Color c = packed.OpaquePixels[i];
+                packed.OpaquePixels[i] = new Color(1f, c.g, c.g, c.r);
+            }
+
+            float rgbScore = analyzer.Analyze(rgb).Score;
+            float packedScore = analyzer.Analyze(packed).Score;
+
+            Assert.That(packedScore, Is.EqualTo(rgbScore).Within(1e-4f));
+            Assert.That(packedScore, Is.GreaterThan(0.1f));
+        }
+
         #endregion
 
         #region Helper Methods
