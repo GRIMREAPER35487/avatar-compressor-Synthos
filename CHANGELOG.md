@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-10-13
 
 ### Changed
 
-- **Texture analysis moved to a shared package** - Detail scoring, resizing, format choice and source file loading now live in **Synthos Texture Analysis** (`com.synthos.texture-analysis`), so Synthos Scene Optimizer can use the same code. VCC installs it automatically with the same version as this package. Compression results are unchanged.
+- **Texture analysis moved to a shared package** - Detail scoring, resizing, format choice and source file loading now live in **Synthos Texture Analysis** (`com.synthos.texture-analysis`), so Synthos Scene Optimizer can use the same code. VCC installs it automatically with the same version as this package. The move itself changes no results; the two fixes below do.
 
 ### Fixed
 

@@ -1,6 +1,6 @@
 {
   "name": "com.synthos.texture-analysis",
-  "version": "1.3.0-beta.1",
+  "version": "1.3.0",
   "displayName": "Synthos Texture Analysis",
   "description": "Shared texture analysis used by Synthos tools: detail scoring, resizing and compression format choice. Installed automatically as a dependency.",
   "unity": "2022.3",
