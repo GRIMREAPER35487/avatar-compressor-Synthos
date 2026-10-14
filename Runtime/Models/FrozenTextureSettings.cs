@@ -32,6 +32,19 @@ namespace dev.limitex.avatar.compressor
         /// </summary>
         public bool Skip = false;
 
+        /// <summary>
+        /// If true, these settings also apply to any other texture that ends up in one of
+        /// <see cref="Slots"/> during the build (a material swapped in by an outfit tool, a
+        /// toggle animation, ...), unless that texture has its own frozen settings.
+        /// </summary>
+        public bool ApplyToSlotSwaps = false;
+
+        /// <summary>
+        /// Where the texture was used on the avatar when <see cref="ApplyToSlotSwaps"/> was set:
+        /// the mesh, the material slot on it and the texture property.
+        /// </summary>
+        public List<FrozenTextureSlot> Slots = new List<FrozenTextureSlot>();
+
         public static Dictionary<string, FrozenTextureSettings> BuildLookup(
             IEnumerable<FrozenTextureSettings> frozenTextures
         )
@@ -64,5 +77,20 @@ namespace dev.limitex.avatar.compressor
             Format = format;
             Skip = skip;
         }
+    }
+
+    /// <summary>
+    /// A material slot on the avatar: a mesh, the material index on it and a texture property.
+    /// The mesh is identified by its asset; a mesh made during the build (no asset, e.g. a copy
+    /// with blendshapes removed) is identified by its name.
+    /// </summary>
+    [System.Serializable]
+    internal sealed class FrozenTextureSlot
+    {
+        public string MeshGuid;
+        public long MeshFileId;
+        public string MeshName;
+        public int MaterialIndex;
+        public string PropertyName;
     }
 }

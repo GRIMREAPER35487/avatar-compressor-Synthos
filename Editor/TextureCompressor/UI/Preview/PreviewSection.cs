@@ -298,7 +298,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         private void DrawPreviewEntry(TextureCompressor config, TexturePreviewData data)
         {
             bool isSkipped = !data.IsProcessed;
-            bool frozenStateChanged = data.IsFrozen != config.IsFrozen(data.Guid);
+            // A texture following a frozen slot is frozen through that entry, not its own
+            bool frozenStateChanged =
+                data.FollowsGuid == null && data.IsFrozen != config.IsFrozen(data.Guid);
 
             if (isSkipped || frozenStateChanged)
             {
@@ -331,7 +333,20 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             );
 
             // Freeze/Unfreeze button
-            if (data.IsProcessed)
+            if (data.FollowsGuid != null)
+            {
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:label:previewFollowsSlot",
+                        System.IO.Path.GetFileNameWithoutExtension(
+                            AssetDatabase.GUIDToAssetPath(data.FollowsGuid)
+                        )
+                    ),
+                    EditorStyles.miniLabel,
+                    GUILayout.MinWidth(0)
+                );
+            }
+            else if (data.IsProcessed)
             {
                 if (data.IsFrozen)
                 {

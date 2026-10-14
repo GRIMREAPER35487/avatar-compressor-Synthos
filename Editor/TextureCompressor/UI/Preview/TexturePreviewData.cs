@@ -26,6 +26,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         public bool IsFrozen { get; set; }
         public FrozenTextureSettings FrozenSettings { get; set; }
 
+        /// <summary>
+        /// GUID of the frozen texture whose settings this one follows because it sits in the
+        /// same slot (Apply to swaps in this slot); null if it is frozen itself or not frozen.
+        /// </summary>
+        public string FollowsGuid { get; set; }
+
         /// <summary>On-avatar density of the texture, when it could be measured.</summary>
         public TexelDensityInfo? Density { get; set; }
 

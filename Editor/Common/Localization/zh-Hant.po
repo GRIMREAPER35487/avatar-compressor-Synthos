@@ -443,6 +443,33 @@ msgstr "縮小倍數："
 msgid "TextureCompressor:prop:frozenFormat"
 msgstr "格式："
 
+msgid "TextureCompressor:prop:frozenApplyToSlotSwaps"
+msgstr "同樣套用於此槽位的替換"
+
+msgid "TextureCompressor:prop:frozenApplyToSlotSwaps:tooltip"
+msgstr "建置時進入同一網格、材質槽位和紋理屬性的任何紋理（例如服裝替換的材質，或切換材質的開關）也使用這些設定。有自己凍結設定的紋理保留其設定。開啟此選項時會從模型讀取槽位。"
+
+msgid "TextureCompressor:message:frozenNoSlots"
+msgstr "此紋理目前不在模型上。請啟用使用它的服裝，然後點擊「尋找槽位」。"
+
+msgid "TextureCompressor:label:frozenSlot"
+msgstr "{0} 槽位 {1}（{2}）"
+
+msgid "TextureCompressor:button:frozenFindSlots"
+msgstr "尋找槽位"
+
+msgid "TextureCompressor:label:previewFollowsSlot"
+msgstr "跟隨 {0}（同一槽位）"
+
+msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
+msgstr "全部套用於替換"
+
+msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps:tooltip"
+msgstr "為所有凍結紋理開啟「同樣套用於此槽位的替換」，並從目前模型讀取槽位。請先啟用使用它們的服裝。"
+
+msgid "TextureCompressor:message:frozenApplyAllMissing"
+msgstr "{0} 個凍結紋理目前不在模型上，因此未找到槽位。請啟用使用它們的服裝，然後分別點擊「尋找槽位」。"
+
 msgid "TextureCompressor:message:frozenLegacyPaths"
 msgstr "偵測到舊版路徑項目。轉換為 GUID 可提升穩定性。"
 

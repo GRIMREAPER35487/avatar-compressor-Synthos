@@ -443,6 +443,33 @@ msgstr "縮小率："
 msgid "TextureCompressor:prop:frozenFormat"
 msgstr "形式："
 
+msgid "TextureCompressor:prop:frozenApplyToSlotSwaps"
+msgstr "このスロットの差し替えにも適用"
+
+msgid "TextureCompressor:prop:frozenApplyToSlotSwaps:tooltip"
+msgstr "ビルド中に同じメッシュ・マテリアルスロット・テクスチャプロパティに入るテクスチャ（衣装の差し替えマテリアルや、マテリアルを切り替えるトグルなど）にもこの設定を使います。独自の固定設定があるテクスチャはその設定のままです。スロットはこれをオンにした時点のアバターから読み取ります。"
+
+msgid "TextureCompressor:message:frozenNoSlots"
+msgstr "このテクスチャは現在アバターにありません。使用している衣装を有効にしてから「スロットを検索」をクリックしてください。"
+
+msgid "TextureCompressor:label:frozenSlot"
+msgstr "{0} スロット {1}（{2}）"
+
+msgid "TextureCompressor:button:frozenFindSlots"
+msgstr "スロットを検索"
+
+msgid "TextureCompressor:label:previewFollowsSlot"
+msgstr "{0} に従う（同じスロット）"
+
+msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
+msgstr "すべてを差し替えに適用"
+
+msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps:tooltip"
+msgstr "すべての固定テクスチャで「このスロットの差し替えにも適用」をオンにし、現在のアバターからスロットを読み取ります。先にそれらを使用する衣装を有効にしてください。"
+
+msgid "TextureCompressor:message:frozenApplyAllMissing"
+msgstr "{0} 個の固定テクスチャは現在アバターにないため、スロットが見つかりませんでした。使用している衣装を有効にして、それぞれの「スロットを検索」をクリックしてください。"
+
 msgid "TextureCompressor:message:frozenLegacyPaths"
 msgstr "旧形式のパス項目を検出しました。安定性向上のため GUID に変換してください。"
 

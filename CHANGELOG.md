@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Frozen settings can follow a material slot** ("Apply to swaps in this slot" on each frozen texture) - Outfit swaps often replace a material with a copy that differs only in its textures, so the swapped-in textures were sized by the analysis instead of your frozen settings. With the option on, any texture that ends up in the same mesh, material slot and texture property during the build (a material swapped in by an outfit tool such as Batch Uploader, or by a toggle animation) gets the frozen texture's divisor, format or skip, unless it has frozen settings of its own. The mesh is matched by its asset, so moving or renaming objects doesn't matter; copies made during the build (e.g. VRCFury removing blendshapes) are matched by name. The slots are read from the avatar when the option is turned on (Find Slots reads them again; **Apply to Swaps for All** turns it on for every frozen texture at once), and the preview shows which textures follow which frozen texture. Existing frozen textures are unchanged until the option is turned on.
+
 ## [1.3.1] - 2026-10-13
 
 ### Changed

@@ -50,13 +50,18 @@ namespace dev.limitex.avatar.compressor.editor.texture
             AnimationUsageMap animationUsageMap = null,
             IUnusedSlotOptimizer unusedSlotOptimizer = null,
             ILilToonBaker lilToonBaker = null,
-            TextureSourceCache sourceCache = null
+            TextureSourceCache sourceCache = null,
+            IEnumerable<FrozenTextureSettings> frozenTextures = null
         )
         {
             _config = config;
             _sourceCache = sourceCache;
 
-            _frozenLookup = FrozenTextureSettings.BuildLookup(config.FrozenTextures);
+            // The build passes the frozen settings expanded to slot swaps (FrozenSlotResolver)
+            var frozen = frozenTextures != null
+                ? frozenTextures.ToList()
+                : config.FrozenTextures;
+            _frozenLookup = FrozenTextureSettings.BuildLookup(frozen);
 
             _animationUsageMap = animationUsageMap;
             _unusedSlotOptimizer = unusedSlotOptimizer;
@@ -83,7 +88,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 config.SkipUnknownUncompressedTextures,
                 config.ExcludedPaths,
                 config.ExcludedTextures,
-                config.FrozenTextures,
+                frozen,
                 config.RespectImportMaxSize
                 || sourceCache == null
                 || !config.SizeFiltersUseSourceSize

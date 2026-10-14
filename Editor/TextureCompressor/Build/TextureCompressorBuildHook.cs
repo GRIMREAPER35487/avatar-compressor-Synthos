@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using dev.limitex.avatar.compressor.editor.texture.integrations;
 using Synthos.TextureAnalysis;
@@ -85,6 +87,25 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 if (unusedSlotOptimizer?.IsAvailable == true || lilToonBaker?.IsAvailable == true)
                     animationUsageMap = AnimationUsageMap.Build(avatarRoot);
 
+                // Frozen textures that apply to slot swaps pass their settings to the textures
+                // now in their slots (an outfit's swapped-in material, a toggle's material).
+                var followedBy = new Dictionary<string, string>();
+                var frozenTextures = FrozenSlotResolver.Expand(
+                    config.FrozenTextures,
+                    avatarRoot,
+                    followedBy
+                );
+                if (AvatarCompressorPreferences.EnableLogging)
+                {
+                    foreach (var pair in followedBy)
+                    {
+                        Debug.Log(
+                            $"[Texture Compressor] {Path.GetFileName(AssetDatabase.GUIDToAssetPath(pair.Key))}: "
+                                + $"frozen settings of {Path.GetFileName(AssetDatabase.GUIDToAssetPath(pair.Value))} (same slot)"
+                        );
+                    }
+                }
+
                 var service = new TextureCompressorService(
                     config,
                     TextureCompressorPreferences.AnalysisBackend,
@@ -94,7 +115,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     lilToonBaker,
                     TextureCompressorPreferences.UseSourceFiles
                         ? new TextureSourceCache(BuildAssetStore.RootFolder + "/_SourceImport")
-                        : null
+                        : null,
+                    frozenTextures
                 );
                 var (processedTextures, clonedMaterials) = service.CompressWithMappings(
                     materialReferences,
