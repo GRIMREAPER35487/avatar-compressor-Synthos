@@ -461,6 +461,12 @@ msgstr "スロットを検索"
 msgid "TextureCompressor:label:previewFollowsSlot"
 msgstr "{0} に従う（同じスロット）"
 
+msgid "TextureCompressor:message:previewUnlockedPoiyomi"
+msgstr "{0} 個の Poiyomi マテリアルがまだロックされていないため（{1}）、オフになっている機能のテクスチャも一覧に表示されています。アップロード時に Poiyomi がテクスチャ圧縮の前にロックし、それらのテクスチャを除外します。アップロード内容を確認するには今ロックしてください。"
+
+msgid "TextureCompressor:button:previewLockPoiyomi"
+msgstr "今すぐロック"
+
 msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
 msgstr "すべてを差し替えに適用"
 

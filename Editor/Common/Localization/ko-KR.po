@@ -461,6 +461,12 @@ msgstr "슬롯 찾기"
 msgid "TextureCompressor:label:previewFollowsSlot"
 msgstr "{0} 따름 (같은 슬롯)"
 
+msgid "TextureCompressor:message:previewUnlockedPoiyomi"
+msgstr "Poiyomi 머티리얼 {0}개가 아직 잠기지 않아({1}) 꺼진 기능의 텍스처도 목록에 표시됩니다. 업로드할 때 Poiyomi가 텍스처 압축 전에 잠그고 그 텍스처들을 제외합니다. 업로드 결과를 보려면 지금 잠그세요."
+
+msgid "TextureCompressor:button:previewLockPoiyomi"
+msgstr "지금 잠그기"
+
 msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
 msgstr "모두 교체에 적용"
 

@@ -462,6 +462,12 @@ msgstr "Find Slots"
 msgid "TextureCompressor:label:previewFollowsSlot"
 msgstr "Follows {0} (same slot)"
 
+msgid "TextureCompressor:message:previewUnlockedPoiyomi"
+msgstr "{0} Poiyomi materials aren't locked yet ({1}), so textures for features that are turned off are still listed. Poiyomi locks them when you upload, before textures are compressed, and drops those textures. Lock them now to see what the upload will contain."
+
+msgid "TextureCompressor:button:previewLockPoiyomi"
+msgstr "Lock Them Now"
+
 msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
 msgstr "Apply to Swaps for All"
 

@@ -154,6 +154,62 @@ namespace dev.limitex.avatar.compressor.tests
         }
 
         [Test]
+        public void TwoSteps_UseSettingsReadBeforeTheComponentIsRemoved()
+        {
+            var config = _avatar.GetComponent<TextureCompressor>();
+            config.FrozenTextures.Add(
+                new FrozenTextureSettings(
+                    AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(_textureA)),
+                    4,
+                    FrozenTextureFormat.BC7,
+                    false
+                )
+            );
+            var copy = Object.Instantiate(_avatar);
+            _sceneObjects.Add(copy);
+
+            TextureCompressorBuildHook.CaptureSettings(copy);
+            Assert.That(copy.GetComponentInChildren<TextureCompressor>(true), Is.Null);
+            TextureCompressorBuildHook.CompressCaptured(copy);
+
+            var texture = (Texture2D)
+                copy.GetComponentInChildren<MeshRenderer>().sharedMaterial.mainTexture;
+            Assert.That(texture.width, Is.EqualTo(TextureSize / 4));
+            Assert.That(texture.format, Is.EqualTo(TextureFormat.BC7));
+        }
+
+        [Test]
+        public void TwoSteps_CompressWhatTheMaterialsHoldAfterStepsInBetween()
+        {
+            var copy = Object.Instantiate(_avatar);
+            _sceneObjects.Add(copy);
+
+            TextureCompressorBuildHook.CaptureSettings(copy);
+            // A step in between (Poiyomi locking on upload) changes the materials
+            copy.GetComponentInChildren<MeshRenderer>().sharedMaterial = _materialB;
+            TextureCompressorBuildHook.CompressCaptured(copy);
+
+            var material = copy.GetComponentInChildren<MeshRenderer>().sharedMaterial;
+            Assert.That(material, Is.Not.SameAs(_materialB));
+            Assert.That(material.name, Does.StartWith("MatB"));
+            Assert.That(material.mainTexture, Is.Not.SameAs(_textureA));
+        }
+
+        [Test]
+        public void CompressStep_WithoutCapturedSettings_DoesNothing()
+        {
+            var copy = Object.Instantiate(_avatar);
+            _sceneObjects.Add(copy);
+
+            TextureCompressorBuildHook.CompressCaptured(copy);
+
+            Assert.That(
+                AssetDatabase.GetAssetPath(copy.GetComponentInChildren<MeshRenderer>().sharedMaterial),
+                Is.EqualTo($"{TestFolder}/MatA.mat")
+            );
+        }
+
+        [Test]
         public void Process_SavesCompressedTextureWithPixelsAndWithoutReadWrite()
         {
             var copy = ProcessCopy();

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Textures are compressed after Poiyomi locks materials on upload** - The compressor copies materials before compressing, and it ran before Poiyomi's lock on upload, so Poiyomi locked those copies instead of your materials (they stayed unlocked in the project), and textures the lock strips (features that are turned off, e.g. a Constellation mask with Constellation off) were analyzed and compressed for nothing. The settings are now read early (the SDK removes the component at -1024) and textures are compressed right after Poiyomi's lock (order 101). Your Poiyomi materials are locked on upload as they are without the compressor, and only textures the locked shaders use are compressed. Play mode and VRCFury test copies are unchanged (Poiyomi doesn't lock there).
+- **Preview notes unlocked Poiyomi materials** - Their textures for turned-off features are listed although the upload drops them. **Lock Them Now** locks them with Poiyomi so the preview shows what the upload will contain.
+
 ### Added
 
 - **Frozen settings can follow a material slot** ("Apply to swaps in this slot" on each frozen texture) - Outfit swaps often replace a material with a copy that differs only in its textures, so the swapped-in textures were sized by the analysis instead of your frozen settings. With the option on, any texture that ends up in the same mesh, material slot and texture property during the build (a material swapped in by an outfit tool such as Batch Uploader, or by a toggle animation) gets the frozen texture's divisor, format or skip, unless it has frozen settings of its own. The mesh is matched by its asset, so moving or renaming objects doesn't matter; copies made during the build (e.g. VRCFury removing blendshapes) are matched by name. The slots are read from the avatar when the option is turned on (Find Slots reads them again; **Apply to Swaps for All** turns it on for every frozen texture at once), and the preview shows which textures follow which frozen texture. Existing frozen textures are unchanged until the option is turned on.

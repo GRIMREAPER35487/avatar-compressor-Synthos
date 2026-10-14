@@ -17,10 +17,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Runs at callback order -1025:
-    /// after VRCFury (-10000), so merged clothing, props and controllers are included, and
-    /// before the SDK strips <c>IEditorOnly</c> components (-1024), which would otherwise remove
-    /// the <see cref="TextureCompressor"/> component before this hook sees it.
+    /// Runs in two steps. At callback order -1025, before the SDK strips <c>IEditorOnly</c>
+    /// components (-1024), it reads the <see cref="TextureCompressor"/> settings and removes the
+    /// component. The textures are compressed at <see cref="TextureCompressorCompressHook"/>'s
+    /// order 101: after VRCFury (-10000), so merged clothing, props and controllers are
+    /// included, and after Poiyomi locks the avatar's materials on upload (100), so textures the
+    /// lock strips (features that are turned off) are never compressed, and the lock applies to
+    /// the project's materials as it does without the compressor rather than to its copies.
     /// </para>
     /// <para>
     /// The SDK, VRCFury Play Mode and VRCFury's "Build an Editor Test Copy" all invoke this hook
@@ -33,11 +36,15 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         public int callbackOrder => CallbackOrder;
 
+        // Settings read at -1025 for the compression at 101, per avatar copy being built
+        private static readonly Dictionary<GameObject, string> PendingSettings =
+            new Dictionary<GameObject, string>();
+
         public bool OnPreprocessAvatar(GameObject avatarGameObject)
         {
             try
             {
-                Process(avatarGameObject);
+                CaptureSettings(avatarGameObject);
                 return true;
             }
             catch (Exception ex)
@@ -52,8 +59,14 @@ namespace dev.limitex.avatar.compressor.editor.texture
             }
         }
 
-        internal static void Process(GameObject avatarRoot)
+        /// <summary>
+        /// Reads the settings of the avatar's <see cref="TextureCompressor"/> and removes the
+        /// component, before the SDK strips it. <see cref="CompressCaptured"/> uses them.
+        /// </summary>
+        internal static void CaptureSettings(GameObject avatarRoot)
         {
+            foreach (var stale in PendingSettings.Keys.Where(k => k == null).ToList())
+                PendingSettings.Remove(stale);
             if (avatarRoot == null)
                 return;
 
@@ -62,8 +75,47 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 return;
 
             ValidateComponents(avatarRoot, components);
-            var config = components[0];
+            PendingSettings[avatarRoot] = EditorJsonUtility.ToJson(components[0]);
 
+            foreach (var component in components)
+                ComponentUtils.SafeDestroy(component);
+        }
+
+        /// <summary>
+        /// Compresses the avatar with the settings <see cref="CaptureSettings"/> read from it.
+        /// </summary>
+        internal static void CompressCaptured(GameObject avatarRoot)
+        {
+            if (avatarRoot == null || !PendingSettings.TryGetValue(avatarRoot, out string json))
+                return;
+            PendingSettings.Remove(avatarRoot);
+
+            // The settings on a hidden component outside the avatar (TextureCompressor is a component)
+            var holder = new GameObject("AvatarCompressorSettings") { hideFlags = HideFlags.HideAndDontSave };
+            try
+            {
+                var config = holder.AddComponent<TextureCompressor>();
+                EditorJsonUtility.FromJsonOverwrite(json, config);
+                Compress(avatarRoot, config);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        /// <summary>
+        /// Both steps at once: compresses the avatar with its component's settings and removes
+        /// the component.
+        /// </summary>
+        internal static void Process(GameObject avatarRoot)
+        {
+            CaptureSettings(avatarRoot);
+            CompressCaptured(avatarRoot);
+        }
+
+        private static void Compress(GameObject avatarRoot, TextureCompressor config)
+        {
             BuildAssetStore.CleanupUnused();
 
             using (ReplacedObjectRegistry.BeginScope())
@@ -145,9 +197,6 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
                 AssetDatabase.SaveAssets();
             }
-
-            foreach (var component in components)
-                ComponentUtils.SafeDestroy(component);
         }
 
         /// <summary>
@@ -210,6 +259,36 @@ namespace dev.limitex.avatar.compressor.editor.texture
         internal static bool IsAvatarRoot(Transform transform)
         {
             return transform != null && transform.GetComponent<VRCAvatarDescriptor>() != null;
+        }
+    }
+
+    /// <summary>
+    /// Second step of <see cref="TextureCompressorBuildHook"/>: compresses the textures with the
+    /// settings read at -1025, after Poiyomi locks the avatar's materials on upload (100).
+    /// </summary>
+    internal sealed class TextureCompressorCompressHook : IVRCSDKPreprocessAvatarCallback
+    {
+        internal const int CallbackOrder = 101;
+
+        public int callbackOrder => CallbackOrder;
+
+        public bool OnPreprocessAvatar(GameObject avatarGameObject)
+        {
+            try
+            {
+                TextureCompressorBuildHook.CompressCaptured(avatarGameObject);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex, avatarGameObject);
+                Debug.LogError(
+                    "[Avatar Compressor] Texture compression failed; the build was stopped so a "
+                        + "partially processed avatar is not uploaded. See the exception above.",
+                    avatarGameObject
+                );
+                return false;
+            }
         }
     }
 }

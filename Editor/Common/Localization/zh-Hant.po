@@ -461,6 +461,12 @@ msgstr "尋找槽位"
 msgid "TextureCompressor:label:previewFollowsSlot"
 msgstr "跟隨 {0}（同一槽位）"
 
+msgid "TextureCompressor:message:previewUnlockedPoiyomi"
+msgstr "{0} 個 Poiyomi 材質尚未鎖定（{1}），因此已關閉功能的紋理仍會列出。上傳時 Poiyomi 會在壓縮紋理之前鎖定它們並移除這些紋理。現在鎖定即可查看上傳的實際內容。"
+
+msgid "TextureCompressor:button:previewLockPoiyomi"
+msgstr "立即鎖定"
+
 msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
 msgstr "全部套用於替換"
 
