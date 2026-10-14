@@ -196,8 +196,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
         /// <summary>
         /// Returns <paramref name="analysis"/> with its divisor lowered (down to
-        /// <paramref name="minDivisor"/>) while the result would be below the target density.
-        /// Only for textures with real detail: on a near-flat texture, blur does not show.
+        /// <paramref name="minDivisor"/>) while the result would be below the density the
+        /// texture's detail needs: the full target at the low-detail threshold and above, and in
+        /// proportion to the score below it, so only truly flat textures shrink freely.
         /// </summary>
         /// <remarks>
         /// Smooth surfaces like skin score low on detail, yet they cover most of the avatar and
@@ -213,7 +214,10 @@ namespace dev.limitex.avatar.compressor.editor.texture
             TextureProcessor processor
         )
         {
-            if (analysis.NormalizedComplexity < lowComplexityThreshold)
+            float wanted =
+                density.TargetDensity
+                * DetailFactor(analysis.NormalizedComplexity, lowComplexityThreshold);
+            if (wanted <= 0f)
                 return analysis;
 
             int floor = Math.Max(1, minDivisor);
@@ -221,7 +225,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
             while (
                 divisor > floor
                 && density.DensityAt(new Vector2Int(baseSize.x / divisor, baseSize.y / divisor))
-                    < density.TargetDensity
+                    < wanted
             )
             {
                 divisor = Math.Max(floor, divisor / 2);
@@ -235,6 +239,19 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 divisor,
                 processor.CalculateNewDimensions(baseSize.x, baseSize.y, divisor)
             );
+        }
+
+        /// <summary>
+        /// Share of the target density a texture's detail needs: all of it at the low-detail
+        /// threshold and above, in proportion to the score below it (half at half the threshold).
+        /// Without this, a texture just under the threshold (a smooth body texture scoring 14%
+        /// against 15%) lost all protection and was shrunk like a flat color.
+        /// </summary>
+        public static float DetailFactor(float complexity, float lowComplexityThreshold)
+        {
+            if (lowComplexityThreshold <= 0f || complexity >= lowComplexityThreshold)
+                return 1f;
+            return Mathf.Clamp01(complexity / lowComplexityThreshold);
         }
 
         /// <summary>

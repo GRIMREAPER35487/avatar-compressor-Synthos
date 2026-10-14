@@ -260,6 +260,37 @@ namespace dev.limitex.avatar.compressor.tests
         }
 
         [Test]
+        public void ApplyFloor_LowDetail_KeepsDetailInProportion()
+        {
+            var processor = new TextureProcessor(32, 2048, true, ResizeBackendPreference.CPU);
+            // 2048 gives 20 px/cm, 1024 gives 10 px/cm; 48 is needed.
+            var density = new TexelDensityInfo(2048.0 * 2048.0 * 5.76, 48f, false);
+            var base2048 = new Vector2Int(2048, 2048);
+
+            // Just under the threshold (0.14 vs 0.15): needs about 45 px/cm, keeps 2048
+            var nearThreshold = TexelDensityAnalyzer.ApplyFloor(
+                new TextureAnalysisResult(0.14f, 2, new Vector2Int(1024, 1024)),
+                base2048,
+                density,
+                1,
+                0.15f,
+                processor
+            );
+            // A fifth of the threshold: needs about 9.6 px/cm, 1024 is enough
+            var faint = TexelDensityAnalyzer.ApplyFloor(
+                new TextureAnalysisResult(0.02f, 2, new Vector2Int(1024, 1024)),
+                base2048,
+                density,
+                1,
+                0.1f,
+                processor
+            );
+
+            Assert.That(nearThreshold.RecommendedDivisor, Is.EqualTo(1));
+            Assert.That(faint.RecommendedDivisor, Is.EqualTo(2));
+        }
+
+        [Test]
         public void ApplyFloor_StopsAtDivisorThatMeetsTarget()
         {
             var processor = new TextureProcessor(32, 2048, true, ResizeBackendPreference.CPU);
@@ -280,14 +311,14 @@ namespace dev.limitex.avatar.compressor.tests
         }
 
         [Test]
-        public void ApplyFloor_LowDetailOrMinDivisor_StillShrinks()
+        public void ApplyFloor_FlatOrMinDivisor_StillShrinks()
         {
             var processor = new TextureProcessor(32, 2048, true, ResizeBackendPreference.CPU);
             var density = new TexelDensityInfo(2048.0 * 2048.0 * 5.76, 48f, false);
             var base2048 = new Vector2Int(2048, 2048);
 
             var lowDetail = TexelDensityAnalyzer.ApplyFloor(
-                new TextureAnalysisResult(0.04f, 2, new Vector2Int(1024, 1024)),
+                new TextureAnalysisResult(0f, 2, new Vector2Int(1024, 1024)),
                 base2048,
                 density,
                 1,

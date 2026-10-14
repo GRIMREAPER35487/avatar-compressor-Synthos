@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Keep detail where it is visible now covers low-detail textures** - It used to protect only textures scoring at or above the low-detail threshold, so a texture just under it lost all protection: a smooth 4096 body texture scoring 14% against a 15% threshold went to 1024 while also covering the face (2 px/cm where 95 are needed). Low-detail textures now keep visible detail in proportion to their score (all of it at the threshold, half at half of it), so only flat colors and similar textures shrink freely.
+
 ## [1.3.0] - 2026-10-13
 
 ### Changed
