@@ -37,7 +37,7 @@ Analyzes and compresses avatar textures based on their complexity.
 - [VRCFury](https://vrcfury.com/) 1.1298.0 or later
 - Synthos Texture Analysis (installed automatically, same version as this package)
 
-This edition does not use NDMF. It runs as a VRChat SDK build hook, after VRCFury has merged its clothing, props and controllers.
+This edition does not use NDMF. It runs as a VRChat SDK build hook, after VRCFury has merged its clothing, props and controllers, and after Poiyomi locks materials on upload, so only textures the locked shaders use are compressed.
 
 VRCFury is installed automatically as a dependency, but its package repository must be added to VCC/ALCOM first: `https://vcc.vrcfury.com`
 

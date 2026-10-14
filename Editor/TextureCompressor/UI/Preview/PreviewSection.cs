@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor;
 using dev.limitex.avatar.compressor.editor.ui;
@@ -19,6 +21,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         private int _previewSettingsHash;
         private bool _showPreview;
         private Vector2 _scrollPosition;
+        private List<Material> _unlockedPoiyomi = new List<Material>();
 
         /// <summary>
         /// Draws the preview section.
@@ -75,6 +78,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 resizeBackend
             );
             _previewData = _generator.Generate(config, analysisBackend, resizeBackend);
+            _unlockedPoiyomi = PoiyomiLockState.FindUnlocked(config.gameObject);
             _searchBox.InvalidateCountCache();
         }
 
@@ -199,6 +203,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 EditorGUILayout.HelpBox(AvatarCompressorLocalization.Tr(helpKey), MessageType.Info);
             }
 
+            DrawUnlockedPoiyomi(config);
+
             // Search box for preview textures
             _searchBox.Draw(filteredCount, totalCount);
 
@@ -293,6 +299,40 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 _showPreview = false;
                 _previewData = null;
             }
+        }
+
+        /// <summary>
+        /// Poiyomi locks its materials on upload before the compressor runs and drops the textures
+        /// of features that are off, so unlocked materials show textures the upload won't contain.
+        /// </summary>
+        private void DrawUnlockedPoiyomi(TextureCompressor config)
+        {
+            _unlockedPoiyomi.RemoveAll(m => m == null || m.GetFloat("_ShaderOptimizerEnabled") >= 0.5f);
+            if (_unlockedPoiyomi.Count == 0)
+                return;
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.HelpBox(
+                AvatarCompressorLocalization.Tr(
+                    "TextureCompressor:message:previewUnlockedPoiyomi",
+                    _unlockedPoiyomi.Count,
+                    string.Join(", ", _unlockedPoiyomi.Take(5).Select(m => m.name))
+                        + (_unlockedPoiyomi.Count > 5 ? ", ..." : "")
+                ),
+                MessageType.Info
+            );
+            if (
+                PoiyomiLockState.CanLock
+                && GUILayout.Button(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:button:previewLockPoiyomi")
+                )
+            )
+            {
+                PoiyomiLockState.Lock(_unlockedPoiyomi);
+                GeneratePreview(config);
+                GUIUtility.ExitGUI();
+            }
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawPreviewEntry(TextureCompressor config, TexturePreviewData data)
