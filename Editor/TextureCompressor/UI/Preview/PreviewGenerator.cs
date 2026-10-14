@@ -50,7 +50,15 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             ResizeBackendPreference resizeBackendPreference
         )
         {
-            var frozenLookup = FrozenTextureSettings.BuildLookup(config.FrozenTextures);
+            // As in the build: frozen textures that apply to slot swaps pass their settings to
+            // the textures in their slots
+            var followedBy = new Dictionary<string, string>();
+            var frozenTextures = FrozenSlotResolver.Expand(
+                config.FrozenTextures,
+                config.gameObject,
+                followedBy
+            );
+            var frozenLookup = FrozenTextureSettings.BuildLookup(frozenTextures);
 
             var collector = new TextureCollector(
                 config.MinSourceSize,
@@ -62,7 +70,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.SkipUnknownUncompressedTextures,
                 config.ExcludedPaths,
                 config.ExcludedTextures,
-                config.FrozenTextures,
+                frozenTextures,
                 config.RespectImportMaxSize
                 || !TextureCompressorPreferences.UseSourceFiles
                 || !config.SizeFiltersUseSourceSize
@@ -454,6 +462,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         HasAlpha = hasAlpha,
                         IsFrozen = isFrozen,
                         FrozenSettings = frozenSettings,
+                        FollowsGuid = followedBy.TryGetValue(guid, out var follows) ? follows : null,
                         Density = densities.TryGetValue(tex, out var measured)
                             ? measured
                             : (TexelDensityInfo?)null,
@@ -498,6 +507,9 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             HasAlpha = false,
                             IsFrozen = isFrozen,
                             FrozenSettings = frozenSettings,
+                            FollowsGuid = followedBy.TryGetValue(guid, out var skippedFollows)
+                                ? skippedFollows
+                                : null,
                         }
                     );
                 }
@@ -680,6 +692,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     hash = hash * 31 + frozen.Divisor;
                     hash = hash * 31 + frozen.Format.GetHashCode();
                     hash = hash * 31 + frozen.Skip.GetHashCode();
+                    hash = hash * 31 + frozen.ApplyToSlotSwaps.GetHashCode();
+                    hash = hash * 31 + (frozen.Slots?.Count ?? 0);
                 }
 
                 return hash;

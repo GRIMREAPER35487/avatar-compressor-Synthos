@@ -53,6 +53,18 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 return;
             }
 
+            DrawApplyToAll(config);
+            if (_applyAllMissing > 0)
+            {
+                EditorGUILayout.HelpBox(
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:frozenApplyAllMissing",
+                        _applyAllMissing
+                    ),
+                    MessageType.Warning
+                );
+            }
+
             // Search box for frozen textures
             _searchBox.Draw(filteredCount, frozenCount);
 
@@ -237,6 +249,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
             EditorGUI.EndDisabledGroup();
 
+            DrawSlotSwaps(config, frozen);
+
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
 
@@ -247,6 +261,107 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.FrozenTextures.RemoveAt(index);
                 EditorUtility.SetDirty(config);
             }
+        }
+
+        /// <summary>
+        /// Turns on "Apply to swaps in this slot" for every frozen texture and reads their slots
+        /// from the avatar as it is now.
+        /// </summary>
+        private void DrawApplyToAll(TextureCompressor config)
+        {
+            if (
+                !GUILayout.Button(
+                    new GUIContent(
+                        AvatarCompressorLocalization.Tr("TextureCompressor:button:frozenApplyAllToSlotSwaps"),
+                        AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:button:frozenApplyAllToSlotSwaps:tooltip"
+                        )
+                    )
+                )
+            )
+                return;
+
+            Undo.RecordObject(config, "Apply Frozen Settings to Slot Swaps");
+            int withoutSlots = 0;
+            foreach (var frozen in config.FrozenTextures)
+            {
+                if (frozen == null)
+                    continue;
+                frozen.ApplyToSlotSwaps = true;
+                frozen.Slots = FrozenSlotResolver.FindSlots(frozen.TextureGuid, config.gameObject);
+                if (frozen.Slots.Count == 0)
+                    withoutSlots++;
+            }
+            EditorUtility.SetDirty(config);
+            _applyAllMissing = withoutSlots;
+        }
+
+        // Frozen textures the last "apply to all" found no slots for (-1: not run yet)
+        private int _applyAllMissing = -1;
+
+        /// <summary>
+        /// "Apply to swaps in this slot": the slots are read from the avatar when the option is
+        /// turned on (or Find Slots is clicked), so the outfit using the texture must be active.
+        /// </summary>
+        private static void DrawSlotSwaps(TextureCompressor config, FrozenTextureSettings frozen)
+        {
+            EditorGUI.BeginChangeCheck();
+            bool apply = EditorGUILayout.ToggleLeft(
+                new GUIContent(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:prop:frozenApplyToSlotSwaps"),
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:prop:frozenApplyToSlotSwaps:tooltip"
+                    )
+                ),
+                frozen.ApplyToSlotSwaps
+            );
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(config, "Change Frozen Slot Swaps");
+                frozen.ApplyToSlotSwaps = apply;
+                if (apply)
+                    frozen.Slots = FrozenSlotResolver.FindSlots(frozen.TextureGuid, config.gameObject);
+                EditorUtility.SetDirty(config);
+            }
+
+            if (!frozen.ApplyToSlotSwaps)
+                return;
+
+            EditorGUI.indentLevel++;
+            if (frozen.Slots == null || frozen.Slots.Count == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:frozenNoSlots"),
+                    MessageType.Warning
+                );
+            }
+            else
+            {
+                foreach (var slot in frozen.Slots)
+                {
+                    EditorGUILayout.LabelField(
+                        AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:label:frozenSlot",
+                            slot.MeshName,
+                            slot.MaterialIndex,
+                            slot.PropertyName
+                        ),
+                        EditorStyles.miniLabel
+                    );
+                }
+            }
+            if (
+                GUILayout.Button(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:button:frozenFindSlots"),
+                    GUILayout.Width(110)
+                )
+            )
+            {
+                Undo.RecordObject(config, "Find Frozen Slots");
+                frozen.Slots = FrozenSlotResolver.FindSlots(frozen.TextureGuid, config.gameObject);
+                EditorUtility.SetDirty(config);
+            }
+            EditorGUI.indentLevel--;
         }
 
         // TODO: Remove this method after users have migrated from TexturePath to TextureGuid

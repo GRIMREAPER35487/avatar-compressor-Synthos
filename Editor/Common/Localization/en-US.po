@@ -444,6 +444,33 @@ msgstr "Divisor:"
 msgid "TextureCompressor:prop:frozenFormat"
 msgstr "Format:"
 
+msgid "TextureCompressor:prop:frozenApplyToSlotSwaps"
+msgstr "Apply to swaps in this slot"
+
+msgid "TextureCompressor:prop:frozenApplyToSlotSwaps:tooltip"
+msgstr "Also use these settings for any texture that ends up in the same mesh, material slot and texture property during the build, such as an outfit's swapped-in material or a toggle that swaps materials. A texture with its own frozen settings keeps them. The slots are read from the avatar when this is turned on."
+
+msgid "TextureCompressor:message:frozenNoSlots"
+msgstr "This texture is not on the avatar right now. Activate the outfit that uses it and click Find Slots."
+
+msgid "TextureCompressor:label:frozenSlot"
+msgstr "{0} slot {1} ({2})"
+
+msgid "TextureCompressor:button:frozenFindSlots"
+msgstr "Find Slots"
+
+msgid "TextureCompressor:label:previewFollowsSlot"
+msgstr "Follows {0} (same slot)"
+
+msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps"
+msgstr "Apply to Swaps for All"
+
+msgid "TextureCompressor:button:frozenApplyAllToSlotSwaps:tooltip"
+msgstr "Turns on \"Apply to swaps in this slot\" for every frozen texture and reads their slots from the avatar as it is now. Activate the outfit that uses them first."
+
+msgid "TextureCompressor:message:frozenApplyAllMissing"
+msgstr "{0} frozen textures are not on the avatar right now, so no slots were found for them. Activate the outfit that uses them and click Find Slots on each."
+
 msgid "TextureCompressor:message:frozenLegacyPaths"
 msgstr "Legacy path-based entries detected. Convert to GUID for better stability."
 
