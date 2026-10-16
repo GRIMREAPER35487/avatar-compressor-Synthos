@@ -527,6 +527,36 @@ msgstr "圧縮後："
 msgid "TextureCompressor:label:previewSavings"
 msgstr "削減量："
 
+msgid "TextureCompressor:label:previewUpload"
+msgstr "アップロード："
+
+msgid "TextureCompressor:button:previewEstimateUpload"
+msgstr "アップロードサイズを推定"
+
+msgid "TextureCompressor:button:previewEstimateUpload:tooltip"
+msgstr "この設定で圧縮した後のダウンロードサイズと非圧縮サイズを、VRChat のモバイル上限と比べて予測します。アップロードと同じようにアバターのビルド処理（VRCFury など）をコピーに対して実行するため、その分の時間がかかります（多くの場合 20〜30 秒）。アバターは変更されません。"
+
+msgid "TextureCompressor:message:previewUploadSizes"
+msgstr "ダウンロード 約 {0} / {1}、非圧縮 約 {2} / {3}"
+
+msgid "TextureCompressor:message:previewUploadUnsupported"
+msgstr "アップロードサイズ（モバイル上限）は Android と iOS のビルドターゲットで推定されます。"
+
+msgid "TextureCompressor:message:previewUploadEstimating"
+msgstr "アップロードサイズを推定しています..."
+
+msgid "TextureCompressor:message:previewUploadFailed"
+msgstr "アップロードサイズを推定できませんでした。コンソールを確認してください。"
+
+msgid "TextureCompressor:message:previewUploadLowered"
+msgstr "「モバイルのサイズ上限に収める」により、アップロード時の最大解像度は {0} -> {1} に下がります。"
+
+msgid "TextureCompressor:message:previewUploadCannotFit"
+msgstr "最大解像度 {0} でもモバイル上限を超えます。警告を出してアップロードを続けます。"
+
+msgid "TextureCompressor:message:previewUploadOver"
+msgstr "モバイル上限を超えています。最大解像度を下げるか、「モバイルのサイズ上限に収める」をオンにしてください。"
+
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
 msgstr "未使用テクスチャスロットの削除と lilToon テクスチャのベイクは ビルド時のみ実行され、このプレビューには反映されません。実際のビルドサイズは表示された推定値と異なる場合があります。"
 

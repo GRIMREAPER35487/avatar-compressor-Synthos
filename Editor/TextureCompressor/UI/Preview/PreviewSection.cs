@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using dev.limitex.avatar.compressor;
 using dev.limitex.avatar.compressor.editor;
+using dev.limitex.avatar.compressor.editor.size;
 using dev.limitex.avatar.compressor.editor.ui;
 using Synthos.TextureAnalysis;
 using UnityEditor;
 using UnityEngine;
+using VRC.SDK3.Avatars.Components;
 
 namespace dev.limitex.avatar.compressor.editor.texture.ui
 {
@@ -22,6 +24,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         private bool _showPreview;
         private Vector2 _scrollPosition;
         private List<Material> _unlockedPoiyomi = new List<Material>();
+        private AvatarSizeCheck.Estimate? _uploadEstimate;
+        private string _uploadEstimateMessage;
 
         /// <summary>
         /// Draws the preview section.
@@ -80,6 +84,124 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             _previewData = _generator.Generate(config, analysisBackend, resizeBackend);
             _unlockedPoiyomi = PoiyomiLockState.FindUnlocked(config.gameObject);
             _searchBox.InvalidateCountCache();
+            _uploadEstimate = null;
+            _uploadEstimateMessage = null;
+        }
+
+        /// <summary>
+        /// Predicts the avatar's upload sizes against VRChat's mobile limits. Runs the avatar's
+        /// build steps (VRCFury and other tools) on a copy, so it takes a while and is run on
+        /// request rather than with every preview.
+        /// </summary>
+        private void EstimateUploadSize(TextureCompressor config, GameObject avatar)
+        {
+            _uploadEstimate = null;
+            _uploadEstimateMessage = null;
+            try
+            {
+                EditorUtility.DisplayProgressBar(
+                    "Avatar Compressor",
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadEstimating"),
+                    0.5f
+                );
+                _uploadEstimate = AvatarSizeCheck.EstimateUpload(avatar, config);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+                _uploadEstimateMessage = AvatarCompressorLocalization.Tr(
+                    "TextureCompressor:message:previewUploadFailed"
+                );
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        private void DrawUploadEstimate(TextureCompressor config)
+        {
+            if (_uploadEstimate.HasValue)
+            {
+                var estimate = _uploadEstimate.Value;
+                bool fits =
+                    estimate.Sizes.Download <= AvatarSizeCheck.DownloadTarget
+                    && estimate.Sizes.Uncompressed <= AvatarSizeCheck.UncompressedTarget;
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:label:previewUpload"),
+                    GUILayout.Width(75)
+                );
+                Color originalColor = GUI.color;
+                GUI.color = fits ? Color.green : new Color(1f, 0.45f, 0.4f);
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr(
+                        "TextureCompressor:message:previewUploadSizes",
+                        AvatarSizeCheck.MiB(estimate.Sizes.Download),
+                        AvatarSizeCheck.MiB(AvatarSizeCheck.DownloadLimit),
+                        AvatarSizeCheck.MiB(estimate.Sizes.Uncompressed),
+                        AvatarSizeCheck.MiB(AvatarSizeCheck.UncompressedLimit)
+                    ),
+                    EditorStyles.boldLabel,
+                    GUILayout.MinWidth(0)
+                );
+                GUI.color = originalColor;
+                EditorGUILayout.EndHorizontal();
+
+                string note =
+                    estimate.CannotFit
+                        ? AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:message:previewUploadCannotFit",
+                            estimate.MaxResolution
+                        )
+                    : estimate.MaxResolution != config.MaxResolution
+                        ? AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:message:previewUploadLowered",
+                            config.MaxResolution,
+                            estimate.MaxResolution
+                        )
+                    : !fits && !config.KeepUnderSizeLimit
+                        ? AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadOver")
+                    : null;
+                if (note != null)
+                    EditorGUILayout.LabelField(note, EditorStyles.wordWrappedMiniLabel);
+            }
+            else if (_uploadEstimateMessage != null)
+            {
+                EditorGUILayout.LabelField(_uploadEstimateMessage, EditorStyles.wordWrappedMiniLabel);
+            }
+            else if (!AvatarSizeCheck.IsSupported(out _))
+            {
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadUnsupported"),
+                    EditorStyles.wordWrappedMiniLabel
+                );
+            }
+            else
+            {
+                var descriptor = config.GetComponentInParent<VRCAvatarDescriptor>(true);
+                if (descriptor == null)
+                    return;
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(
+                    AvatarCompressorLocalization.Tr("TextureCompressor:label:previewUpload"),
+                    GUILayout.Width(75)
+                );
+                bool estimate = GUILayout.Button(
+                    AvatarCompressorLocalization.Content(
+                        "TextureCompressor:button:previewEstimateUpload",
+                        "TextureCompressor:button:previewEstimateUpload:tooltip"
+                    ),
+                    GUILayout.ExpandWidth(false)
+                );
+                EditorGUILayout.EndHorizontal();
+                if (estimate)
+                {
+                    EstimateUploadSize(config, descriptor.gameObject);
+                    GUIUtility.ExitGUI();
+                }
+            }
         }
 
         private bool IsPreviewOutdated(TextureCompressor config)
@@ -188,6 +310,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             );
             GUI.color = originalColor;
             EditorGUILayout.EndHorizontal();
+
+            DrawUploadEstimate(config);
 
             EditorGUILayout.EndVertical();
 

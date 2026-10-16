@@ -528,6 +528,36 @@ msgstr "After:"
 msgid "TextureCompressor:label:previewSavings"
 msgstr "Savings:"
 
+msgid "TextureCompressor:label:previewUpload"
+msgstr "Upload:"
+
+msgid "TextureCompressor:button:previewEstimateUpload"
+msgstr "Estimate upload size"
+
+msgid "TextureCompressor:button:previewEstimateUpload:tooltip"
+msgstr "Predicts the avatar's download and uncompressed size after compression with these settings, against VRChat's mobile limits. Runs the avatar's build steps (VRCFury and other tools) on a copy, as the upload does, so it takes about as long as they do (often 20-30 seconds). The avatar is not changed."
+
+msgid "TextureCompressor:message:previewUploadSizes"
+msgstr "~{0} / {1} download, ~{2} / {3} uncompressed"
+
+msgid "TextureCompressor:message:previewUploadUnsupported"
+msgstr "Upload size (mobile limits) is estimated for Android and iOS build targets."
+
+msgid "TextureCompressor:message:previewUploadEstimating"
+msgstr "Estimating the upload size..."
+
+msgid "TextureCompressor:message:previewUploadFailed"
+msgstr "Couldn't estimate the upload size; see the console."
+
+msgid "TextureCompressor:message:previewUploadLowered"
+msgstr "Keep under the mobile size limit will lower Max Resolution {0} -> {1} for the upload."
+
+msgid "TextureCompressor:message:previewUploadCannotFit"
+msgstr "Over the mobile limit even at Max Resolution {0}; the upload will continue with a warning."
+
+msgid "TextureCompressor:message:previewUploadOver"
+msgstr "Over the mobile limit. Lower Max Resolution or turn on \"Keep under the mobile size limit\"."
+
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
 msgstr "Unused texture slot removal and lilToon texture baking run only during the avatar build and are not reflected in this preview, so actual build sizes may differ from the estimate shown."
 

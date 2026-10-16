@@ -41,6 +41,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private static readonly Dictionary<GameObject, string> PendingSettings =
             new Dictionary<GameObject, string>();
 
+        /// <summary>
+        /// Set while the preview runs the build steps to estimate the upload size: the avatar
+        /// is left uncompressed (the SDK still removes the component).
+        /// </summary>
+        internal static bool SkipCompression;
+
         public bool OnPreprocessAvatar(GameObject avatarGameObject)
         {
             try
@@ -68,7 +74,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         {
             foreach (var stale in PendingSettings.Keys.Where(k => k == null).ToList())
                 PendingSettings.Remove(stale);
-            if (avatarRoot == null)
+            if (avatarRoot == null || SkipCompression)
                 return;
 
             var components = avatarRoot.GetComponentsInChildren<TextureCompressor>(true);

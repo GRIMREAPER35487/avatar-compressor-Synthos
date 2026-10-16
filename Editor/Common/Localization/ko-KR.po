@@ -527,6 +527,36 @@ msgstr "압축 후:"
 msgid "TextureCompressor:label:previewSavings"
 msgstr "절감:"
 
+msgid "TextureCompressor:label:previewUpload"
+msgstr "업로드:"
+
+msgid "TextureCompressor:button:previewEstimateUpload"
+msgstr "업로드 크기 추정"
+
+msgid "TextureCompressor:button:previewEstimateUpload:tooltip"
+msgstr "이 설정으로 압축한 후의 다운로드 크기와 비압축 크기를 VRChat 모바일 제한과 비교해 예측합니다. 업로드와 같이 아바타의 빌드 단계(VRCFury 등)를 복사본에서 실행하므로 그만큼 시간이 걸립니다(보통 20~30초). 아바타는 변경되지 않습니다."
+
+msgid "TextureCompressor:message:previewUploadSizes"
+msgstr "다운로드 약 {0} / {1}, 비압축 약 {2} / {3}"
+
+msgid "TextureCompressor:message:previewUploadUnsupported"
+msgstr "업로드 크기(모바일 제한)는 Android와 iOS 빌드 타깃에서 추정됩니다."
+
+msgid "TextureCompressor:message:previewUploadEstimating"
+msgstr "업로드 크기를 추정하는 중..."
+
+msgid "TextureCompressor:message:previewUploadFailed"
+msgstr "업로드 크기를 추정하지 못했습니다. 콘솔을 확인하세요."
+
+msgid "TextureCompressor:message:previewUploadLowered"
+msgstr "\"모바일 크기 제한 안에 맞추기\"로 업로드 시 Max Resolution이 {0} -> {1}(으)로 낮아집니다."
+
+msgid "TextureCompressor:message:previewUploadCannotFit"
+msgstr "Max Resolution {0}에서도 모바일 제한을 넘습니다. 경고 후 업로드를 계속합니다."
+
+msgid "TextureCompressor:message:previewUploadOver"
+msgstr "모바일 제한을 넘습니다. Max Resolution을 낮추거나 \"모바일 크기 제한 안에 맞추기\"를 켜세요."
+
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
 msgstr "사용하지 않는 텍스처 슬롯 제거와 lilToon 텍스처 베이크는 빌드 중에만 실행되며 이 미리보기에는 반영되지 않습니다. 실제 빌드 크기는 표시된 예상값과 다를 수 있습니다."
 

@@ -100,7 +100,12 @@ namespace dev.limitex.avatar.compressor.editor.size
         /// the avatar is predicted to fit. Returns the number of steps taken, or -1 when even the
         /// lowest step is predicted to be over.
         /// </summary>
-        public static int Plan(GameObject avatarRoot, TextureCompressor config)
+        public static int Plan(GameObject avatarRoot, TextureCompressor config) =>
+            Plan(avatarRoot, config, lowerResolution: true, log: true, out _);
+
+        /// <param name="lowerResolution">False to only predict the sizes at the current settings.</param>
+        /// <param name="predicted">Predicted sizes at the step returned (the lowest when -1).</param>
+        private static int Plan(GameObject avatarRoot, TextureCompressor config, bool lowerResolution, bool log, out Sizes predicted)
         {
             var before = Calculate(avatarRoot);
             long download = BundleSizeCalculator.DownloadSize(before);
@@ -132,14 +137,72 @@ namespace dev.limitex.avatar.compressor.editor.size
                 long uncompressed = before.Uncompressed - stripped - now + after;
                 long predictedDownload = download - (long)(stripped * StrippedDownloadRatio) - textureDownloadNow + textureDownloadAfter;
                 bool fits = uncompressed <= UncompressedTarget && predictedDownload <= DownloadTarget * (1 - PlanSlack);
-                Debug.Log(
-                    $"[Avatar Compressor] Size plan: max resolution {maxResolution} -> download ~{MiB(predictedDownload)}, "
-                        + $"uncompressed ~{MiB(uncompressed)}{(fits ? " (fits)" : "")}"
-                );
-                if (fits)
+                if (log)
+                    Debug.Log(
+                        $"[Avatar Compressor] Size plan: max resolution {maxResolution} -> download ~{MiB(predictedDownload)}, "
+                            + $"uncompressed ~{MiB(uncompressed)}{(fits ? " (fits)" : "")}"
+                    );
+                predicted = new Sizes { Uncompressed = uncompressed, Download = predictedDownload };
+                if (fits || !lowerResolution)
                     return step;
                 if (maxResolution == LowestMaxResolution)
                     return -1;
+            }
+        }
+
+        internal struct Estimate
+        {
+            /// <summary>Predicted sizes of the upload.</summary>
+            public Sizes Sizes;
+
+            /// <summary>Max Resolution the upload will use (lowered by Keep under size limit).</summary>
+            public int MaxResolution;
+
+            /// <summary>True when even the lowest Max Resolution is predicted to be over.</summary>
+            public bool CannotFit;
+        }
+
+        /// <summary>
+        /// Predicts the sizes the avatar will upload at with <paramref name="config"/>, for the
+        /// preview. Runs the SDK's build steps on a copy of the avatar, as the upload does
+        /// (VRCFury merges, editor-only components removed), without compressing, then predicts
+        /// the compression as <see cref="Plan(GameObject, TextureCompressor)"/> does. Neither the
+        /// avatar nor <paramref name="config"/> is changed.
+        /// </summary>
+        public static Estimate EstimateUpload(GameObject avatar, TextureCompressor config)
+        {
+            var clone = UnityEngine.Object.Instantiate(avatar);
+            clone.name = avatar.name + "(Clone)";
+            clone.SetActive(true);
+            var holder = new GameObject("AvatarCompressorSettings") { hideFlags = HideFlags.HideAndDontSave };
+            try
+            {
+                var settings = holder.AddComponent<TextureCompressor>();
+                EditorJsonUtility.FromJsonOverwrite(EditorJsonUtility.ToJson(config), settings);
+
+                TextureCompressorBuildHook.SkipCompression = true;
+                try
+                {
+                    if (!VRC.SDKBase.Editor.BuildPipeline.VRCBuildPipelineCallbacks.OnPreprocessAvatar(clone))
+                        throw new InvalidOperationException("the avatar's build steps failed (see the console)");
+                }
+                finally
+                {
+                    TextureCompressorBuildHook.SkipCompression = false;
+                }
+
+                int steps = Plan(clone, settings, settings.KeepUnderSizeLimit, log: false, out var predicted);
+                return new Estimate
+                {
+                    Sizes = predicted,
+                    MaxResolution = settings.MaxResolution,
+                    CannotFit = steps < 0,
+                };
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(clone);
+                UnityEngine.Object.DestroyImmediate(holder);
             }
         }
 
