@@ -19,6 +19,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private bool _showTextureFiltersSection;
         private bool _showSourceTexturesSection;
         private bool _showLilToonOptimizationsSection = true;
+        private bool _showMaterialCleanupSection = true;
 
         private void OnEnable()
         {
@@ -48,6 +49,9 @@ namespace dev.limitex.avatar.compressor.editor.texture
             EditorGUILayout.Space(10);
 
             FilterSection.DrawLilToonOptimizations(config, ref _showLilToonOptimizationsSection);
+            EditorGUILayout.Space(10);
+
+            FilterSection.DrawMaterialCleanup(config, ref _showMaterialCleanupSection);
             EditorGUILayout.Space(10);
 
             // Exclusions (textures + paths)

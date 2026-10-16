@@ -47,15 +47,20 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         public TexturePreviewData[] Generate(
             TextureCompressor config,
             AnalysisBackendPreference backendPreference,
-            ResizeBackendPreference resizeBackendPreference
+            ResizeBackendPreference resizeBackendPreference,
+            GameObject avatarRoot = null
         )
         {
+            // The avatar is the component's object, except during a build, where the settings sit
+            // on a holder outside the avatar copy
+            var root = avatarRoot != null ? avatarRoot : config.gameObject;
+
             // As in the build: frozen textures that apply to slot swaps pass their settings to
             // the textures in their slots
             var followedBy = new Dictionary<string, string>();
             var frozenTextures = FrozenSlotResolver.Expand(
                 config.FrozenTextures,
-                config.gameObject,
+                root,
                 followedBy
             );
             var frozenLookup = FrozenTextureSettings.BuildLookup(frozenTextures);
@@ -107,15 +112,15 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 config.RespectImportFormat
             );
 
-            var allTextures = collector.CollectAll(config.gameObject);
+            var allTextures = collector.CollectAll(root);
 
             // Collect additional materials from animations and components
             var additionalMaterialRefs = new List<MaterialReference>();
             additionalMaterialRefs.AddRange(
-                MaterialCollector.CollectFromAnimator(config.gameObject)
+                MaterialCollector.CollectFromAnimator(root)
             );
             additionalMaterialRefs.AddRange(
-                MaterialCollector.CollectFromComponents(config.gameObject)
+                MaterialCollector.CollectFromComponents(root)
             );
 
             var additionalMaterials = MaterialCollector.GetDistinctMaterials(
@@ -234,8 +239,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
 
             var densities = config.LimitByOnAvatarSize
                 ? TexelDensityAnalyzer.Analyze(
-                    config
-                        .gameObject.GetComponentsInChildren<Renderer>(true)
+                    root.GetComponentsInChildren<Renderer>(true)
                         .Where(r => !ComponentUtils.IsEditorOnly(r.gameObject)),
                     processedTextures,
                     config.FaceViewDistance,

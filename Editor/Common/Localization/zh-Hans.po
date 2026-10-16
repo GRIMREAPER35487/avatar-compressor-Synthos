@@ -350,6 +350,21 @@ msgstr "移除未使用的纹理槽"
 msgid "TextureCompressor:prop:removeUnused:tooltip"
 msgstr "清除功能开关关闭且未被动画驱动的 lilToon 纹理槽，使不再被引用的纹理不参与上传。冻结或被动画引用的纹理不会移除。此处不应用排除过滤器。"
 
+msgid "TextureCompressor:label:materialCleanup"
+msgstr "上传大小"
+
+msgid "TextureCompressor:prop:stripUnusedProperties"
+msgstr "删除着色器未使用的属性"
+
+msgid "TextureCompressor:prop:stripUnusedProperties:tooltip"
+msgstr "从构建用的材质副本中删除着色器未声明的保存值。从 Poiyomi 或 lilToon 切换到 VRChat Mobile 着色器的材质仍会上传数千个旧着色器的值（每个约 120 KB），并计入未压缩大小上限。模型外观不变，项目中的材质也不会被修改。"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit"
+msgstr "保持在移动端大小上限内"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit:tooltip"
+msgstr "Android 和 iOS 上传时计算模型的下载大小和未压缩大小，若会超过 VRChat 移动端上限（10 MiB / 40 MiB，留 1% / 0.1% 余量），则在压缩前逐步降低 Max Resolution 直到符合。已符合的模型照常压缩。每次上传会多花约 10 秒；若无法符合，会发出警告并继续上传。"
+
 msgid "TextureCompressor:label:textureFilters"
 msgstr "纹理过滤器"
 

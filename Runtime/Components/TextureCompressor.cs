@@ -104,6 +104,28 @@ namespace dev.limitex.avatar.compressor
         )]
         public bool BakeLilToonTextures = true;
 
+        [Header("Material Cleanup")]
+        [Tooltip(
+            "Remove saved float, color and int values the material's shader doesn't declare "
+                + "from the build's material copies. Materials keep every property they ever had, "
+                + "so one switched from Poiyomi or lilToon to a VRChat Mobile shader still uploads "
+                + "thousands of the old shader's values (about 120 KB per material), which count "
+                + "toward the uncompressed size limit. The shader can't read them, so the avatar "
+                + "looks the same. Your project's materials are not changed."
+        )]
+        public bool StripUnusedMaterialProperties = true;
+
+        [Header("Size Limit")]
+        [Tooltip(
+            "Android and iOS uploads: calculate the avatar's download and uncompressed size and, "
+                + "if it would go over VRChat's mobile limits (10 MiB / 40 MiB, with a 1% / 0.1% "
+                + "margin), lower Max Resolution step by step until it fits before compressing. "
+                + "Avatars that already fit are compressed with your settings as usual. Adds about "
+                + "10 seconds to each upload. If it can't fit even at the lowest step, the "
+                + "upload continues with a warning."
+        )]
+        public bool KeepUnderSizeLimit = false;
+
         [Header("Source Textures")]
         [Tooltip(
             "Use the texture's import Max Size as the starting size. When off, the full-quality "

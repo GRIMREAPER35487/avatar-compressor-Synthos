@@ -350,6 +350,21 @@ msgstr "未使用テクスチャスロットを削除"
 msgid "TextureCompressor:prop:removeUnused:tooltip"
 msgstr "機能トグルがオフでアニメーションされていない lilToon スロットを消去し、参照されなくなったテクスチャをアップロードから除外します。凍結済みまたはアニメーション参照中のテクスチャは削除されません。除外フィルターはここには適用されません。"
 
+msgid "TextureCompressor:label:materialCleanup"
+msgstr "アップロードサイズ"
+
+msgid "TextureCompressor:prop:stripUnusedProperties"
+msgstr "シェーダーが使わないプロパティを削除"
+
+msgid "TextureCompressor:prop:stripUnusedProperties:tooltip"
+msgstr "ビルド用のマテリアルのコピーから、シェーダーが宣言していない保存値を削除します。Poiyomi や lilToon から VRChat Mobile シェーダーに切り替えたマテリアルには以前のシェーダーの値が数千個残っており（1 つあたり約 120 KB）、非圧縮サイズの上限に含まれます。アバターの見た目は変わらず、プロジェクトのマテリアルも変更されません。"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit"
+msgstr "モバイルのサイズ上限に収める"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit:tooltip"
+msgstr "Android と iOS のアップロード時に、アバターのダウンロードサイズと非圧縮サイズを計算し、VRChat のモバイル上限（10 MiB / 40 MiB、余裕 1% / 0.1%）を超える場合は、収まるまで圧縮前に Max Resolution を段階的に下げます。すでに収まるアバターは通常どおり圧縮されます。アップロードごとに約 10 秒かかります。収まらない場合は警告を出してアップロードを続けます。"
+
 msgid "TextureCompressor:label:textureFilters"
 msgstr "テクスチャフィルター"
 
