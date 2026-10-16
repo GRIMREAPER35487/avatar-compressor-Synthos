@@ -539,8 +539,17 @@ msgstr "この設定で圧縮した後のダウンロードサイズと非圧縮
 msgid "TextureCompressor:message:previewUploadSizes"
 msgstr "ダウンロード 約 {0} / {1}、非圧縮 約 {2} / {3}"
 
+msgid "TextureCompressor:message:previewUploadUnityVersion"
+msgstr "アップロードサイズは Unity 2022.3 でのみ推定できます（現在は {0}）。"
+
+msgid "TextureCompressor:message:previewOtherPlatformMobile"
+msgstr "ビルドターゲットが {0} のままモバイル向けをプレビューしています。サイズは各テクスチャの Android インポート設定から求めた近似値です。正確な値を見るには、VRChat SDK（Builder タブ）で Android に切り替えてプレビューを再生成してください。"
+
+msgid "TextureCompressor:message:previewOtherPlatformDesktop"
+msgstr "ビルドターゲットが {0} のまま PC 向けをプレビューしています。サイズは各テクスチャの PC インポート設定から求めた近似値です。正確な値を見るには、VRChat SDK（Builder タブ）で Windows に切り替えてプレビューを再生成してください。"
+
 msgid "TextureCompressor:message:previewUploadUnsupported"
-msgstr "アップロードサイズ（モバイル上限）は Android と iOS のビルドターゲットで推定されます。"
+msgstr "アップロードサイズはアップロード先のプラットフォームで推定する必要があります（現在のビルドターゲットは {0}）。VRChat SDK（Builder タブ）で Android または iOS に切り替えてから、プレビューを再生成してください。"
 
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "アップロードサイズを推定しています..."

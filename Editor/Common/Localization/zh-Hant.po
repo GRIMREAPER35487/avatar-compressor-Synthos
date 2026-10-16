@@ -539,8 +539,17 @@ msgstr "預測依目前設定壓縮後的下載大小和未壓縮大小，並與
 msgid "TextureCompressor:message:previewUploadSizes"
 msgstr "下載 約 {0} / {1}，未壓縮 約 {2} / {3}"
 
+msgid "TextureCompressor:message:previewUploadUnityVersion"
+msgstr "上傳大小只能在 Unity 2022.3 中估算（目前為 {0}）。"
+
+msgid "TextureCompressor:message:previewOtherPlatformMobile"
+msgstr "建置目標為 {0} 時正在預覽行動版：大小來自各紋理的 Android 匯入設定，為近似值。要查看準確數值，請在 VRChat SDK（Builder 分頁）中切換到 Android 並重新產生預覽。"
+
+msgid "TextureCompressor:message:previewOtherPlatformDesktop"
+msgstr "建置目標為 {0} 時正在預覽 PC 版：大小來自各紋理的 PC 匯入設定，為近似值。要查看準確數值，請在 VRChat SDK（Builder 分頁）中切換到 Windows 並重新產生預覽。"
+
 msgid "TextureCompressor:message:previewUploadUnsupported"
-msgstr "上傳大小（行動版上限）僅在 Android 和 iOS 建置目標下估算。"
+msgstr "上傳大小必須在要上傳的平台下估算（目前建置目標為 {0}）。請在 VRChat SDK（Builder 分頁）中切換到 Android 或 iOS，然後重新產生預覽。"
 
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "正在估算上傳大小..."

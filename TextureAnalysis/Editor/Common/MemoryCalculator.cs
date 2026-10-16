@@ -10,6 +10,12 @@ namespace Synthos.TextureAnalysis
         /// <summary>
         /// Calculates compressed memory size based on format and mipmap count.
         /// </summary>
+        /// <remarks>
+        /// Block-compressed formats store whole blocks (4x4 for DXT/BC, up to 12x12 for ASTC), so
+        /// each mip level is rounded up to whole blocks: small levels, and sizes that aren't a
+        /// multiple of the block, cost more than bits-per-pixel alone says. Levels past 1x1 are
+        /// not counted, so a mip count from a larger texture is safe to pass.
+        /// </remarks>
         public static long CalculateCompressedMemory(
             int width,
             int height,
@@ -17,15 +23,76 @@ namespace Synthos.TextureAnalysis
             int mipmapCount
         )
         {
+            if (width <= 0 || height <= 0)
+                return 0;
+            int levels = Mathf.Min(mipmapCount, FullMipCount(width, height));
+            bool blocks = TryGetBlock(format, out int blockWidth, out int blockHeight, out int blockBytes);
             float bitsPerPixel = GetBitsPerPixel(format);
             long bytes = 0;
-            for (int index = 0; index < mipmapCount; ++index)
+            for (int index = 0; index < levels; ++index)
             {
-                // Each mipmap level is 1/4 the size of previous: (width * height) / 4^index
-                bytes += (long)
-                    Mathf.RoundToInt(((width * height) >> (2 * index)) * bitsPerPixel / 8f);
+                int levelWidth = Mathf.Max(1, width >> index);
+                int levelHeight = Mathf.Max(1, height >> index);
+                bytes += blocks
+                    ? (long)((levelWidth + blockWidth - 1) / blockWidth)
+                        * ((levelHeight + blockHeight - 1) / blockHeight)
+                        * blockBytes
+                    : (long)Mathf.RoundToInt((long)levelWidth * levelHeight * bitsPerPixel / 8f);
             }
             return bytes;
+        }
+
+        /// <summary>
+        /// Number of mip levels of a full chain down to 1x1.
+        /// </summary>
+        public static int FullMipCount(int width, int height)
+        {
+            int longest = Mathf.Max(width, height);
+            int count = 1;
+            while (longest > 1)
+            {
+                longest >>= 1;
+                count++;
+            }
+            return count;
+        }
+
+        private static bool TryGetBlock(TextureFormat format, out int width, out int height, out int bytes)
+        {
+            width = height = 4;
+            bytes = 16;
+            switch (format)
+            {
+                case TextureFormat.DXT1:
+                case TextureFormat.DXT1Crunched:
+                case TextureFormat.BC4:
+                    bytes = 8;
+                    return true;
+                case TextureFormat.DXT5:
+                case TextureFormat.DXT5Crunched:
+                case TextureFormat.BC5:
+                case TextureFormat.BC6H:
+                case TextureFormat.BC7:
+                case TextureFormat.ASTC_4x4:
+                    return true;
+                case TextureFormat.ASTC_5x5:
+                    width = height = 5;
+                    return true;
+                case TextureFormat.ASTC_6x6:
+                    width = height = 6;
+                    return true;
+                case TextureFormat.ASTC_8x8:
+                    width = height = 8;
+                    return true;
+                case TextureFormat.ASTC_10x10:
+                    width = height = 10;
+                    return true;
+                case TextureFormat.ASTC_12x12:
+                    width = height = 12;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>

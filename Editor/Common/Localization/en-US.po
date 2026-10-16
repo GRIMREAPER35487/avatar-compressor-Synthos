@@ -540,8 +540,17 @@ msgstr "Predicts the avatar's download and uncompressed size after compression w
 msgid "TextureCompressor:message:previewUploadSizes"
 msgstr "~{0} / {1} download, ~{2} / {3} uncompressed"
 
+msgid "TextureCompressor:message:previewUploadUnityVersion"
+msgstr "Upload size can only be estimated in Unity 2022.3 (this is {0})."
+
+msgid "TextureCompressor:message:previewOtherPlatformMobile"
+msgstr "Previewing for Mobile while the build target is {0}: sizes come from each texture's Android import settings, so they are close but not exact. For the true numbers, switch to Android in the VRChat SDK (Builder tab) and generate the preview again."
+
+msgid "TextureCompressor:message:previewOtherPlatformDesktop"
+msgstr "Previewing for PC while the build target is {0}: sizes come from each texture's PC import settings, so they are close but not exact. For the true numbers, switch to Windows in the VRChat SDK (Builder tab) and generate the preview again."
+
 msgid "TextureCompressor:message:previewUploadUnsupported"
-msgstr "Upload size (mobile limits) is estimated for Android and iOS build targets."
+msgstr "Upload size has to be estimated from the platform you upload to: the build target is {0}. Switch it to Android or iOS in the VRChat SDK (Builder tab), then generate the preview again."
 
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "Estimating the upload size..."
