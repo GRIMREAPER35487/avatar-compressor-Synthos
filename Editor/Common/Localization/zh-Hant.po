@@ -527,6 +527,36 @@ msgstr "壓縮後："
 msgid "TextureCompressor:label:previewSavings"
 msgstr "節省："
 
+msgid "TextureCompressor:label:previewUpload"
+msgstr "上傳："
+
+msgid "TextureCompressor:button:previewEstimateUpload"
+msgstr "估算上傳大小"
+
+msgid "TextureCompressor:button:previewEstimateUpload:tooltip"
+msgstr "預測依目前設定壓縮後的下載大小和未壓縮大小，並與 VRChat 行動版上限比較。會像上傳時一樣在副本上執行模型的建置步驟（VRCFury 等），因此耗時相近（通常 20–30 秒）。模型本身不會被修改。"
+
+msgid "TextureCompressor:message:previewUploadSizes"
+msgstr "下載 約 {0} / {1}，未壓縮 約 {2} / {3}"
+
+msgid "TextureCompressor:message:previewUploadUnsupported"
+msgstr "上傳大小（行動版上限）僅在 Android 和 iOS 建置目標下估算。"
+
+msgid "TextureCompressor:message:previewUploadEstimating"
+msgstr "正在估算上傳大小..."
+
+msgid "TextureCompressor:message:previewUploadFailed"
+msgstr "無法估算上傳大小，請查看主控台。"
+
+msgid "TextureCompressor:message:previewUploadLowered"
+msgstr "「保持在行動版大小上限內」會在上傳時將 Max Resolution 從 {0} 降到 {1}。"
+
+msgid "TextureCompressor:message:previewUploadCannotFit"
+msgstr "即使 Max Resolution 為 {0} 也超過行動版上限；將發出警告並繼續上傳。"
+
+msgid "TextureCompressor:message:previewUploadOver"
+msgstr "超過行動版上限。請降低 Max Resolution 或開啟「保持在行動版大小上限內」。"
+
 msgid "TextureCompressor:message:previewBuildOnlyBoth"
 msgstr "移除未使用的紋理槽和 lilToon 紋理烘焙僅在 建置期間執行，不會反映在此預覽中，因此實際建置大小可能與顯示的估算值不同。"
 
