@@ -351,6 +351,21 @@ msgstr "Remove unused texture slots"
 msgid "TextureCompressor:prop:removeUnused:tooltip"
 msgstr "Clears lilToon slots whose feature toggle is off and not animated, dropping textures that become unreferenced from the upload. Frozen and animation-referenced textures are never removed. Exclusion filters do not apply here."
 
+msgid "TextureCompressor:label:materialCleanup"
+msgstr "Upload Size"
+
+msgid "TextureCompressor:prop:stripUnusedProperties"
+msgstr "Remove properties the shader doesn't use"
+
+msgid "TextureCompressor:prop:stripUnusedProperties:tooltip"
+msgstr "Removes saved values the material's shader doesn't declare from the build's material copies. A material switched from Poiyomi or lilToon to a VRChat Mobile shader still uploads thousands of the old shader's values (about 120 KB each), which count toward the uncompressed size limit. The avatar looks the same; your project's materials are not changed."
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit"
+msgstr "Keep under the mobile size limit"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit:tooltip"
+msgstr "Android and iOS uploads: calculates the avatar's download and uncompressed size and, if it would go over VRChat's mobile limits (10 MiB / 40 MiB, with a 1% / 0.1% margin), lowers Max Resolution step by step until it fits before compressing. Avatars that already fit are compressed as usual. Adds about 10 seconds to each upload; if it can't fit, the upload continues with a warning."
+
 msgid "TextureCompressor:label:textureFilters"
 msgstr "Texture Filters"
 

@@ -350,6 +350,21 @@ msgstr "移除未使用的紋理槽"
 msgid "TextureCompressor:prop:removeUnused:tooltip"
 msgstr "清除功能已關閉且未受動畫驅動的 lilToon 紋理槽，避免上傳不再被引用的紋理。凍結或被動畫引用的紋理不會移除。排除篩選器不適用於此處。"
 
+msgid "TextureCompressor:label:materialCleanup"
+msgstr "上傳大小"
+
+msgid "TextureCompressor:prop:stripUnusedProperties"
+msgstr "刪除著色器未使用的屬性"
+
+msgid "TextureCompressor:prop:stripUnusedProperties:tooltip"
+msgstr "從建置用的材質副本中刪除著色器未宣告的儲存值。從 Poiyomi 或 lilToon 切換到 VRChat Mobile 著色器的材質仍會上傳數千個舊著色器的值（每個約 120 KB），並計入未壓縮大小上限。模型外觀不變，專案中的材質也不會被修改。"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit"
+msgstr "保持在行動版大小上限內"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit:tooltip"
+msgstr "Android 和 iOS 上傳時計算模型的下載大小和未壓縮大小，若會超過 VRChat 行動版上限（10 MiB / 40 MiB，保留 1% / 0.1% 餘量），則在壓縮前逐步降低 Max Resolution 直到符合。已符合的模型照常壓縮。每次上傳會多花約 10 秒；若無法符合，會發出警告並繼續上傳。"
+
 msgid "TextureCompressor:label:textureFilters"
 msgstr "紋理篩選器"
 

@@ -350,6 +350,21 @@ msgstr "사용하지 않는 텍스처 슬롯 제거"
 msgid "TextureCompressor:prop:removeUnused:tooltip"
 msgstr "기능 토글이 꺼져 있고 애니메이션되지 않은 lilToon 슬롯을 비워 참조되지 않는 텍스처를 업로드에서 제외합니다. 동결되거나 애니메이션에서 참조하는 텍스처는 제거하지 않습니다. 제외 필터는 여기에 적용되지 않습니다."
 
+msgid "TextureCompressor:label:materialCleanup"
+msgstr "업로드 크기"
+
+msgid "TextureCompressor:prop:stripUnusedProperties"
+msgstr "셰이더가 사용하지 않는 프로퍼티 제거"
+
+msgid "TextureCompressor:prop:stripUnusedProperties:tooltip"
+msgstr "빌드용 머티리얼 복사본에서 셰이더가 선언하지 않은 저장 값을 제거합니다. Poiyomi나 lilToon에서 VRChat Mobile 셰이더로 바꾼 머티리얼에는 이전 셰이더의 값이 수천 개 남아 있으며(머티리얼당 약 120 KB), 비압축 크기 제한에 포함됩니다. 아바타의 모습은 그대로이며 프로젝트의 머티리얼은 변경되지 않습니다."
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit"
+msgstr "모바일 크기 제한 안에 맞추기"
+
+msgid "TextureCompressor:prop:keepUnderSizeLimit:tooltip"
+msgstr "Android와 iOS 업로드 시 아바타의 다운로드 크기와 비압축 크기를 계산하고, VRChat 모바일 제한(10 MiB / 40 MiB, 여유 1% / 0.1%)을 넘으면 압축 전에 Max Resolution을 단계적으로 낮춰 맞춥니다. 이미 맞는 아바타는 평소대로 압축됩니다. 업로드마다 약 10초가 추가되며, 맞출 수 없으면 경고 후 업로드를 계속합니다."
+
 msgid "TextureCompressor:label:textureFilters"
 msgstr "텍스처 필터"
 

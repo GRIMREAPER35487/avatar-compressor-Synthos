@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using dev.limitex.avatar.compressor.editor.size;
 using dev.limitex.avatar.compressor.editor.texture.integrations;
 using Synthos.TextureAnalysis;
 using UnityEditor;
@@ -118,6 +119,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
         {
             BuildAssetStore.CleanupUnused();
 
+            bool keepUnderLimit = config.KeepUnderSizeLimit && PlanSizeLimit(avatarRoot, config);
+
             using (ReplacedObjectRegistry.BeginScope())
             {
                 var store = new BuildAssetStore(avatarRoot.name.Replace("(Clone)", ""));
@@ -185,6 +188,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                         MarkNonReadable(texture);
                     store.Persist(texture);
                 }
+                if (config.StripUnusedMaterialProperties)
+                    StripUnusedProperties(clonedMaterials.Values);
                 foreach (var material in clonedMaterials.Values)
                     store.Persist(material);
 
@@ -197,6 +202,59 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
                 AssetDatabase.SaveAssets();
             }
+
+            // Measured by SizeCheckBuildHook once every other build step has run: later steps
+            // still change the avatar (at this point it is about 1 MB larger than the upload)
+            if (keepUnderLimit)
+                SizeCheckBuildHook.Pending.Add(avatarRoot);
+        }
+
+        /// <summary>
+        /// Lowers Max Resolution on the build's settings until the avatar is predicted to fit
+        /// the mobile limits. Returns false when sizes can't be calculated for this build.
+        /// </summary>
+        private static bool PlanSizeLimit(GameObject avatarRoot, TextureCompressor config)
+        {
+            if (!AvatarSizeCheck.IsSupported(out string reason))
+            {
+                Debug.Log($"[Avatar Compressor] Keep under size limit: skipped, {reason}.");
+                return false;
+            }
+            int original = config.MaxResolution;
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            int steps = AvatarSizeCheck.Plan(avatarRoot, config);
+            string took = $"{timer.ElapsedMilliseconds / 1000.0:0.0} s";
+            if (steps < 0)
+                Debug.LogWarning(
+                    $"[Avatar Compressor] The avatar is predicted to stay over the mobile size limit even with "
+                        + $"Max Resolution {config.MaxResolution}; compressing at that and uploading anyway."
+                );
+            else if (steps > 0)
+                Debug.Log(
+                    $"[Avatar Compressor] Keep under size limit: Max Resolution {original} -> {config.MaxResolution} for this upload ({took})."
+                );
+            else
+                Debug.Log($"[Avatar Compressor] Keep under size limit: fits with your settings ({took}).");
+            return true;
+        }
+
+
+        private static void StripUnusedProperties(IEnumerable<Material> materials)
+        {
+            int total = 0;
+            foreach (var material in materials.Distinct())
+            {
+                int removed = UnusedMaterialPropertyStripper.Strip(material);
+                total += removed;
+                if (removed > 0 && AvatarCompressorPreferences.EnableLogging)
+                    Debug.Log(
+                        $"[Texture Compressor] {material.name}: removed {removed} properties its shader doesn't use"
+                    );
+            }
+            if (total > 0)
+                Debug.Log(
+                    $"[Texture Compressor] Removed {total} material properties the shaders don't use"
+                );
         }
 
         /// <summary>

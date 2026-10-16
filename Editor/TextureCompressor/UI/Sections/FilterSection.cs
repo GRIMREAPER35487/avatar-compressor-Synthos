@@ -71,6 +71,43 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         }
 
         /// <summary>
+        /// Draws the material cleanup option (removing properties the shader doesn't use).
+        /// </summary>
+        public static void DrawMaterialCleanup(TextureCompressor config, ref bool showSection)
+        {
+            showSection = EditorGUILayout.Foldout(
+                showSection,
+                AvatarCompressorLocalization.Tr("TextureCompressor:label:materialCleanup"),
+                true
+            );
+            if (!showSection)
+                return;
+
+            EditorGUI.BeginChangeCheck();
+            bool strip = EditorGUILayout.ToggleLeft(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:stripUnusedProperties",
+                    "TextureCompressor:prop:stripUnusedProperties:tooltip"
+                ),
+                config.StripUnusedMaterialProperties
+            );
+            bool keepUnder = EditorGUILayout.ToggleLeft(
+                AvatarCompressorLocalization.Content(
+                    "TextureCompressor:prop:keepUnderSizeLimit",
+                    "TextureCompressor:prop:keepUnderSizeLimit:tooltip"
+                ),
+                config.KeepUnderSizeLimit
+            );
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(config, "Change Material Cleanup");
+                config.StripUnusedMaterialProperties = strip;
+                config.KeepUnderSizeLimit = keepUnder;
+                EditorUtility.SetDirty(config);
+            }
+        }
+
+        /// <summary>
         /// Draws the source and quality options: whether the creator's import Max Size and
         /// compression format are kept or the compressor decides, and the banding safeguard.
         /// </summary>
