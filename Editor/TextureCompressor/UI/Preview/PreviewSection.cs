@@ -15,8 +15,29 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
     /// Draws the preview section with texture analysis results.
     /// Owns its own search box.
     /// </summary>
+    /// <remarks>
+    /// One per component (<see cref="For"/>), kept outside the inspector: Unity rebuilds
+    /// inspectors at times (an avatar copy appearing in the scene, another tool's popup during
+    /// the upload-size estimate), and a rebuilt inspector picks up the same preview.
+    /// </remarks>
     internal sealed class PreviewSection
     {
+        private static readonly Dictionary<int, PreviewSection> s_byComponent =
+            new Dictionary<int, PreviewSection>();
+
+        /// <summary>The preview of <paramref name="config"/>, kept across inspector rebuilds.</summary>
+        public static PreviewSection For(TextureCompressor config)
+        {
+            int id = config.GetInstanceID();
+            if (!s_byComponent.TryGetValue(id, out var section))
+            {
+                foreach (int stale in s_byComponent.Keys.Where(k => EditorUtility.InstanceIDToObject(k) == null).ToList())
+                    s_byComponent.Remove(stale);
+                s_byComponent[id] = section = new PreviewSection();
+            }
+            return section;
+        }
+
         private readonly PreviewGenerator _generator = new PreviewGenerator();
         private readonly SearchBoxControl _searchBox = new();
         private TexturePreviewData[] _previewData;
@@ -26,6 +47,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         private List<Material> _unlockedPoiyomi = new List<Material>();
         private AvatarSizeCheck.Estimate? _uploadEstimate;
         private string _uploadEstimateMessage;
+        private bool _estimatePending;
+        private static GUIStyle _warningNoteStyle;
 
         /// <summary>
         /// Draws the preview section.
@@ -99,12 +122,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             _uploadEstimateMessage = null;
             try
             {
-                EditorUtility.DisplayProgressBar(
-                    "Avatar Compressor",
-                    AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadEstimating"),
-                    0.5f
+                _uploadEstimate = AvatarSizeCheck.EstimateUpload(
+                    avatar,
+                    config,
+                    AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadEstimating")
                 );
-                _uploadEstimate = AvatarSizeCheck.EstimateUpload(avatar, config);
+            }
+            catch (AvatarSizeCheck.BuildStepsFailedException)
+            {
+                _uploadEstimateMessage = AvatarCompressorLocalization.Tr(
+                    "TextureCompressor:message:previewUploadBuildStepsFailed"
+                );
             }
             catch (System.Exception ex)
             {
@@ -113,10 +141,31 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     "TextureCompressor:message:previewUploadFailed"
                 );
             }
-            finally
+        }
+
+        /// <summary>
+        /// Runs <see cref="EstimateUploadSize"/> once the inspector has finished drawing: the
+        /// build steps change the scene and can show popups, which must not happen in the
+        /// middle of drawing the inspector.
+        /// </summary>
+        private void QueueEstimate(TextureCompressor config, GameObject avatar)
+        {
+            if (_estimatePending)
+                return;
+            _estimatePending = true;
+            EditorApplication.delayCall += () =>
             {
-                EditorUtility.ClearProgressBar();
-            }
+                try
+                {
+                    if (config != null && avatar != null)
+                        EstimateUploadSize(config, avatar);
+                }
+                finally
+                {
+                    _estimatePending = false;
+                    UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
+                }
+            };
         }
 
         /// <summary>
@@ -182,23 +231,32 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 GUI.color = originalColor;
                 EditorGUILayout.EndHorizontal();
 
+                var changes = estimate.Changes ?? new List<AvatarSizeCheck.FitChange>();
                 string note =
                     estimate.CannotFit
+                        ? AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadCannotFit")
+                    : changes.Count > 0
                         ? AvatarCompressorLocalization.Tr(
-                            "TextureCompressor:message:previewUploadCannotFit",
-                            estimate.MaxResolution
-                        )
-                    : estimate.MaxResolution != config.MaxResolution
-                        ? AvatarCompressorLocalization.Tr(
-                            "TextureCompressor:message:previewUploadLowered",
-                            config.MaxResolution,
-                            estimate.MaxResolution
+                            "TextureCompressor:message:previewUploadShrinks",
+                            changes.Count,
+                            string.Join(
+                                ", ",
+                                changes.Select(c =>
+                                    $"{(c.Texture != null ? c.Texture.name : "?")} {Mathf.Max(c.From.x, c.From.y)} -> {Mathf.Max(c.To.x, c.To.y)}"
+                                )
+                            )
                         )
                     : !fits && !config.KeepUnderSizeLimit
                         ? AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadOver")
                     : null;
                 if (note != null)
-                    EditorGUILayout.LabelField(note, EditorStyles.wordWrappedMiniLabel);
+                {
+                    _warningNoteStyle ??= new GUIStyle(EditorStyles.wordWrappedMiniLabel)
+                    {
+                        normal = { textColor = new Color(1f, 0.6f, 0.2f) },
+                    };
+                    EditorGUILayout.LabelField(note, _warningNoteStyle);
+                }
             }
             else if (_uploadEstimateMessage != null)
             {
@@ -230,19 +288,26 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     AvatarCompressorLocalization.Tr("TextureCompressor:label:previewUpload"),
                     GUILayout.Width(75)
                 );
-                bool estimate = GUILayout.Button(
-                    AvatarCompressorLocalization.Content(
-                        "TextureCompressor:button:previewEstimateUpload",
-                        "TextureCompressor:button:previewEstimateUpload:tooltip"
-                    ),
-                    GUILayout.ExpandWidth(false)
-                );
+                bool estimate;
+                using (new EditorGUI.DisabledScope(_estimatePending))
+                {
+                    estimate = GUILayout.Button(
+                        _estimatePending
+                            ? new GUIContent(
+                                AvatarCompressorLocalization.Tr(
+                                    "TextureCompressor:message:previewUploadEstimating"
+                                )
+                            )
+                            : AvatarCompressorLocalization.Content(
+                                "TextureCompressor:button:previewEstimateUpload",
+                                "TextureCompressor:button:previewEstimateUpload:tooltip"
+                            ),
+                        GUILayout.ExpandWidth(false)
+                    );
+                }
                 EditorGUILayout.EndHorizontal();
                 if (estimate)
-                {
-                    EstimateUploadSize(config, descriptor.gameObject);
-                    GUIUtility.ExitGUI();
-                }
+                    QueueEstimate(config, descriptor.gameObject);
             }
         }
 

@@ -125,7 +125,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
         {
             BuildAssetStore.CleanupUnused();
 
-            bool keepUnderLimit = config.KeepUnderSizeLimit && PlanSizeLimit(avatarRoot, config);
+            var sizePlan = config.KeepUnderSizeLimit ? PlanSizeLimit(avatarRoot, config) : null;
 
             using (ReplacedObjectRegistry.BeginScope())
             {
@@ -211,39 +211,59 @@ namespace dev.limitex.avatar.compressor.editor.texture
 
             // Measured by SizeCheckBuildHook once every other build step has run: later steps
             // still change the avatar (at this point it is about 1 MB larger than the upload)
-            if (keepUnderLimit)
-                SizeCheckBuildHook.Pending.Add(avatarRoot);
+            if (sizePlan != null)
+                SizeCheckBuildHook.Pending[avatarRoot] = sizePlan;
         }
 
         /// <summary>
-        /// Lowers Max Resolution on the build's settings until the avatar is predicted to fit
-        /// the mobile limits. Returns false when sizes can't be calculated for this build.
+        /// Picks the textures to make smaller on the build's settings so the avatar is predicted
+        /// to fit the mobile limits. Returns null when sizes can't be calculated for this build.
         /// </summary>
-        private static bool PlanSizeLimit(GameObject avatarRoot, TextureCompressor config)
+        private static AvatarSizeCheck.FitPlan PlanSizeLimit(GameObject avatarRoot, TextureCompressor config)
         {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return null; // nothing is uploaded from Play Mode
             if (!AvatarSizeCheck.IsSupported(out string reason))
             {
                 Debug.Log($"[Avatar Compressor] Keep under size limit: skipped, {reason}.");
-                return false;
+                return null;
             }
-            int original = config.MaxResolution;
             var timer = System.Diagnostics.Stopwatch.StartNew();
-            int steps = AvatarSizeCheck.Plan(avatarRoot, config);
+            AvatarSizeCheck.FitPlan plan;
+            try
+            {
+                plan = AvatarSizeCheck.Plan(avatarRoot, config);
+            }
+            catch (Exception ex)
+            {
+                // A failed plan never stops the upload: compress with the settings as they are
+                config.FitHalvings = null;
+                Debug.LogWarning($"[Avatar Compressor] Keep under size limit: couldn't plan the sizes ({ex.Message}); compressing with your settings.");
+                Debug.LogException(ex);
+                return null;
+            }
             string took = $"{timer.ElapsedMilliseconds / 1000.0:0.0} s";
-            if (steps < 0)
+            string changes = string.Join(
+                "\n",
+                plan.Changes.Select(c => $"  {c.Texture.name}: {c.From.x}x{c.From.y} -> {c.To.x}x{c.To.y}")
+            );
+            if (plan.CannotFit)
                 Debug.LogWarning(
-                    $"[Avatar Compressor] The avatar is predicted to stay over the mobile size limit even with "
-                        + $"Max Resolution {config.MaxResolution}; compressing at that and uploading anyway."
+                    "[Avatar Compressor] The avatar is predicted to stay over the mobile size limit even with every "
+                        + $"texture it could shrink made smaller ({took}); uploading anyway."
+                        + (plan.Changes.Count > 0 ? "\n" + changes : ""),
+                    avatarRoot
                 );
-            else if (steps > 0)
-                Debug.Log(
-                    $"[Avatar Compressor] Keep under size limit: Max Resolution {original} -> {config.MaxResolution} for this upload ({took})."
+            else if (plan.Changes.Count > 0)
+                Debug.LogWarning(
+                    $"[Avatar Compressor] Keep under size limit: made {plan.Changes.Count} textures smaller for this upload "
+                        + $"to fit ({took}). Your project's textures are not changed.\n{changes}",
+                    avatarRoot
                 );
             else
                 Debug.Log($"[Avatar Compressor] Keep under size limit: fits with your settings ({took}).");
-            return true;
+            return plan;
         }
-
 
         private static void StripUnusedProperties(IEnumerable<Material> materials)
         {

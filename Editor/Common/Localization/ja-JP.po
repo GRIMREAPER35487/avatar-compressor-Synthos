@@ -554,14 +554,38 @@ msgstr "アップロードサイズはアップロード先のプラットフォ
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "アップロードサイズを推定しています..."
 
+msgid "TextureCompressor:message:previewUploadBuildStepsFailed"
+msgstr "アバターのビルド処理（VRCFury などのツール）が失敗しました。コンソールを確認してください。実際のアップロードも同じエラーで止まる可能性が高いです。"
+
 msgid "TextureCompressor:message:previewUploadFailed"
 msgstr "アップロードサイズを推定できませんでした。コンソールを確認してください。"
 
-msgid "TextureCompressor:message:previewUploadLowered"
-msgstr "「モバイルのサイズ上限に収める」により、アップロード時の最大解像度は {0} -> {1} に下がります。"
+msgid "TextureCompressor:message:previewUploadShrinks"
+msgstr "「モバイルのサイズ上限に収める」により、アップロード時に {0} 枚のテクスチャが小さくなります: {1}"
 
 msgid "TextureCompressor:message:previewUploadCannotFit"
-msgstr "最大解像度 {0} でもモバイル上限を超えます。警告を出してアップロードを続けます。"
+msgstr "縮小できるテクスチャをすべて小さくしてもモバイル上限を超えます。アップロード時に続行するか確認します。"
+
+msgid "TextureCompressor:dialog:sizeAdjustedTitle"
+msgstr "サイズ上限に収めるためテクスチャを縮小しました"
+
+msgid "TextureCompressor:dialog:sizeAdjusted"
+msgstr "{0} を VRChat のモバイルのサイズ上限に収めるため、「モバイルのサイズ上限に収める」がこのアップロードで次のテクスチャを小さくしました:\n\n{3}\n\nアップロードはダウンロード {1}、非圧縮 {2} です。プロジェクトのテクスチャは変更されません。"
+
+msgid "TextureCompressor:dialog:sizeOverTitle"
+msgstr "モバイルのサイズ上限を超えています"
+
+msgid "TextureCompressor:dialog:sizeOver"
+msgstr "{0} は VRChat のモバイルのサイズ上限を超えています（ダウンロード {1}、非圧縮 {2}。上限は 10 MiB と 40 MiB）。アップロードが拒否される可能性があります。"
+
+msgid "TextureCompressor:dialog:sizeStillOver"
+msgstr "{0} は次のテクスチャを小さくした後も VRChat のモバイルのサイズ上限を超えています（ダウンロード {1}、非圧縮 {2}。上限は 10 MiB と 40 MiB）:\n\n{3}\n\nアップロードが拒否される可能性があります。"
+
+msgid "TextureCompressor:dialog:continueUpload"
+msgstr "アップロードを続ける"
+
+msgid "TextureCompressor:dialog:cancelUpload"
+msgstr "アップロードを中止"
 
 msgid "TextureCompressor:message:previewUploadOver"
 msgstr "モバイル上限を超えています。最大解像度を下げるか、「モバイルのサイズ上限に収める」をオンにしてください。"

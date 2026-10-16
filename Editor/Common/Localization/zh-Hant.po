@@ -554,14 +554,38 @@ msgstr "上傳大小必須在要上傳的平台下估算（目前建置目標為
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "正在估算上傳大小..."
 
+msgid "TextureCompressor:message:previewUploadBuildStepsFailed"
+msgstr "模型的建置步驟（VRCFury 或其他工具）失敗，請查看主控台。實際上傳很可能會因同一錯誤而停止。"
+
 msgid "TextureCompressor:message:previewUploadFailed"
 msgstr "無法估算上傳大小，請查看主控台。"
 
-msgid "TextureCompressor:message:previewUploadLowered"
-msgstr "「保持在行動版大小上限內」會在上傳時將 Max Resolution 從 {0} 降到 {1}。"
+msgid "TextureCompressor:message:previewUploadShrinks"
+msgstr "「保持在行動版大小上限內」會在上傳時縮小 {0} 張貼圖：{1}"
 
 msgid "TextureCompressor:message:previewUploadCannotFit"
-msgstr "即使 Max Resolution 為 {0} 也超過行動版上限；將發出警告並繼續上傳。"
+msgstr "即使把所有可縮小的貼圖都縮小也超過行動版上限；上傳時會詢問是否繼續。"
+
+msgid "TextureCompressor:dialog:sizeAdjustedTitle"
+msgstr "已縮小貼圖以符合上限"
+
+msgid "TextureCompressor:dialog:sizeAdjusted"
+msgstr "為了讓 {0} 保持在 VRChat 行動版大小上限內，「保持在行動版大小上限內」在本次上傳中縮小了以下貼圖：\n\n{3}\n\n上傳大小現在為下載 {1}、未壓縮 {2}。專案中的貼圖不會被修改。"
+
+msgid "TextureCompressor:dialog:sizeOverTitle"
+msgstr "超過行動版大小上限"
+
+msgid "TextureCompressor:dialog:sizeOver"
+msgstr "{0} 超過了 VRChat 行動版大小上限（下載 {1}、未壓縮 {2}；上限為 10 MiB 和 40 MiB）。VRChat 可能會拒絕上傳。"
+
+msgid "TextureCompressor:dialog:sizeStillOver"
+msgstr "縮小以下貼圖後，{0} 仍超過 VRChat 行動版大小上限（下載 {1}、未壓縮 {2}；上限為 10 MiB 和 40 MiB）：\n\n{3}\n\nVRChat 可能會拒絕上傳。"
+
+msgid "TextureCompressor:dialog:continueUpload"
+msgstr "繼續上傳"
+
+msgid "TextureCompressor:dialog:cancelUpload"
+msgstr "取消上傳"
 
 msgid "TextureCompressor:message:previewUploadOver"
 msgstr "超過行動版上限。請降低 Max Resolution 或開啟「保持在行動版大小上限內」。"
