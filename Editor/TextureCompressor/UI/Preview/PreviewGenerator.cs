@@ -247,6 +247,14 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 )
                 : new Dictionary<Texture2D, TexelDensityInfo>();
 
+            // As in the build: alpha and banding are checked on the resized source file when
+            // source files are used. Unity's import is already compressed, and its blocks change
+            // which formats look clean, so checking it picks different formats than the build.
+            var sourceCache = TextureCompressorPreferences.UseSourceFiles
+                ? new TextureSourceCache()
+                : null;
+            sourceCache?.Prepare(processedTextures.Keys);
+
             var processedList = new List<TexturePreviewData>();
             var frozenList = new List<TexturePreviewData>();
             var skippedList = new List<TexturePreviewData>();
@@ -320,7 +328,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             recommendedSize = formatOnlySize;
                             divisor = 1;
                         }
-                        var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
+                        var resizedTex = ResizeFromSource(processor, sourceCache, tex, recommendedSize, isNormalMap);
                         try
                         {
                             hasAlpha = TextureFormatSelector.HasSignificantAlpha(
@@ -395,7 +403,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         // Match the build pipeline: detect alpha on the resized texture
                         // so that alpha regions lost during downscaling don't cause an
                         // unnecessary alpha-capable format (e.g. BC7 instead of DXT1).
-                        var resizedTex = processor.ResizeSingle(tex, recommendedSize, isNormalMap);
+                        var resizedTex = ResizeFromSource(processor, sourceCache, tex, recommendedSize, isNormalMap);
                         try
                         {
                             hasAlpha = TextureFormatSelector.HasSignificantAlpha(
@@ -569,6 +577,30 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         /// Mirrors the build: the largest image available, the source file (up to the size the
         /// source cache reads) when not respecting the import Max Size, else the imported size.
         /// </summary>
+        /// <summary>
+        /// Resizes the texture's source file when one is cached, as the build does, otherwise
+        /// the imported texture. The caller destroys the result.
+        /// </summary>
+        private static Texture2D ResizeFromSource(
+            TextureProcessor processor,
+            TextureSourceCache sourceCache,
+            Texture2D texture,
+            Vector2Int size,
+            bool isNormalMap
+        )
+        {
+            var source = sourceCache?.Load(texture);
+            try
+            {
+                return processor.ResizeSingle(source != null ? source : texture, size, isNormalMap);
+            }
+            finally
+            {
+                if (source != null)
+                    Object.DestroyImmediate(source);
+            }
+        }
+
         private static Vector2Int GetFullSize(Texture2D texture, TextureCompressor config)
         {
             var imported = PlatformImport.Get(texture, config.TargetPlatform).Size;
