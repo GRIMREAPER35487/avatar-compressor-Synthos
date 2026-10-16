@@ -255,6 +255,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             {
                 var tex = kvp.Key;
                 var info = kvp.Value;
+                // Format and size on the platform being compressed for (see PlatformImport)
+                var import = PlatformImport.Get(tex, config.TargetPlatform);
 
                 string guid;
                 if (assetInfoCache.TryGetValue(tex, out var cachedAssetInfo))
@@ -278,10 +280,10 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 if (info.IsProcessed && analysisResults.TryGetValue(tex, out var analysis))
                 {
                     long originalMemory = MemoryCalculator.CalculateCompressedMemory(
-                        tex.width,
-                        tex.height,
-                        tex.format,
-                        tex.mipmapCount
+                        import.Size.x,
+                        import.Size.y,
+                        import.Format,
+                        import.MipCount
                     );
                     bool isNormalMap = info.IsNormalMap;
 
@@ -292,8 +294,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                     var baseSize = GetBaseSize(tex, config);
                     var selector = info.FormatOnly ? formatOnlySelector : formatSelector;
                     var formatOnlySize = new Vector2Int(
-                        TextureProcessor.EnsureMultipleOf4(tex.width),
-                        TextureProcessor.EnsureMultipleOf4(tex.height)
+                        TextureProcessor.EnsureMultipleOf4(import.Size.x),
+                        TextureProcessor.EnsureMultipleOf4(import.Size.y)
                     );
 
                     if (isFrozen && !frozenSettings.Skip)
@@ -325,7 +327,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                                 resizedTex != null ? resizedTex : tex
                             );
                             targetFormat = selector.ResolveTargetFormat(
-                                tex.format,
+                                import.Format,
                                 isNormalMap,
                                 AnalysisConstants.DefaultComplexityScore,
                                 hasAlpha,
@@ -335,6 +337,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                                 config,
                                 selector,
                                 tex,
+                                import.Format,
                                 resizedTex,
                                 isNormalMap,
                                 targetFormat,
@@ -380,7 +383,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         {
                             recommendedSize = UpscaleGate.Apply(
                                 recommendedSize,
-                                new Vector2Int(tex.width, tex.height),
+                                import.Size,
                                 analysis.NormalizedComplexity,
                                 config.LowComplexityThreshold,
                                 densities.TryGetValue(tex, out var measuredDensity)
@@ -399,7 +402,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                                 resizedTex != null ? resizedTex : tex
                             );
                             targetFormat = selector.ResolveTargetFormat(
-                                tex.format,
+                                import.Format,
                                 isNormalMap,
                                 analysis.NormalizedComplexity,
                                 hasAlpha,
@@ -409,6 +412,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                                 config,
                                 selector,
                                 tex,
+                                import.Format,
                                 resizedTex,
                                 isNormalMap,
                                 targetFormat,
@@ -445,7 +449,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         recommendedSize.x,
                         recommendedSize.y,
                         targetFormat,
-                        tex.mipmapCount
+                        import.MipCount
                     );
 
                     var previewData = new TexturePreviewData
@@ -454,7 +458,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         Guid = guid,
                         Complexity = analysis.NormalizedComplexity,
                         RecommendedDivisor = divisor,
-                        OriginalSize = new Vector2Int(tex.width, tex.height),
+                        OriginalSize = import.Size,
                         RecommendedSize = recommendedSize,
                         TextureType = info.TextureType,
                         IsProcessed = true,
@@ -486,10 +490,10 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 else
                 {
                     long originalMemory = MemoryCalculator.CalculateCompressedMemory(
-                        tex.width,
-                        tex.height,
-                        tex.format,
-                        tex.mipmapCount
+                        import.Size.x,
+                        import.Size.y,
+                        import.Format,
+                        import.MipCount
                     );
 
                     skippedList.Add(
@@ -499,8 +503,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             Guid = guid,
                             Complexity = 0f,
                             RecommendedDivisor = 1,
-                            OriginalSize = new Vector2Int(tex.width, tex.height),
-                            RecommendedSize = new Vector2Int(tex.width, tex.height),
+                            OriginalSize = import.Size,
+                            RecommendedSize = import.Size,
                             TextureType = info.TextureType,
                             IsProcessed = false,
                             SkipReason = info.SkipReason,
@@ -567,7 +571,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         /// </summary>
         private static Vector2Int GetFullSize(Texture2D texture, TextureCompressor config)
         {
-            var imported = new Vector2Int(texture.width, texture.height);
+            var imported = PlatformImport.Get(texture, config.TargetPlatform).Size;
             if (
                 config.RespectImportMaxSize
                 || !TextureCompressorPreferences.UseSourceFiles
@@ -579,14 +583,21 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             return TextureSourceCache.FitWithin(sourceSize, TextureSourceCache.MaxSourceSize);
         }
 
+        /// <summary>
+        /// As <see cref="TextureSourceCache.GetPlannedBaseSize"/>, with the imported size taken
+        /// from the platform being compressed for.
+        /// </summary>
         private static Vector2Int GetBaseSize(Texture2D texture, TextureCompressor config)
         {
-            return TextureSourceCache.GetPlannedBaseSize(
-                texture,
-                config.RespectImportMaxSize,
-                TextureCompressorPreferences.UseSourceFiles,
-                config.MaxResolution
-            );
+            if (
+                !config.RespectImportMaxSize
+                && TextureCompressorPreferences.UseSourceFiles
+                && TextureSourceCache.TryGetSourceSize(texture, out var sourceSize)
+            )
+            {
+                return TextureSourceCache.FitWithin(sourceSize, config.MaxResolution);
+            }
+            return PlatformImport.Get(texture, config.TargetPlatform).Size;
         }
 
         /// <summary>
@@ -598,6 +609,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             TextureCompressor config,
             TextureFormatSelector formatSelector,
             Texture2D texture,
+            TextureFormat importFormat,
             Texture2D resized,
             bool isNormalMap,
             TextureFormat targetFormat,
@@ -608,7 +620,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 resized != null
                 && !isNormalMap
                 && config.AvoidCompressionArtifacts
-                && formatSelector.ChoosesFormat(texture.format, frozenFormat)
+                && formatSelector.ChoosesFormat(importFormat, frozenFormat)
             )
             {
                 return CompressionArtifactDetector.ChooseCleanFormat(resized, targetFormat);

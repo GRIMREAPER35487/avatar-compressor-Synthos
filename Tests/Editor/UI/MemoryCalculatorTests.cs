@@ -224,6 +224,38 @@ namespace dev.limitex.avatar.compressor.tests
             Assert.That(result, Is.EqualTo(262144));
         }
 
+        [Test]
+        public void CalculateCompressedMemory_Astc_RoundsUpToWholeBlocks()
+        {
+            // 64x64 ASTC 6x6: 11x11 blocks of 16 bytes
+            var result = MemoryCalculator.CalculateCompressedMemory(
+                64,
+                64,
+                TextureFormat.ASTC_6x6,
+                1
+            );
+
+            Assert.That(result, Is.EqualTo(11 * 11 * 16));
+        }
+
+        [Test]
+        public void CalculateCompressedMemory_FullChain_CountsSmallLevelsAsWholeBlocks()
+        {
+            // 8x8 DXT1 with 4 levels: 8x8 (4 blocks), 4x4, 2x2 and 1x1 (1 block each), 8 bytes per block
+            var result = MemoryCalculator.CalculateCompressedMemory(8, 8, TextureFormat.DXT1, 4);
+
+            Assert.That(result, Is.EqualTo((4 + 1 + 1 + 1) * 8));
+        }
+
+        [Test]
+        public void CalculateCompressedMemory_MipCountPastOneByOne_IsIgnored()
+        {
+            var full = MemoryCalculator.CalculateCompressedMemory(256, 256, TextureFormat.BC7, 9);
+            var tooMany = MemoryCalculator.CalculateCompressedMemory(256, 256, TextureFormat.BC7, 12);
+
+            Assert.That(tooMany, Is.EqualTo(full));
+        }
+
         #endregion
 
         #region FormatBytes Tests

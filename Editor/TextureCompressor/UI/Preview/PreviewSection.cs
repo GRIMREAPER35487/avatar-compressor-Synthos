@@ -119,6 +119,39 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             }
         }
 
+        /// <summary>
+        /// Target Platform set to the other platform than the build target: sizes come from that
+        /// platform's import settings (see <see cref="PlatformImport"/>), which is close but not
+        /// what the build target shows.
+        /// </summary>
+        private static void DrawOtherPlatformNote(TextureCompressor config)
+        {
+            string platform = PlatformImport.OtherPlatformName(config.TargetPlatform);
+            if (platform == null)
+                return;
+            EditorGUILayout.HelpBox(
+                AvatarCompressorLocalization.Tr(
+                    platform == "Android"
+                        ? "TextureCompressor:message:previewOtherPlatformMobile"
+                        : "TextureCompressor:message:previewOtherPlatformDesktop",
+                    BuildTargetName()
+                ),
+                MessageType.Info
+            );
+        }
+
+        private static string BuildTargetName()
+        {
+            var target = EditorUserBuildSettings.activeBuildTarget;
+            return target switch
+            {
+                BuildTarget.StandaloneWindows or BuildTarget.StandaloneWindows64 => "Windows",
+                BuildTarget.Android => "Android",
+                BuildTarget.iOS => "iOS",
+                _ => target.ToString(),
+            };
+        }
+
         private void DrawUploadEstimate(TextureCompressor config)
         {
             if (_uploadEstimate.HasValue)
@@ -173,8 +206,17 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
             }
             else if (!AvatarSizeCheck.IsSupported(out _))
             {
+                var target = EditorUserBuildSettings.activeBuildTarget;
                 EditorGUILayout.LabelField(
-                    AvatarCompressorLocalization.Tr("TextureCompressor:message:previewUploadUnsupported"),
+                    target == BuildTarget.Android || target == BuildTarget.iOS
+                        ? AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:message:previewUploadUnityVersion",
+                            Application.unityVersion
+                        )
+                        : AvatarCompressorLocalization.Tr(
+                            "TextureCompressor:message:previewUploadUnsupported",
+                            BuildTargetName()
+                        ),
                     EditorStyles.wordWrappedMiniLabel
                 );
             }
@@ -327,6 +369,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                 EditorGUILayout.HelpBox(AvatarCompressorLocalization.Tr(helpKey), MessageType.Info);
             }
 
+            DrawOtherPlatformNote(config);
             DrawUnlockedPoiyomi(config);
 
             // Search box for preview textures
