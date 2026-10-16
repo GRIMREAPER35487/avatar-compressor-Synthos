@@ -24,6 +24,12 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
         public TextureFormat? PredictedFormat { get; set; }
         public bool HasAlpha { get; set; }
         public bool IsFrozen { get; set; }
+
+        /// <summary>Caught by the size filters: only the format changes, never the size.</summary>
+        public bool FormatOnly { get; set; }
+
+        /// <summary>Halvings "Keep under the mobile size limit" applied to fit (see FitHalving).</summary>
+        public int FitHalvings { get; set; }
         public FrozenTextureSettings FrozenSettings { get; set; }
 
         /// <summary>

@@ -554,14 +554,38 @@ msgstr "업로드 크기는 업로드할 플랫폼에서 추정해야 합니다(
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "업로드 크기를 추정하는 중..."
 
+msgid "TextureCompressor:message:previewUploadBuildStepsFailed"
+msgstr "아바타 빌드 단계(VRCFury 등 도구)가 실패했습니다. 콘솔을 확인하세요. 실제 업로드도 같은 오류로 멈출 가능성이 높습니다."
+
 msgid "TextureCompressor:message:previewUploadFailed"
 msgstr "업로드 크기를 추정하지 못했습니다. 콘솔을 확인하세요."
 
-msgid "TextureCompressor:message:previewUploadLowered"
-msgstr "\"모바일 크기 제한 안에 맞추기\"로 업로드 시 Max Resolution이 {0} -> {1}(으)로 낮아집니다."
+msgid "TextureCompressor:message:previewUploadShrinks"
+msgstr "\"모바일 크기 제한 안에 맞추기\"가 업로드 시 텍스처 {0}개를 작게 만듭니다: {1}"
 
 msgid "TextureCompressor:message:previewUploadCannotFit"
-msgstr "Max Resolution {0}에서도 모바일 제한을 넘습니다. 경고 후 업로드를 계속합니다."
+msgstr "줄일 수 있는 텍스처를 모두 줄여도 모바일 제한을 넘습니다. 업로드 시 계속할지 묻습니다."
+
+msgid "TextureCompressor:dialog:sizeAdjustedTitle"
+msgstr "크기 제한에 맞추려고 텍스처를 줄였습니다"
+
+msgid "TextureCompressor:dialog:sizeAdjusted"
+msgstr "{0}을(를) VRChat 모바일 크기 제한 안에 맞추기 위해 \"모바일 크기 제한 안에 맞추기\"가 이번 업로드에서 다음 텍스처를 작게 만들었습니다:\n\n{3}\n\n업로드는 다운로드 {1}, 비압축 {2}입니다. 프로젝트의 텍스처는 바뀌지 않습니다."
+
+msgid "TextureCompressor:dialog:sizeOverTitle"
+msgstr "모바일 크기 제한 초과"
+
+msgid "TextureCompressor:dialog:sizeOver"
+msgstr "{0}이(가) VRChat 모바일 크기 제한을 넘습니다(다운로드 {1}, 비압축 {2}, 제한은 10 MiB와 40 MiB). 업로드가 거부될 수 있습니다."
+
+msgid "TextureCompressor:dialog:sizeStillOver"
+msgstr "{0}은(는) 다음 텍스처를 줄인 뒤에도 VRChat 모바일 크기 제한을 넘습니다(다운로드 {1}, 비압축 {2}, 제한은 10 MiB와 40 MiB):\n\n{3}\n\n업로드가 거부될 수 있습니다."
+
+msgid "TextureCompressor:dialog:continueUpload"
+msgstr "업로드 계속"
+
+msgid "TextureCompressor:dialog:cancelUpload"
+msgstr "업로드 취소"
 
 msgid "TextureCompressor:message:previewUploadOver"
 msgstr "모바일 제한을 넘습니다. Max Resolution을 낮추거나 \"모바일 크기 제한 안에 맞추기\"를 켜세요."

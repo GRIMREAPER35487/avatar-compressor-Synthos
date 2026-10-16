@@ -408,6 +408,15 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     );
                     upscaleNote = UpscaleGate.Describe(decision, importedSize, density);
                 }
+                if (!isFrozen && !formatOnly)
+                {
+                    targetSize = FitHalving.Apply(_config, textureInfo.AssetGuid, targetSize, out int fitHalvings);
+                    if (fitHalvings > 0 && enableLogging)
+                        Debug.Log(
+                            $"[{Name}] {originalTexture.name}: made smaller to fit the upload size limit "
+                                + $"({targetSize.x}x{targetSize.y})"
+                        );
+                }
                 string densityNote = density.HasValue
                     ? $" | On avatar: {density.Value.DensityAt(targetSize):F0} px/cm on the "
                         + $"{(density.Value.FromHead ? "head" : "body")}, needs "

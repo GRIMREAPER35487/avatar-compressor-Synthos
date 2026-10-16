@@ -12,7 +12,6 @@ namespace dev.limitex.avatar.compressor.editor.texture
     {
         // Section components (each owns its own search and UI state)
         private FrozenTexturesSection _frozenSection;
-        private PreviewSection _previewSection;
 
         // UI state for sections that don't own their own
         private bool _showExclusionsSection;
@@ -24,7 +23,6 @@ namespace dev.limitex.avatar.compressor.editor.texture
         private void OnEnable()
         {
             _frozenSection = new FrozenTexturesSection();
-            _previewSection = new PreviewSection();
         }
 
         protected override void DrawInspectorContent()
@@ -62,8 +60,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
             _frozenSection.Draw(config);
             EditorGUILayout.Space(15);
 
-            // Preview section
-            _previewSection.Draw(config);
+            // Preview section (kept per component, across inspector rebuilds)
+            PreviewSection.For(config).Draw(config);
         }
     }
 }

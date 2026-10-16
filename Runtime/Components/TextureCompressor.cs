@@ -126,6 +126,13 @@ namespace dev.limitex.avatar.compressor
         )]
         public bool KeepUnderSizeLimit = false;
 
+        /// <summary>
+        /// Set by "Keep under the mobile size limit" on the build's copy of the settings: how many
+        /// times to halve single textures (by asset GUID) to fit. Never saved.
+        /// </summary>
+        [System.NonSerialized]
+        internal Dictionary<string, int> FitHalvings;
+
         [Header("Source Textures")]
         [Tooltip(
             "Use the texture's import Max Size as the starting size. When off, the full-quality "

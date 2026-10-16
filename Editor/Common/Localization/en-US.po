@@ -555,14 +555,38 @@ msgstr "Upload size has to be estimated from the platform you upload to: the bui
 msgid "TextureCompressor:message:previewUploadEstimating"
 msgstr "Estimating the upload size..."
 
+msgid "TextureCompressor:message:previewUploadBuildStepsFailed"
+msgstr "The avatar's build steps failed (VRCFury or another tool); see the console. A real upload would most likely stop at the same error."
+
 msgid "TextureCompressor:message:previewUploadFailed"
 msgstr "Couldn't estimate the upload size; see the console."
 
-msgid "TextureCompressor:message:previewUploadLowered"
-msgstr "Keep under the mobile size limit will lower Max Resolution {0} -> {1} for the upload."
+msgid "TextureCompressor:message:previewUploadShrinks"
+msgstr "Keep under the mobile size limit will make {0} textures smaller for the upload: {1}"
 
 msgid "TextureCompressor:message:previewUploadCannotFit"
-msgstr "Over the mobile limit even at Max Resolution {0}; the upload will continue with a warning."
+msgstr "Over the mobile limit even with every texture it can shrink made smaller; the upload will ask before continuing."
+
+msgid "TextureCompressor:dialog:sizeAdjustedTitle"
+msgstr "Textures made smaller to fit"
+
+msgid "TextureCompressor:dialog:sizeAdjusted"
+msgstr "To keep {0} under VRChat's mobile size limit, \"Keep under the mobile size limit\" made these textures smaller for this upload:\n\n{3}\n\nThe upload is now {1} download, {2} uncompressed. Your project's textures are not changed."
+
+msgid "TextureCompressor:dialog:sizeOverTitle"
+msgstr "Over the mobile size limit"
+
+msgid "TextureCompressor:dialog:sizeOver"
+msgstr "{0} is over VRChat's mobile size limit ({1} download, {2} uncompressed; the limits are 10 MiB and 40 MiB). VRChat may refuse the upload."
+
+msgid "TextureCompressor:dialog:sizeStillOver"
+msgstr "{0} is still over VRChat's mobile size limit ({1} download, {2} uncompressed; the limits are 10 MiB and 40 MiB) after making these textures smaller:\n\n{3}\n\nVRChat may refuse the upload."
+
+msgid "TextureCompressor:dialog:continueUpload"
+msgstr "Continue upload"
+
+msgid "TextureCompressor:dialog:cancelUpload"
+msgstr "Cancel upload"
 
 msgid "TextureCompressor:message:previewUploadOver"
 msgstr "Over the mobile limit. Lower Max Resolution or turn on \"Keep under the mobile size limit\"."

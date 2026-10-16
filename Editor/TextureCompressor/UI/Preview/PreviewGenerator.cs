@@ -294,6 +294,7 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                         import.MipCount
                     );
                     bool isNormalMap = info.IsNormalMap;
+                    int fitHalvings = 0;
 
                     int divisor;
                     Vector2Int recommendedSize;
@@ -400,6 +401,11 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                                 out _
                             );
                         }
+                        if (!info.FormatOnly)
+                        {
+                            recommendedSize = FitHalving.Apply(config, guid, recommendedSize, out fitHalvings);
+                            divisor <<= fitHalvings;
+                        }
                         // Match the build pipeline: detect alpha on the resized texture
                         // so that alpha regions lost during downscaling don't cause an
                         // unnecessary alpha-capable format (e.g. BC7 instead of DXT1).
@@ -484,6 +490,8 @@ namespace dev.limitex.avatar.compressor.editor.texture.ui
                             : (TexelDensityInfo?)null,
                         BaseSize = baseSize,
                         MaxResolutionWanted = maxResolutionWanted,
+                        FormatOnly = info.FormatOnly,
+                        FitHalvings = fitHalvings,
                     };
 
                     if (isFrozen)
