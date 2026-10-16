@@ -43,8 +43,8 @@ namespace dev.limitex.avatar.compressor.editor.size
         public static long UncompressedTarget => (long)(UncompressedLimit * 0.999);
 
         /// <summary>
-        /// Extra room when choosing the step: the plan predicts texture sizes and how well they
-        /// compress (within a few percent), the final check measures them.
+        /// Extra room when choosing the step: the plan predicts the compressed textures (within
+        /// about 1% of the avatar's sizes on test avatars), the final check measures them.
         /// </summary>
         private const double PlanSlack = 0.01;
 
@@ -136,7 +136,7 @@ namespace dev.limitex.avatar.compressor.editor.size
 
                 long uncompressed = before.Uncompressed - stripped - now + after;
                 long predictedDownload = download - (long)(stripped * StrippedDownloadRatio) - textureDownloadNow + textureDownloadAfter;
-                bool fits = uncompressed <= UncompressedTarget && predictedDownload <= DownloadTarget * (1 - PlanSlack);
+                bool fits = uncompressed <= UncompressedTarget * (1 - PlanSlack) && predictedDownload <= DownloadTarget * (1 - PlanSlack);
                 if (log)
                     Debug.Log(
                         $"[Avatar Compressor] Size plan: max resolution {maxResolution} -> download ~{MiB(predictedDownload)}, "

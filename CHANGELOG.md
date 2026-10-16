@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Preview with Target Platform set to the other platform** - Previewing for Mobile while the build target is Windows (or for PC on Android) used the textures' Windows (or Android) import: its formats, sizes and, with "Respect import format" on, its kept formats, so Original and After could be far off. The preview now reads each texture's import settings for the platform being compressed for (format override or Unity's automatic format, Max Size, mipmaps) and says so in a note; switch the build target in the VRChat SDK for exact numbers.
+- **Preview picked different formats than the build** - With "Avoid compression artifacts" on, the build tests for banding on the full-quality source file, but the preview tested Unity's already-compressed import, whose blocks change what looks clean. The two could choose different ASTC/DXT formats for the same texture (on a test avatar the preview said 9.39 MB of textures where the upload had 11.41 MB, and the size limit plan predicted 35.2 MiB for a 37.3 MiB avatar). The preview now tests the source file like the build does. The size limit plan also keeps a 1% margin on the uncompressed size, as it already did for the download.
 - **Texture memory of block-compressed formats** - DXT/BC and ASTC sizes are now counted in whole blocks per mip level, as the GPU stores them, instead of bits per pixel; small mip levels and ASTC sizes that aren't a multiple of the block were slightly undercounted.
 
 ## [1.3.1] - 2026-10-13
