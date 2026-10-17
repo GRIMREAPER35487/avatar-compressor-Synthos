@@ -2,7 +2,7 @@
 
 All notable changes to Synthos Texture Analysis (`com.synthos.texture-analysis`). It is released together with Avatar Compressor (Synthos Edition) and always has the same version number. Versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.4.0] - 2026-10-17
 
 ### Fixed
 
