@@ -2,6 +2,12 @@
 
 All notable changes to Synthos Texture Analysis (`com.synthos.texture-analysis`). It is released together with Avatar Compressor (Synthos Edition) and always has the same version number. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Texture memory of block-compressed formats** - DXT/BC and ASTC sizes are now counted in whole blocks per mip level, as the GPU stores them, instead of bits per pixel. Small mip levels and ASTC sizes that aren't a multiple of the block were slightly undercounted, which the Avatar Compressor preview and its upload size estimate both read.
+
 ## [1.3.1] - 2026-10-13
 
 No changes; released with Avatar Compressor 1.3.1.
