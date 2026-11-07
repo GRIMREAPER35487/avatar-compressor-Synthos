@@ -56,6 +56,8 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 var timer = System.Diagnostics.Stopwatch.StartNew();
                 sizes = AvatarSizeCheck.Measure(avatarGameObject, textures: true);
                 over = sizes.Download > AvatarSizeCheck.DownloadTarget || sizes.Uncompressed > AvatarSizeCheck.UncompressedTarget;
+                // before anything below changes the textures: how far this plan's samples were off
+                AvatarSizeCheck.Learn(plan, sizes.TextureDownload);
                 if (over && !plan.CannotFit)
                 {
                     // The plan said it fits: its prediction was low, so make more textures smaller now

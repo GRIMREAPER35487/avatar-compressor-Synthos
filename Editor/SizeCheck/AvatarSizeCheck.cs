@@ -67,6 +67,48 @@ namespace dev.limitex.avatar.compressor.editor.size
         // The current plan's correction for the samples (Calibrate), worked out once per plan
         private static double? _calibration;
 
+        // The current plan's correction for the samples learned from earlier builds (Learn)
+        private static double _learned = 1.0;
+
+        /// <summary>
+        /// EditorPrefs key of the learned correction: per project (by its path) and build target,
+        /// since how the samples are off depends on the project's textures and formats.
+        /// </summary>
+        private static string LearnedKey
+        {
+            get
+            {
+                uint hash = 2166136261;
+                foreach (char ch in Application.dataPath)
+                    hash = (hash ^ ch) * 16777619;
+                return $"Synthos.AvatarCompressor.SampleCorrection.{hash:x8}.{EditorUserBuildSettings.activeBuildTarget}";
+            }
+        }
+
+        /// <summary>
+        /// After a build, compares the measured texture download with the plan's and keeps how far
+        /// the samples were off, for the next plan in this project and build target. The rest of
+        /// the texture prediction comes from real bytes, so the difference is put on the sampled
+        /// textures. Each build adjusts the correction by at most 30%, within 0.5-1.5.
+        /// </summary>
+        public static void Learn(FitPlan plan, long measuredTextureDownload)
+        {
+            if (plan == null || plan.SampledTextureDownload <= 0 || measuredTextureDownload <= 0)
+                return;
+            if (plan.UnremappedControllers != null && plan.UnremappedControllers.Count > 0)
+                return; // the original textures in the upload aren't the samples' error
+
+            long error = measuredTextureDownload - plan.PredictedTextureDownload;
+            double step = (plan.SampledTextureDownload + error) / (double)plan.SampledTextureDownload;
+            step = Math.Max(0.7, Math.Min(1.3, step));
+            double learned = Math.Max(0.5, Math.Min(1.5, plan.LearnedCorrection * step));
+            EditorPrefs.SetFloat(LearnedKey, (float)learned);
+            Debug.Log(
+                $"[Avatar Compressor] Size check: the sampled textures came out {(step < 1 ? "smaller" : "larger")} than planned "
+                    + $"(x{step:0.00}); the next plan for this project and platform scales them by {learned:0.00}."
+            );
+        }
+
         /// <summary>
         /// Download saved per byte of removed material properties: they are near-identical
         /// values that compress well (1.93 MB removed saved 124 KB on a 16-material avatar).
@@ -148,6 +190,12 @@ namespace dev.limitex.avatar.compressor.editor.size
             /// <summary>Predicted download of all of the upload's texture data, to compare with the check's measurement.</summary>
             public long PredictedTextureDownload;
 
+            /// <summary>The part of <see cref="PredictedTextureDownload"/> predicted from samples (textures that change format).</summary>
+            public long SampledTextureDownload;
+
+            /// <summary>The learned correction this plan's samples were scaled by.</summary>
+            public double LearnedCorrection = 1.0;
+
             // What the check after the build needs to make more textures smaller
             internal List<Candidate> Candidates;
             internal Dictionary<string, int> Halvings;
@@ -187,10 +235,11 @@ namespace dev.limitex.avatar.compressor.editor.size
             _sampled = 0;
             _sampleTime.Reset();
             _calibration = null;
+            _learned = Math.Max(0.5, Math.Min(1.5, EditorPrefs.GetFloat(LearnedKey, 1f)));
             long textureDownloadNow = -1;
             long allTexturesDownloadNow = -1;
             var pickOrder = new List<string>();
-            var plan = new FitPlan { Halvings = halvings, PickOrder = pickOrder, MinResolution = config.MinResolution };
+            var plan = new FitPlan { Halvings = halvings, PickOrder = pickOrder, MinResolution = config.MinResolution, LearnedCorrection = _learned };
             for (int round = 0; ; round++)
             {
                 var data = preview.Generate(
@@ -212,6 +261,7 @@ namespace dev.limitex.avatar.compressor.editor.size
                 var perTexture = new List<(TexturePreviewData Data, long Download)>();
                 long textureDownloadAfter = PredictedTextureDownload(data, rawCache, sampleCache, perTexture);
                 plan.PredictedTextureDownload = allTexturesDownloadNow - textureDownloadNow + textureDownloadAfter;
+                plan.SampledTextureDownload = perTexture.Where(p => ChangesFormat(p.Data)).Sum(p => p.Download);
 
                 long uncompressed = before.Uncompressed - stripped - now + after;
                 long predictedDownload = download - (long)(stripped * StrippedDownloadRatio) - textureDownloadNow + textureDownloadAfter;
@@ -243,6 +293,7 @@ namespace dev.limitex.avatar.compressor.editor.size
                     {
                         plan.Predicted = new Sizes { Uncompressed = uncompressed + memory, Download = predictedDownload + dl };
                         plan.PredictedTextureDownload += dl;
+                        plan.SampledTextureDownload += dl; // given back textures are almost always sampled ones
                         plan.Changes = ChangesFrom(plan.Candidates, pickOrder);
                         if (log)
                             Debug.Log(
@@ -756,7 +807,7 @@ namespace dev.limitex.avatar.compressor.editor.size
                     var key = (d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
                     if (!sampleCache.TryGetValue(key, out double sampled))
                         sampleCache[key] = sampled = SampledDownloadRatio(d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
-                    textureRatio = Math.Min(1.0, sampled * (_calibration ?? 1.0));
+                    textureRatio = Math.Min(1.0, sampled * (_calibration ?? 1.0) * _learned);
                 }
                 long download = (long)(bytes * textureRatio);
                 perTexture?.Add((d, download));
@@ -937,6 +988,7 @@ namespace dev.limitex.avatar.compressor.editor.size
             Debug.Log(
                 $"[Avatar Compressor] Size plan per texture ({_sampled} samples encoded in {_sampleTime.ElapsedMilliseconds / 1000.0:0.0} s"
                     + (_calibration.HasValue ? $", samples scaled by {_calibration.Value:0.00} from textures that keep their format" : "")
+                    + (Math.Abs(_learned - 1.0) > 0.005 ? $" and by {_learned:0.00} learned from earlier builds" : "")
                     + "):\n"
                     + string.Join("\n", lines)
             );
