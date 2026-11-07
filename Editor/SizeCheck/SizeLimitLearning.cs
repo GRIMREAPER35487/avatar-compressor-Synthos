@@ -14,6 +14,17 @@ namespace dev.limitex.avatar.compressor.editor.size
     public static class SizeLimitLearning
     {
         /// <summary>
+        /// SessionState flag an upload tool sets while it can build an avatar again. A build that
+        /// planned without the avatar's learned correction is then stopped once it has been learned
+        /// from (when the correction could change what is made smaller), and
+        /// <see cref="RetryRequestedKey"/> is set: the tool clears it and builds the same avatar again.
+        /// </summary>
+        public const string RetryReaderKey = texture.SizeCheckBuildHook.LearningRetryReaderKey;
+
+        /// <summary>Set when a build was stopped to be built again with what was learned.</summary>
+        public const string RetryRequestedKey = texture.SizeCheckBuildHook.LearningRetryRequestedKey;
+
+        /// <summary>
         /// True when a build of <paramref name="avatarRoot"/> for <paramref name="target"/> would
         /// teach the size plan something: the avatar keeps under the mobile size limit, the target
         /// is Android or iOS, and no build of this avatar ID on that target has been checked yet.

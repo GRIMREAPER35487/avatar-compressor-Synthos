@@ -110,16 +110,17 @@ namespace dev.limitex.avatar.compressor.editor.size
         /// failed measurement) is not kept. A build with nothing sampled still marks the avatar
         /// as checked.
         /// </summary>
-        public static void Learn(FitPlan plan, long measuredTextureDownload)
+        /// <returns>True when a correction was learned from the sampled textures.</returns>
+        public static bool Learn(FitPlan plan, long measuredTextureDownload)
         {
             if (plan == null || string.IsNullOrEmpty(plan.LearnedKey) || measuredTextureDownload <= 0)
-                return;
+                return false;
             if (plan.UnremappedControllers != null && plan.UnremappedControllers.Count > 0)
-                return; // the original textures in the upload aren't the samples' error
+                return false; // the original textures in the upload aren't the samples' error
             if (plan.SampledTextureDownload <= 0)
             {
                 Save(plan, plan.LearnedCorrection);
-                return;
+                return false;
             }
 
             long error = measuredTextureDownload - plan.PredictedTextureDownload;
@@ -131,13 +132,14 @@ namespace dev.limitex.avatar.compressor.editor.size
                     $"[Avatar Compressor] Size check: couldn't learn from this build (measured textures {MiB(measuredTextureDownload)}, "
                         + $"planned {MiB(plan.PredictedTextureDownload)}); keeping what was learned before."
                 );
-                return;
+                return false;
             }
             Save(plan, learned);
             Debug.Log(
                 $"[Avatar Compressor] Size check: the sampled textures came out {(step < 1 ? "smaller" : "larger")} than planned "
                     + $"(x{step:0.00}); the next plan for this avatar on this platform scales them by {learned:0.00}."
             );
+            return true;
         }
 
         private static void Save(FitPlan plan, double learned)
@@ -316,6 +318,9 @@ namespace dev.limitex.avatar.compressor.editor.size
             /// <summary>What this plan's avatar looked like, saved with what is learned from its build.</summary>
             public string Fingerprint;
 
+            /// <summary>True when the plan used a correction learned on this same avatar (not a first or changed build).</summary>
+            public bool UsedLearned;
+
             // What the check after the build needs to make more textures smaller
             internal List<Candidate> Candidates;
             internal Dictionary<string, int> Halvings;
@@ -388,6 +393,10 @@ namespace dev.limitex.avatar.compressor.editor.size
                                     + "so it plans without its learned correction and learns again from this build."
                             );
                         _learned = 1.0;
+                    }
+                    else
+                    {
+                        plan.UsedLearned = EditorPrefs.HasKey(learnedKey);
                     }
                     plan.LearnedCorrection = _learned;
                     textureDownloadNow = BundleSizeCalculator.CompressedSize(TextureStream(data, rawCache, predicted: false));

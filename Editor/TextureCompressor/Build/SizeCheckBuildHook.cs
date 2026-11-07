@@ -37,6 +37,18 @@ namespace dev.limitex.avatar.compressor.editor.texture
         /// </summary>
         internal const string ReportsKey = "Synthos.AvatarCompressor.SizeReports";
 
+        /// <summary>
+        /// SessionState flag a tool running the uploads sets when it can build an avatar again:
+        /// a build planned without the avatar's learned size correction (its first build, or the
+        /// avatar changed) is then stopped after it was measured and learned from, when the
+        /// correction could change what is made smaller, and <see cref="LearningRetryRequestedKey"/>
+        /// is set. The tool clears that and builds the same avatar again.
+        /// </summary>
+        internal const string LearningRetryReaderKey = "Synthos.AvatarCompressor.LearningRetryReader";
+
+        /// <summary>Set when a build was stopped to be built again with what was learned (<see cref="LearningRetryReaderKey"/>).</summary>
+        internal const string LearningRetryRequestedKey = "Synthos.AvatarCompressor.LearningRetryRequested";
+
         private const int MaxListedTextures = 12;
 
         public int callbackOrder => int.MaxValue;
@@ -57,7 +69,25 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 sizes = AvatarSizeCheck.Measure(avatarGameObject, textures: true);
                 over = sizes.Download > AvatarSizeCheck.DownloadTarget || sizes.Uncompressed > AvatarSizeCheck.UncompressedTarget;
                 // before anything below changes the textures: how far this plan's samples were off
-                AvatarSizeCheck.Learn(plan, sizes.TextureDownload);
+                bool learned = AvatarSizeCheck.Learn(plan, sizes.TextureDownload);
+
+                // A plan made without this avatar's correction (first build, or the avatar changed):
+                // when the correction could change what is shrunk, a tool that can retry builds it again
+                // with it instead of uploading this build
+                if (learned
+                    && !plan.UsedLearned
+                    && (plan.Changes.Count > 0 || over)
+                    && SessionState.GetBool(LearningRetryReaderKey, false))
+                {
+                    SessionState.SetBool(LearningRetryRequestedKey, true);
+                    Debug.Log(
+                        $"[Avatar Compressor] Size check: learned this avatar's size ({AvatarSizeCheck.MiB(sizes.Download)} measured, "
+                            + $"{AvatarSizeCheck.MiB(plan.Predicted.Download)} planned); stopping this build so it is built again "
+                            + "with what was learned, before uploading.",
+                        avatarGameObject
+                    );
+                    return false;
+                }
                 if (over && !plan.CannotFit)
                 {
                     // The plan said it fits: its prediction was low, so make more textures smaller now
