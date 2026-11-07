@@ -102,10 +102,13 @@ namespace dev.limitex.avatar.compressor.editor.size
 
         /// <summary>
         /// After a build, compares the measured texture download with the plan's and keeps how far
-        /// the samples were off, for this avatar's next plan on this build target. The rest of
-        /// the texture prediction comes from real bytes, so the difference is put on the sampled
-        /// textures. Each build adjusts the correction by at most 30%, within 0.5-1.5. A build
-        /// with nothing sampled still marks the avatar as checked (correction 1).
+        /// the samples were off, for this avatar's next plan on this build target, together with
+        /// the fingerprint of what it was learned on (<see cref="Fingerprint"/>). The rest of the
+        /// texture prediction comes from real bytes, so the difference is put on the sampled
+        /// textures, in full: an unchanged avatar is off by the same amount every build, and a
+        /// changed one starts over (<see cref="UseLearned"/>). Only an impossible result (from a
+        /// failed measurement) is not kept. A build with nothing sampled still marks the avatar
+        /// as checked.
         /// </summary>
         public static void Learn(FitPlan plan, long measuredTextureDownload)
         {
@@ -115,19 +118,109 @@ namespace dev.limitex.avatar.compressor.editor.size
                 return; // the original textures in the upload aren't the samples' error
             if (plan.SampledTextureDownload <= 0)
             {
-                EditorPrefs.SetFloat(plan.LearnedKey, (float)plan.LearnedCorrection);
+                Save(plan, plan.LearnedCorrection);
                 return;
             }
 
             long error = measuredTextureDownload - plan.PredictedTextureDownload;
             double step = (plan.SampledTextureDownload + error) / (double)plan.SampledTextureDownload;
-            step = Math.Max(0.7, Math.Min(1.3, step));
-            double learned = Math.Max(0.5, Math.Min(1.5, plan.LearnedCorrection * step));
-            EditorPrefs.SetFloat(plan.LearnedKey, (float)learned);
+            double learned = plan.LearnedCorrection * step;
+            if (double.IsNaN(learned) || double.IsInfinity(learned) || learned <= 0)
+            {
+                Debug.LogWarning(
+                    $"[Avatar Compressor] Size check: couldn't learn from this build (measured textures {MiB(measuredTextureDownload)}, "
+                        + $"planned {MiB(plan.PredictedTextureDownload)}); keeping what was learned before."
+                );
+                return;
+            }
+            Save(plan, learned);
             Debug.Log(
                 $"[Avatar Compressor] Size check: the sampled textures came out {(step < 1 ? "smaller" : "larger")} than planned "
                     + $"(x{step:0.00}); the next plan for this avatar on this platform scales them by {learned:0.00}."
             );
+        }
+
+        private static void Save(FitPlan plan, double learned)
+        {
+            EditorPrefs.SetFloat(plan.LearnedKey, (float)learned);
+            if (plan.Fingerprint != null)
+                EditorPrefs.SetString(plan.LearnedKey + ".fingerprint", plan.Fingerprint);
+        }
+
+        /// <summary>
+        /// Share of the texture memory (by the textures' imported size) that may change before a
+        /// learned correction no longer fits the avatar.
+        /// </summary>
+        private const double ChangedTexturesShare = 0.2;
+
+        /// <summary>
+        /// What a correction is learned on: the compressor settings and every texture the plan
+        /// looks at (its asset, and a hash of its file and import settings, which Unity changes
+        /// when either does), with its imported memory. Not the sizes the plan picks, which can
+        /// differ from one build of the same avatar to the next.
+        /// </summary>
+        private static string Fingerprint(TextureCompressor config, List<TexturePreviewData> data)
+        {
+            // Object references are written as instance IDs, which change between editor sessions
+            string settings = System.Text.RegularExpressions.Regex.Replace(
+                EditorJsonUtility.ToJson(config),
+                "\"instanceID\":-?\\d+",
+                ""
+            );
+            uint hash = 2166136261;
+            foreach (char ch in settings)
+                hash = (hash ^ ch) * 16777619;
+
+            var textures = data.Select(d =>
+                {
+                    string path = AssetDatabase.GetAssetPath(d.Texture);
+                    string id = string.IsNullOrEmpty(path) ? d.Texture.name : AssetDatabase.AssetPathToGUID(path);
+                    string content = string.IsNullOrEmpty(path) ? "" : AssetDatabase.GetAssetDependencyHash(path).ToString();
+                    return $"{id}:{content}:{d.OriginalMemory}";
+                })
+                .Distinct()
+                .OrderBy(t => t, StringComparer.Ordinal);
+            return $"{hash:x8}|{string.Join(";", textures)}";
+        }
+
+        /// <summary>
+        /// True when the correction saved with <paramref name="saved"/> still fits the avatar now:
+        /// the same compressor settings, and textures making up at least 80% of the memory
+        /// unchanged. A correction saved without a fingerprint is used as it is.
+        /// </summary>
+        private static bool UseLearned(string saved, string now, out string reason)
+        {
+            reason = null;
+            if (string.IsNullOrEmpty(saved))
+                return true;
+            var savedParts = saved.Split('|');
+            var nowParts = now.Split('|');
+            if (savedParts.Length != 2 || nowParts.Length != 2)
+                return true;
+            if (savedParts[0] != nowParts[0])
+            {
+                reason = "its compressor settings changed";
+                return false;
+            }
+
+            Dictionary<string, long> Parse(string list) =>
+                list.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => (Key: t.Substring(0, Math.Max(0, t.LastIndexOf(':'))), Bytes: t.Substring(t.LastIndexOf(':') + 1)))
+                    .GroupBy(t => t.Key)
+                    .ToDictionary(g => g.Key, g => long.TryParse(g.First().Bytes, out long b) ? b : 0);
+            var before = Parse(savedParts[1]);
+            var after = Parse(nowParts[1]);
+            long total = Math.Max(before.Values.Sum(), after.Values.Sum());
+            if (total <= 0)
+                return true;
+            long changed = before.Where(t => !after.ContainsKey(t.Key)).Sum(t => t.Value)
+                + after.Where(t => !before.ContainsKey(t.Key)).Sum(t => t.Value);
+            if (changed > total * ChangedTexturesShare)
+            {
+                reason = $"{changed * 100 / total}% of its texture memory changed";
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -220,6 +313,9 @@ namespace dev.limitex.avatar.compressor.editor.size
             /// <summary>Where this avatar's learned correction is kept (<see cref="LearnedKey(string, BuildTarget)"/>).</summary>
             public string LearnedKey;
 
+            /// <summary>What this plan's avatar looked like, saved with what is learned from its build.</summary>
+            public string Fingerprint;
+
             // What the check after the build needs to make more textures smaller
             internal List<Candidate> Candidates;
             internal Dictionary<string, int> Halvings;
@@ -260,7 +356,10 @@ namespace dev.limitex.avatar.compressor.editor.size
             _sampleTime.Reset();
             _calibration = null;
             string learnedKey = LearnedKey(AvatarId(avatarRoot), EditorUserBuildSettings.activeBuildTarget);
-            _learned = Math.Max(0.5, Math.Min(1.5, EditorPrefs.GetFloat(learnedKey, 1f)));
+            // Checked against the avatar as it is now once the textures are known (first round)
+            _learned = EditorPrefs.GetFloat(learnedKey, 1f);
+            if (double.IsNaN(_learned) || double.IsInfinity(_learned) || _learned <= 0)
+                _learned = 1.0;
             long textureDownloadNow = -1;
             long allTexturesDownloadNow = -1;
             var pickOrder = new List<string>();
@@ -278,6 +377,19 @@ namespace dev.limitex.avatar.compressor.editor.size
                 long after = data.Sum(d => d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory);
                 if (textureDownloadNow < 0)
                 {
+                    // A correction learned on a different avatar (changed settings or textures) doesn't apply
+                    plan.Fingerprint = Fingerprint(config, data);
+                    if (EditorPrefs.HasKey(learnedKey)
+                        && !UseLearned(EditorPrefs.GetString(learnedKey + ".fingerprint", ""), plan.Fingerprint, out string changeReason))
+                    {
+                        if (log && Math.Abs(_learned - 1.0) > 0.005)
+                            Debug.Log(
+                                $"[Avatar Compressor] Size plan: this avatar changed since it was learned ({changeReason}), "
+                                    + "so it plans without its learned correction and learns again from this build."
+                            );
+                        _learned = 1.0;
+                    }
+                    plan.LearnedCorrection = _learned;
                     textureDownloadNow = BundleSizeCalculator.CompressedSize(TextureStream(data, rawCache, predicted: false));
                     allTexturesDownloadNow = before.TextureStream != null && before.TextureStream.Length > 0
                         ? BundleSizeCalculator.CompressedSize(before.TextureStream)
