@@ -57,12 +57,20 @@ namespace dev.limitex.avatar.compressor.editor.size
         private const double DownloadPlanSlack = 0.03;
 
         /// <summary>
-        /// LZMA size per byte of freshly encoded ASTC/DXT/BC data. Block-compressed data hardly
-        /// compresses further, so this is used for textures the compressor writes in a different
-        /// format than they are imported in, whose imported bytes say nothing about the output
-        /// (an uncompressed or crunched import compresses far better or worse).
+        /// LZMA size per byte of freshly encoded block data, used only when a texture's sample
+        /// can't be encoded (<see cref="SampledDownloadRatio"/>). Measured on an avatar whose
+        /// textures went from imported ASTC 6x6 to mostly ASTC 4x4: about 0.48.
         /// </summary>
-        private const double FreshEncodeDownloadRatio = 0.9;
+        private const double FreshEncodeDownloadRatio = 0.5;
+
+        /// <summary>Tiles per side and tile size of the sample <see cref="SampledDownloadRatio"/> encodes.</summary>
+        private const int SampleGrid = 4;
+
+        private const int SampleTile = 64;
+
+        // Samples encoded during the current plan and the time they took, for its log
+        private static int _sampled;
+        private static readonly System.Diagnostics.Stopwatch _sampleTime = new System.Diagnostics.Stopwatch();
 
         /// <summary>
         /// Download saved per byte of removed material properties: they are near-identical
@@ -178,6 +186,9 @@ namespace dev.limitex.avatar.compressor.editor.size
             config.FitHalvings = halvings;
             var preview = new PreviewGenerator();
             var rawCache = new Dictionary<Texture2D, byte[]>();
+            var sampleCache = new Dictionary<(Texture2D, TextureFormat, Vector2Int), double>();
+            _sampled = 0;
+            _sampleTime.Reset();
             long textureDownloadNow = -1;
             long allTexturesDownloadNow = -1;
             var pickOrder = new List<string>();
@@ -201,7 +212,7 @@ namespace dev.limitex.avatar.compressor.editor.size
                         : 0;
                 }
                 var perTexture = new List<(TexturePreviewData Data, long Download)>();
-                long textureDownloadAfter = PredictedTextureDownload(data, rawCache, perTexture);
+                long textureDownloadAfter = PredictedTextureDownload(data, rawCache, sampleCache, perTexture);
                 plan.PredictedTextureDownload = allTexturesDownloadNow - textureDownloadNow + textureDownloadAfter;
 
                 long uncompressed = before.Uncompressed - stripped - now + after;
@@ -602,14 +613,16 @@ namespace dev.limitex.avatar.compressor.editor.size
         /// its downscaled versions, already encoded, so a texture predicted at 512 is stood in
         /// for by its mip chain from 512 down; smaller textures compress worse, which a single
         /// ratio for all sizes would miss. Only textures that keep their imported format are
-        /// predicted from their bytes; a texture written in another format (e.g. imported
-        /// uncompressed or crunched, written as ASTC) compresses like fresh block data
-        /// (<see cref="FreshEncodeDownloadRatio"/>).
+        /// predicted from their bytes. A texture written in another format compresses
+        /// differently (imported ASTC 6x6 written as ASTC 4x4 compresses to about 0.48 of its
+        /// size, its import to about 0.27), so a sample of it is encoded in the output format and
+        /// measured instead (<see cref="SampledDownloadRatio"/>).
         /// </summary>
         /// <param name="perTexture">Filled with each texture's predicted download, for the log.</param>
         private static long PredictedTextureDownload(
             List<TexturePreviewData> data,
             Dictionary<Texture2D, byte[]> rawCache,
+            Dictionary<(Texture2D, TextureFormat, Vector2Int), double> sampleCache,
             List<(TexturePreviewData Data, long Download)> perTexture
         )
         {
@@ -621,11 +634,107 @@ namespace dev.limitex.avatar.compressor.editor.size
             foreach (var d in data)
             {
                 long bytes = d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory;
-                long download = (long)(bytes * (ChangesFormat(d) ? FreshEncodeDownloadRatio : ratio));
+                double textureRatio = ratio;
+                if (ChangesFormat(d))
+                {
+                    var key = (d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
+                    if (!sampleCache.TryGetValue(key, out textureRatio))
+                        sampleCache[key] = textureRatio = SampledDownloadRatio(d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
+                }
+                long download = (long)(bytes * textureRatio);
                 perTexture?.Add((d, download));
                 total += download;
             }
             return total;
+        }
+
+        /// <summary>
+        /// How well the texture compresses in the upload when written as <paramref name="format"/>
+        /// at <paramref name="size"/>: tiles spread over the texture at that size are encoded the
+        /// way the build encodes (best quality) and LZMA-compressed. The tiles cover empty and
+        /// detailed areas alike, at the output's detail per pixel. Falls back to
+        /// <see cref="FreshEncodeDownloadRatio"/> if the sample can't be made.
+        /// </summary>
+        private static double SampledDownloadRatio(Texture2D texture, TextureFormat format, Vector2Int size)
+        {
+            RenderTexture rt = null;
+            Texture2D full = null, sample = null;
+            var previous = RenderTexture.active;
+            _sampled++;
+            _sampleTime.Start();
+            try
+            {
+                int width = Math.Max(1, size.x), height = Math.Max(1, size.y);
+                bool linear = !UnityEngine.Experimental.Rendering.GraphicsFormatUtility.IsSRGBFormat(texture.graphicsFormat);
+                rt = RenderTexture.GetTemporary(
+                    width,
+                    height,
+                    0,
+                    RenderTextureFormat.ARGB32,
+                    linear ? RenderTextureReadWrite.Linear : RenderTextureReadWrite.sRGB
+                );
+                Graphics.Blit(texture, rt);
+                RenderTexture.active = rt;
+                full = new Texture2D(width, height, TextureFormat.RGBA32, false, linear);
+                full.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
+                full.Apply(false);
+                var pixels = full.GetPixels32();
+
+                // Small textures are encoded whole; larger ones as a grid of tiles
+                int tile = Math.Min(SampleTile, Math.Min(width, height) / SampleGrid);
+                Color32[] samplePixels;
+                int sampleWidth, sampleHeight;
+                if (tile < 4 || width * height <= SampleGrid * SampleGrid * SampleTile * SampleTile)
+                {
+                    samplePixels = pixels;
+                    sampleWidth = width;
+                    sampleHeight = height;
+                }
+                else
+                {
+                    sampleWidth = sampleHeight = SampleGrid * tile;
+                    samplePixels = new Color32[sampleWidth * sampleHeight];
+                    for (int ty = 0; ty < SampleGrid; ty++)
+                    {
+                        for (int tx = 0; tx < SampleGrid; tx++)
+                        {
+                            // the middle of each grid cell
+                            int sx = (int)((tx + 0.5) * width / SampleGrid) - tile / 2;
+                            int sy = (int)((ty + 0.5) * height / SampleGrid) - tile / 2;
+                            for (int y = 0; y < tile; y++)
+                                Array.Copy(pixels, (sy + y) * width + sx, samplePixels, (ty * tile + y) * sampleWidth + tx * tile, tile);
+                        }
+                    }
+                }
+
+                sample = new Texture2D(sampleWidth, sampleHeight, TextureFormat.RGBA32, false, linear);
+                sample.SetPixels32(samplePixels);
+                sample.Apply(false);
+                EditorUtility.CompressTexture(sample, format, TextureCompressionQuality.Best);
+                var raw = sample.GetRawTextureData();
+                if (raw.Length == 0)
+                    return FreshEncodeDownloadRatio;
+                return Math.Min(1.0, (double)BundleSizeCalculator.CompressedSize(raw) / raw.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning(
+                    $"[Avatar Compressor] Size plan: couldn't sample '{texture.name}' as {format} ({ex.Message}); "
+                        + $"assuming it compresses to {FreshEncodeDownloadRatio:0.0} of its size."
+                );
+                return FreshEncodeDownloadRatio;
+            }
+            finally
+            {
+                _sampleTime.Stop();
+                RenderTexture.active = previous;
+                if (rt != null)
+                    RenderTexture.ReleaseTemporary(rt);
+                if (full != null)
+                    UnityEngine.Object.DestroyImmediate(full);
+                if (sample != null)
+                    UnityEngine.Object.DestroyImmediate(sample);
+            }
         }
 
         /// <summary>True when the compressor writes the texture in a different format than it is imported in.</summary>
@@ -646,9 +755,12 @@ namespace dev.limitex.avatar.compressor.editor.size
                     var size = d.IsProcessed ? d.RecommendedSize : new Vector2Int(d.Texture.width, d.Texture.height);
                     long bytes = d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory;
                     return $"  {d.Texture.name}: {d.Texture.format} -> {output} {size.x}x{size.y}, "
-                        + $"{MiB(bytes)} memory, ~{MiB(p.Download)} download{(ChangesFormat(d) ? " (new format)" : "")}";
+                        + $"{MiB(bytes)} memory, ~{MiB(p.Download)} download{(ChangesFormat(d) ? " (sampled in the new format)" : "")}";
                 });
-            Debug.Log("[Avatar Compressor] Size plan per texture:\n" + string.Join("\n", lines));
+            Debug.Log(
+                $"[Avatar Compressor] Size plan per texture ({_sampled} samples encoded in {_sampleTime.ElapsedMilliseconds / 1000.0:0.0} s):\n"
+                    + string.Join("\n", lines)
+            );
         }
 
         /// <summary>
