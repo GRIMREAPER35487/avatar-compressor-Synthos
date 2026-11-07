@@ -111,6 +111,13 @@ namespace dev.limitex.avatar.compressor.editor.size
 
             /// <summary>True when the avatar is predicted to stay over even with every texture it can shrink shrunk.</summary>
             public bool CannotFit;
+
+            /// <summary>
+            /// Controllers the build could not point at the compressed materials. The plan
+            /// assumes the original textures drop out of the upload; these keep them in, so the
+            /// prediction is low by about their size.
+            /// </summary>
+            public List<string> UnremappedControllers = new List<string>();
         }
 
         /// <summary>

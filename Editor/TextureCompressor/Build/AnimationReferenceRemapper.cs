@@ -35,6 +35,12 @@ namespace dev.limitex.avatar.compressor.editor.texture
             RuntimeAnimatorController
         > _controllerCache = new Dictionary<RuntimeAnimatorController, RuntimeAnimatorController>();
 
+        /// <summary>
+        /// Controllers that could not be copied: their animations still use the original
+        /// materials and textures, which then ship next to the compressed ones.
+        /// </summary>
+        public List<string> UnremappedControllers { get; } = new List<string>();
+
         public AnimationReferenceRemapper(
             Dictionary<Texture2D, Texture2D> processedTextures,
             Dictionary<Material, Material> clonedMaterials,
@@ -347,6 +353,7 @@ namespace dev.limitex.avatar.compressor.editor.texture
             var copy = _store.CopyAsset(controller);
             if (copy == null)
             {
+                UnremappedControllers.Add(controller.name);
                 Debug.LogWarning(
                     $"[Avatar Compressor] Could not copy controller '{controller.name}'. "
                         + "Its animations keep the original materials and textures.",

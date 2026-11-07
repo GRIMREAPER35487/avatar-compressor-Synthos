@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-11-07
+
+### Fixed
+
+- **Keep under the mobile size limit planned too small with the Synthos FX Optimizer** - The FX Optimizer saves its optimized controllers inside another asset, which the compressor couldn't copy ("Could not copy controller 'Base4_VRCFury FX'"), so the FX animations (material swaps and toggles) kept the original materials and their full-size textures were uploaded next to the compressed ones. The plan assumed they dropped out and came up about 1.5-2 MiB short (one Android upload planned ~8.7 MiB came out at 10.26 MiB). The FX Optimizer's TrashBin, which it rebuilds every build, is now edited in place like VRCFury's build folder, and controllers saved inside another asset can now be copied. If a controller still can't be updated, the size check says the plan was low and why.
+
 ## [1.4.0] - 2026-10-17
 
 ### Changed

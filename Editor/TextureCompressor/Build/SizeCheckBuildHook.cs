@@ -64,6 +64,13 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     Debug.LogWarning($"[Avatar Compressor] Size check: {summary}. The avatar may be over VRChat's mobile limit.", avatarGameObject);
                 else
                     Debug.Log($"[Avatar Compressor] Size check: {summary}.", avatarGameObject);
+                if (plan.UnremappedControllers != null && plan.UnremappedControllers.Count > 0)
+                    Debug.LogWarning(
+                        "[Avatar Compressor] Size check: the size plan was low because the animations in "
+                            + string.Join(", ", plan.UnremappedControllers.Distinct().Select(n => $"'{n}'"))
+                            + " still use the original materials, so their full-size textures are uploaded too.",
+                        avatarGameObject
+                    );
             }
             catch (System.Exception ex)
             {
