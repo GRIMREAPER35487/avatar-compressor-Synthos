@@ -71,41 +71,62 @@ namespace dev.limitex.avatar.compressor.editor.size
         private static double _learned = 1.0;
 
         /// <summary>
-        /// EditorPrefs key of the learned correction: per project (by its path) and build target,
-        /// since how the samples are off depends on the project's textures and formats.
+        /// EditorPrefs key of the learned correction: per project (by its path), build target and
+        /// avatar. Each avatar (each outfit the Batch Uploader uploads has its own) is off by its
+        /// own amount, so one avatar's correction is never used for another.
         /// </summary>
-        private static string LearnedKey
+        internal static string LearnedKey(string avatarId, BuildTarget target)
         {
-            get
+            uint hash = 2166136261;
+            foreach (char ch in Application.dataPath)
+                hash = (hash ^ ch) * 16777619;
+            return $"Synthos.AvatarCompressor.SampleCorrection.{hash:x8}.{target}.{avatarId}";
+        }
+
+        /// <summary>
+        /// The avatar's VRChat ID (the Pipeline Manager's blueprint ID), or its name before it has
+        /// been uploaded. Read by property name, so no VRChat core assembly reference is needed.
+        /// </summary>
+        internal static string AvatarId(GameObject avatarRoot)
+        {
+            var pipeline = avatarRoot != null ? avatarRoot.GetComponent("PipelineManager") : null;
+            if (pipeline != null)
             {
-                uint hash = 2166136261;
-                foreach (char ch in Application.dataPath)
-                    hash = (hash ^ ch) * 16777619;
-                return $"Synthos.AvatarCompressor.SampleCorrection.{hash:x8}.{EditorUserBuildSettings.activeBuildTarget}";
+                using var serialized = new SerializedObject(pipeline);
+                string id = serialized.FindProperty("blueprintId")?.stringValue;
+                if (!string.IsNullOrWhiteSpace(id))
+                    return id;
             }
+            return avatarRoot != null ? avatarRoot.name.Replace("(Clone)", "").Trim() : "";
         }
 
         /// <summary>
         /// After a build, compares the measured texture download with the plan's and keeps how far
-        /// the samples were off, for the next plan in this project and build target. The rest of
+        /// the samples were off, for this avatar's next plan on this build target. The rest of
         /// the texture prediction comes from real bytes, so the difference is put on the sampled
-        /// textures. Each build adjusts the correction by at most 30%, within 0.5-1.5.
+        /// textures. Each build adjusts the correction by at most 30%, within 0.5-1.5. A build
+        /// with nothing sampled still marks the avatar as checked (correction 1).
         /// </summary>
         public static void Learn(FitPlan plan, long measuredTextureDownload)
         {
-            if (plan == null || plan.SampledTextureDownload <= 0 || measuredTextureDownload <= 0)
+            if (plan == null || string.IsNullOrEmpty(plan.LearnedKey) || measuredTextureDownload <= 0)
                 return;
             if (plan.UnremappedControllers != null && plan.UnremappedControllers.Count > 0)
                 return; // the original textures in the upload aren't the samples' error
+            if (plan.SampledTextureDownload <= 0)
+            {
+                EditorPrefs.SetFloat(plan.LearnedKey, (float)plan.LearnedCorrection);
+                return;
+            }
 
             long error = measuredTextureDownload - plan.PredictedTextureDownload;
             double step = (plan.SampledTextureDownload + error) / (double)plan.SampledTextureDownload;
             step = Math.Max(0.7, Math.Min(1.3, step));
             double learned = Math.Max(0.5, Math.Min(1.5, plan.LearnedCorrection * step));
-            EditorPrefs.SetFloat(LearnedKey, (float)learned);
+            EditorPrefs.SetFloat(plan.LearnedKey, (float)learned);
             Debug.Log(
                 $"[Avatar Compressor] Size check: the sampled textures came out {(step < 1 ? "smaller" : "larger")} than planned "
-                    + $"(x{step:0.00}); the next plan for this project and platform scales them by {learned:0.00}."
+                    + $"(x{step:0.00}); the next plan for this avatar on this platform scales them by {learned:0.00}."
             );
         }
 
@@ -196,6 +217,9 @@ namespace dev.limitex.avatar.compressor.editor.size
             /// <summary>The learned correction this plan's samples were scaled by.</summary>
             public double LearnedCorrection = 1.0;
 
+            /// <summary>Where this avatar's learned correction is kept (<see cref="LearnedKey(string, BuildTarget)"/>).</summary>
+            public string LearnedKey;
+
             // What the check after the build needs to make more textures smaller
             internal List<Candidate> Candidates;
             internal Dictionary<string, int> Halvings;
@@ -235,11 +259,12 @@ namespace dev.limitex.avatar.compressor.editor.size
             _sampled = 0;
             _sampleTime.Reset();
             _calibration = null;
-            _learned = Math.Max(0.5, Math.Min(1.5, EditorPrefs.GetFloat(LearnedKey, 1f)));
+            string learnedKey = LearnedKey(AvatarId(avatarRoot), EditorUserBuildSettings.activeBuildTarget);
+            _learned = Math.Max(0.5, Math.Min(1.5, EditorPrefs.GetFloat(learnedKey, 1f)));
             long textureDownloadNow = -1;
             long allTexturesDownloadNow = -1;
             var pickOrder = new List<string>();
-            var plan = new FitPlan { Halvings = halvings, PickOrder = pickOrder, MinResolution = config.MinResolution, LearnedCorrection = _learned };
+            var plan = new FitPlan { Halvings = halvings, PickOrder = pickOrder, MinResolution = config.MinResolution, LearnedCorrection = _learned, LearnedKey = learnedKey };
             for (int round = 0; ; round++)
             {
                 var data = preview.Generate(
