@@ -49,6 +49,22 @@ namespace dev.limitex.avatar.compressor.editor.size
         private const double PlanSlack = 0.01;
 
         /// <summary>
+        /// Extra room for the download, which is predicted less exactly than the uncompressed
+        /// size (texture data's LZMA size is estimated, not built). The check after the build
+        /// makes more textures smaller if the prediction was still low
+        /// (<see cref="ShrinkAfterBuild"/>).
+        /// </summary>
+        private const double DownloadPlanSlack = 0.03;
+
+        /// <summary>
+        /// LZMA size per byte of freshly encoded ASTC/DXT/BC data. Block-compressed data hardly
+        /// compresses further, so this is used for textures the compressor writes in a different
+        /// format than they are imported in, whose imported bytes say nothing about the output
+        /// (an uncompressed or crunched import compresses far better or worse).
+        /// </summary>
+        private const double FreshEncodeDownloadRatio = 0.9;
+
+        /// <summary>
         /// Download saved per byte of removed material properties: they are near-identical
         /// values that compress well (1.93 MB removed saved 124 KB on a 16-material avatar).
         /// </summary>
@@ -80,16 +96,23 @@ namespace dev.limitex.avatar.compressor.editor.size
         {
             public long Uncompressed;
             public long Download;
+
+            /// <summary>LZMA size of the texture data on its own; only measured when asked for.</summary>
+            public long TextureDownload;
         }
 
         /// <summary>Calculates both sizes of the avatar as it is now.</summary>
-        public static Sizes Measure(GameObject avatarRoot)
+        /// <param name="textures">Also measure <see cref="Sizes.TextureDownload"/> (takes a moment longer).</param>
+        public static Sizes Measure(GameObject avatarRoot, bool textures = false)
         {
             var res = Calculate(avatarRoot);
             return new Sizes
             {
                 Uncompressed = res.Uncompressed,
                 Download = BundleSizeCalculator.DownloadSize(res),
+                TextureDownload = textures && res.TextureStream != null && res.TextureStream.Length > 0
+                    ? BundleSizeCalculator.CompressedSize(res.TextureStream)
+                    : 0,
             };
         }
 
@@ -118,6 +141,18 @@ namespace dev.limitex.avatar.compressor.editor.size
             /// prediction is low by about their size.
             /// </summary>
             public List<string> UnremappedControllers = new List<string>();
+
+            /// <summary>Predicted download of all of the upload's texture data, to compare with the check's measurement.</summary>
+            public long PredictedTextureDownload;
+
+            // What the check after the build needs to make more textures smaller
+            internal List<Candidate> Candidates;
+            internal Dictionary<string, int> Halvings;
+            internal List<string> PickOrder;
+            internal int MinResolution;
+
+            /// <summary>The compressed texture each source texture became, set by the build.</summary>
+            internal Dictionary<Texture2D, Texture2D> Outputs;
         }
 
         /// <summary>
@@ -135,7 +170,7 @@ namespace dev.limitex.avatar.compressor.editor.size
             long download = BundleSizeCalculator.DownloadSize(before);
             long stripped = StrippedPropertyBytes(avatarRoot, config);
             long uncompressedGoal = (long)(UncompressedTarget * (1 - PlanSlack));
-            long downloadGoal = (long)(DownloadTarget * (1 - PlanSlack));
+            long downloadGoal = (long)(DownloadTarget * (1 - DownloadPlanSlack));
 
             // Work in differences from the measured avatar: textures the preview doesn't list
             // (not on a material) stay counted as they are
@@ -144,8 +179,9 @@ namespace dev.limitex.avatar.compressor.editor.size
             var preview = new PreviewGenerator();
             var rawCache = new Dictionary<Texture2D, byte[]>();
             long textureDownloadNow = -1;
+            long allTexturesDownloadNow = -1;
             var pickOrder = new List<string>();
-            var plan = new FitPlan();
+            var plan = new FitPlan { Halvings = halvings, PickOrder = pickOrder, MinResolution = config.MinResolution };
             for (int round = 0; ; round++)
             {
                 var data = preview.Generate(
@@ -158,8 +194,15 @@ namespace dev.limitex.avatar.compressor.editor.size
                 long now = data.Sum(d => d.OriginalMemory);
                 long after = data.Sum(d => d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory);
                 if (textureDownloadNow < 0)
+                {
                     textureDownloadNow = BundleSizeCalculator.CompressedSize(TextureStream(data, rawCache, predicted: false));
-                long textureDownloadAfter = PredictedTextureDownload(data, rawCache);
+                    allTexturesDownloadNow = before.TextureStream != null && before.TextureStream.Length > 0
+                        ? BundleSizeCalculator.CompressedSize(before.TextureStream)
+                        : 0;
+                }
+                var perTexture = new List<(TexturePreviewData Data, long Download)>();
+                long textureDownloadAfter = PredictedTextureDownload(data, rawCache, perTexture);
+                plan.PredictedTextureDownload = allTexturesDownloadNow - textureDownloadNow + textureDownloadAfter;
 
                 long uncompressed = before.Uncompressed - stripped - now + after;
                 long predictedDownload = download - (long)(stripped * StrippedDownloadRatio) - textureDownloadNow + textureDownloadAfter;
@@ -167,7 +210,8 @@ namespace dev.limitex.avatar.compressor.editor.size
                 if (log)
                     Debug.Log(
                         $"[Avatar Compressor] Size plan{(round > 0 ? $" ({halvings.Count} textures smaller)" : "")}: "
-                            + $"download ~{MiB(predictedDownload)}, uncompressed ~{MiB(uncompressed)}{(fits ? " (fits)" : "")}"
+                            + $"download ~{MiB(predictedDownload)} (textures ~{MiB(plan.PredictedTextureDownload)}), "
+                            + $"uncompressed ~{MiB(uncompressed)}{(fits ? " (fits)" : "")}"
                     );
                 plan.Predicted = new Sizes { Uncompressed = uncompressed, Download = predictedDownload };
                 plan.Changes = data.Where(d => d.IsProcessed && d.FitHalvings > 0)
@@ -179,6 +223,10 @@ namespace dev.limitex.avatar.compressor.editor.size
                     })
                     .OrderBy(c => pickOrder.IndexOf(data.First(d => d.Texture == c.Texture).Guid))
                     .ToList();
+                plan.Candidates = CandidatesFrom(data);
+                bool done = fits || !shrink || round >= MaxPlanRounds;
+                if (done && log)
+                    LogTexturePredictions(perTexture);
                 if (fits || !shrink)
                     return plan;
                 if (round >= MaxPlanRounds)
@@ -190,9 +238,11 @@ namespace dev.limitex.avatar.compressor.editor.size
                 // Download saved per uncompressed byte saved, from the textures as they are now
                 long predictedBytes = data.Sum(d => d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory);
                 double downloadRatio = predictedBytes > 0 ? (double)textureDownloadAfter / predictedBytes : 0.25;
-                if (!PickHalvings(data, config, halvings, pickOrder, uncompressed - uncompressedGoal, predictedDownload - downloadGoal, downloadRatio))
+                if (!PickHalvings(plan.Candidates, config.MinResolution, halvings, pickOrder, uncompressed - uncompressedGoal, predictedDownload - downloadGoal, downloadRatio))
                 {
                     plan.CannotFit = true;
+                    if (log)
+                        LogTexturePredictions(perTexture);
                     return plan;
                 }
             }
@@ -214,24 +264,16 @@ namespace dev.limitex.avatar.compressor.editor.size
         /// instead of one texture shrinking to nothing.
         /// </remarks>
         private static bool PickHalvings(
-            List<TexturePreviewData> data,
-            TextureCompressor config,
+            List<Candidate> candidates,
+            int minResolution,
             Dictionary<string, int> halvings,
             List<string> pickOrder,
             long uncompressedExcess,
             long downloadExcess,
-            double downloadRatio
+            double downloadRatio,
+            Func<Candidate, bool> canHalve = null
         )
         {
-            var candidates = data.Where(d =>
-                    d.IsProcessed
-                    && !d.IsFrozen
-                    && d.FollowsGuid == null
-                    && !d.FormatOnly
-                    && !string.IsNullOrEmpty(d.Guid)
-                )
-                .Select(d => new Candidate { Data = d, Size = d.RecommendedSize, Memory = d.EstimatedMemory, Halvings = d.FitHalvings })
-                .ToList();
             bool picked = false;
             while (uncompressedExcess > 0 || downloadExcess > 0)
             {
@@ -240,7 +282,9 @@ namespace dev.limitex.avatar.compressor.editor.size
                 foreach (var c in candidates)
                 {
                     var next = FitHalving.Halve(c.Size, 1);
-                    if (Math.Max(next.x, next.y) < config.MinResolution || c.Memory <= 0)
+                    if (Math.Max(next.x, next.y) < minResolution || c.Memory <= 0)
+                        continue;
+                    if (canHalve != null && !canHalve(c))
                         continue;
                     double score = HalvingCost(c.Data, next, c.Halvings) / (c.Memory * 0.75);
                     if (score < bestScore)
@@ -266,12 +310,192 @@ namespace dev.limitex.avatar.compressor.editor.size
             return picked;
         }
 
-        private sealed class Candidate
+        /// <summary>Textures "Keep under size limit" may make smaller.</summary>
+        private static List<Candidate> CandidatesFrom(List<TexturePreviewData> data) =>
+            data.Where(d =>
+                    d.IsProcessed
+                    && !d.IsFrozen
+                    && d.FollowsGuid == null
+                    && !d.FormatOnly
+                    && !string.IsNullOrEmpty(d.Guid)
+                )
+                .Select(d => new Candidate { Data = d, Size = d.RecommendedSize, Memory = d.EstimatedMemory, Halvings = d.FitHalvings })
+                .ToList();
+
+        internal sealed class Candidate
         {
             public TexturePreviewData Data;
             public Vector2Int Size;
             public long Memory;
             public int Halvings;
+        }
+
+        /// <summary>
+        /// The safety net for a low download prediction: when the check after the build measures
+        /// the avatar over the limit although the plan said it fits, makes more textures smaller
+        /// on the built avatar, picked the same way as the plan picks them. A compressed texture
+        /// is halved by dropping its largest mip level, so it is not encoded again and looks the
+        /// same as its next mip. Measures again after each round and returns the last sizes.
+        /// </summary>
+        /// <param name="measured">The sizes the check measured.</param>
+        /// <param name="halved">Number of textures made smaller here.</param>
+        public static Sizes ShrinkAfterBuild(GameObject avatarRoot, FitPlan plan, Sizes measured, out int halved)
+        {
+            halved = 0;
+            if (plan?.Candidates == null || plan.Outputs == null || plan.Outputs.Count == 0)
+                return measured;
+
+            var startHalvings = plan.Candidates.ToDictionary(c => c, c => c.Halvings);
+            var startSizes = plan.Candidates.ToDictionary(c => c, c => c.Size);
+            var dropped = new Dictionary<Candidate, int>();
+            var sizes = measured;
+
+            // How the upload's own texture data compresses, measured
+            var res = Calculate(avatarRoot);
+            double downloadRatio = res.TextureStream != null && res.TextureStream.Length > 0
+                ? (double)BundleSizeCalculator.CompressedSize(res.TextureStream) / res.TextureStream.Length
+                : FreshEncodeDownloadRatio;
+
+            for (int round = 0; round < MaxShrinkRounds; round++)
+            {
+                long uncompressedExcess = sizes.Uncompressed - (long)(UncompressedTarget * (1 - PlanSlack));
+                long downloadExcess = sizes.Download - (long)(DownloadTarget * (1 - PlanSlack));
+                if (uncompressedExcess <= 0 && downloadExcess <= 0)
+                    break;
+
+                bool CanHalve(Candidate c) =>
+                    plan.Outputs.TryGetValue(c.Data.Texture, out var output)
+                    && CanDropTopMips(output, c.Halvings - startHalvings[c] + 1);
+                if (!PickHalvings(plan.Candidates, plan.MinResolution, plan.Halvings, plan.PickOrder, uncompressedExcess, downloadExcess, downloadRatio, CanHalve))
+                    break;
+
+                bool changed = false;
+                foreach (var c in plan.Candidates)
+                {
+                    int total = c.Halvings - startHalvings[c];
+                    dropped.TryGetValue(c, out int done);
+                    if (total <= done)
+                        continue;
+                    if (!DropTopMips(plan.Outputs[c.Data.Texture], total - done))
+                    {
+                        // keep the bookkeeping in line with the texture
+                        c.Halvings = startHalvings[c] + done;
+                        c.Size = FitHalving.Halve(startSizes[c], done);
+                        plan.Halvings[c.Data.Guid] = c.Halvings;
+                        continue;
+                    }
+                    dropped[c] = total;
+                    changed = true;
+                }
+                if (!changed)
+                    break;
+
+                AssetDatabase.SaveAssets();
+                sizes = Measure(avatarRoot, textures: true);
+                Debug.Log(
+                    $"[Avatar Compressor] Size check: made {dropped.Count} more textures smaller after the build; "
+                        + $"download {MiB(sizes.Download)}, uncompressed {MiB(sizes.Uncompressed)}.",
+                    avatarRoot
+                );
+            }
+
+            foreach (var pair in dropped)
+            {
+                var c = pair.Key;
+                int index = plan.Changes.FindIndex(ch => ch.Texture == c.Data.Texture);
+                if (index >= 0)
+                {
+                    var change = plan.Changes[index];
+                    change.To = FitHalving.Halve(change.To, pair.Value);
+                    plan.Changes[index] = change;
+                }
+                else
+                {
+                    plan.Changes.Add(new FitChange
+                    {
+                        Texture = c.Data.Texture,
+                        From = startSizes[c],
+                        To = FitHalving.Halve(startSizes[c], pair.Value),
+                    });
+                }
+            }
+            halved = dropped.Count;
+            return sizes;
+        }
+
+        /// <summary>Times the check after the build makes more textures smaller and measures again.</summary>
+        private const int MaxShrinkRounds = 3;
+
+        private static bool CanDropTopMips(Texture2D texture, int levels) =>
+            texture != null && levels > 0 && texture.mipmapCount > levels && HasFullMipChain(texture);
+
+        private static bool HasFullMipChain(Texture2D texture)
+        {
+            int largest = Math.Max(texture.width, texture.height);
+            int full = 1;
+            while (largest > 1)
+            {
+                largest >>= 1;
+                full++;
+            }
+            return texture.mipmapCount == full;
+        }
+
+        /// <summary>
+        /// Halves a texture <paramref name="levels"/> times in place by dropping its largest
+        /// mip levels: the remaining levels are already encoded at the smaller sizes, so
+        /// materials and animations keep referencing the same texture.
+        /// </summary>
+        private static bool DropTopMips(Texture2D texture, int levels)
+        {
+            if (!CanDropTopMips(texture, levels))
+                return false;
+
+            using var serialized = new SerializedObject(texture);
+            var readable = serialized.FindProperty("m_IsReadable");
+            bool wasReadable = readable == null || readable.boolValue;
+            try
+            {
+                var raw = texture.GetRawTextureData();
+                int width = texture.width, height = texture.height;
+                long offset = 0;
+                for (int i = 0; i < levels; i++)
+                {
+                    offset += (long)UnityEngine.Experimental.Rendering.GraphicsFormatUtility.ComputeMipmapSize(width, height, texture.graphicsFormat);
+                    width = Math.Max(1, width >> 1);
+                    height = Math.Max(1, height >> 1);
+                }
+                if (offset <= 0 || offset >= raw.Length)
+                    return false;
+
+                var rest = new byte[raw.Length - offset];
+                Buffer.BlockCopy(raw, (int)offset, rest, 0, rest.Length);
+                if (!wasReadable)
+                {
+                    readable.boolValue = true;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+                if (!texture.Reinitialize(width, height, texture.format, true))
+                    return false;
+                texture.LoadRawTextureData(rest);
+                texture.Apply(false, false);
+                EditorUtility.SetDirty(texture);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Avatar Compressor] Couldn't make '{texture.name}' smaller after the build: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                if (!wasReadable)
+                {
+                    serialized.Update();
+                    readable.boolValue = false;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
         }
 
         /// <summary>How much making the texture <paramref name="next"/> in size costs the avatar's look.</summary>
@@ -377,16 +601,54 @@ namespace dev.limitex.avatar.compressor.editor.size
         /// Compressed size of the textures as the preview predicts them. A texture's mipmaps are
         /// its downscaled versions, already encoded, so a texture predicted at 512 is stood in
         /// for by its mip chain from 512 down; smaller textures compress worse, which a single
-        /// ratio for all sizes would miss. Scaled to the predicted bytes for format changes.
+        /// ratio for all sizes would miss. Only textures that keep their imported format are
+        /// predicted from their bytes; a texture written in another format (e.g. imported
+        /// uncompressed or crunched, written as ASTC) compresses like fresh block data
+        /// (<see cref="FreshEncodeDownloadRatio"/>).
         /// </summary>
-        private static long PredictedTextureDownload(List<TexturePreviewData> data, Dictionary<Texture2D, byte[]> rawCache)
+        /// <param name="perTexture">Filled with each texture's predicted download, for the log.</param>
+        private static long PredictedTextureDownload(
+            List<TexturePreviewData> data,
+            Dictionary<Texture2D, byte[]> rawCache,
+            List<(TexturePreviewData Data, long Download)> perTexture
+        )
         {
-            var stream = TextureStream(data, rawCache, predicted: true);
-            if (stream.Length == 0)
-                return 0;
-            long predictedBytes = data.Sum(d => d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory);
-            double ratio = (double)BundleSizeCalculator.CompressedSize(stream) / stream.Length;
-            return (long)(ratio * predictedBytes);
+            var sameFormat = data.Where(d => !ChangesFormat(d)).ToList();
+            long total = 0;
+
+            var stream = TextureStream(sameFormat, rawCache, predicted: true);
+            double ratio = stream.Length > 0 ? (double)BundleSizeCalculator.CompressedSize(stream) / stream.Length : 0;
+            foreach (var d in data)
+            {
+                long bytes = d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory;
+                long download = (long)(bytes * (ChangesFormat(d) ? FreshEncodeDownloadRatio : ratio));
+                perTexture?.Add((d, download));
+                total += download;
+            }
+            return total;
+        }
+
+        /// <summary>True when the compressor writes the texture in a different format than it is imported in.</summary>
+        private static bool ChangesFormat(TexturePreviewData d) =>
+            d.IsProcessed && d.PredictedFormat.HasValue && d.PredictedFormat.Value != d.Texture.format;
+
+        /// <summary>One log entry with each texture's predicted size, largest download first.</summary>
+        private static void LogTexturePredictions(List<(TexturePreviewData Data, long Download)> perTexture)
+        {
+            if (perTexture == null || perTexture.Count == 0)
+                return;
+            var lines = perTexture
+                .OrderByDescending(p => p.Download)
+                .Select(p =>
+                {
+                    var d = p.Data;
+                    string output = d.IsProcessed ? (d.PredictedFormat?.ToString() ?? "kept") : "not processed";
+                    var size = d.IsProcessed ? d.RecommendedSize : new Vector2Int(d.Texture.width, d.Texture.height);
+                    long bytes = d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory;
+                    return $"  {d.Texture.name}: {d.Texture.format} -> {output} {size.x}x{size.y}, "
+                        + $"{MiB(bytes)} memory, ~{MiB(p.Download)} download{(ChangesFormat(d) ? " (new format)" : "")}";
+                });
+            Debug.Log("[Avatar Compressor] Size plan per texture:\n" + string.Join("\n", lines));
         }
 
         /// <summary>

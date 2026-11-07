@@ -202,7 +202,10 @@ namespace dev.limitex.avatar.compressor.editor.texture
                 var remapper = new AnimationReferenceRemapper(processedTextures, clonedMaterials, store);
                 remapper.Apply(avatarRoot);
                 if (sizePlan != null)
+                {
                     sizePlan.UnremappedControllers = remapper.UnremappedControllers;
+                    sizePlan.Outputs = processedTextures;
+                }
 
                 // Must run after the remapping above: baked textures can be processedTextures keys.
                 lilToonBaker?.DestroyOrphanedBakes(clonedMaterials.Values);

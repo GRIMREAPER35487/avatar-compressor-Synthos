@@ -54,11 +54,28 @@ namespace dev.limitex.avatar.compressor.editor.texture
             try
             {
                 var timer = System.Diagnostics.Stopwatch.StartNew();
-                sizes = AvatarSizeCheck.Measure(avatarGameObject);
+                sizes = AvatarSizeCheck.Measure(avatarGameObject, textures: true);
                 over = sizes.Download > AvatarSizeCheck.DownloadTarget || sizes.Uncompressed > AvatarSizeCheck.UncompressedTarget;
+                if (over && !plan.CannotFit)
+                {
+                    // The plan said it fits: its prediction was low, so make more textures smaller now
+                    Debug.LogWarning(
+                        $"[Avatar Compressor] Size check: measured download {AvatarSizeCheck.MiB(sizes.Download)}, "
+                            + $"uncompressed {AvatarSizeCheck.MiB(sizes.Uncompressed)} (textures {AvatarSizeCheck.MiB(sizes.TextureDownload)}), but the plan predicted "
+                            + $"{AvatarSizeCheck.MiB(plan.Predicted.Download)} / {AvatarSizeCheck.MiB(plan.Predicted.Uncompressed)} "
+                            + $"(textures ~{AvatarSizeCheck.MiB(plan.PredictedTextureDownload)}). Making more textures smaller.",
+                        avatarGameObject
+                    );
+                    sizes = AvatarSizeCheck.ShrinkAfterBuild(avatarGameObject, plan, sizes, out int halved);
+                    if (halved == 0)
+                        Debug.LogWarning("[Avatar Compressor] Size check: no more textures could be made smaller after the build.", avatarGameObject);
+                    over = sizes.Download > AvatarSizeCheck.DownloadTarget || sizes.Uncompressed > AvatarSizeCheck.UncompressedTarget;
+                }
                 string summary =
                     $"download {AvatarSizeCheck.MiB(sizes.Download)} / {AvatarSizeCheck.MiB(AvatarSizeCheck.DownloadLimit)}, "
-                    + $"uncompressed {AvatarSizeCheck.MiB(sizes.Uncompressed)} / {AvatarSizeCheck.MiB(AvatarSizeCheck.UncompressedLimit)} "
+                    + $"uncompressed {AvatarSizeCheck.MiB(sizes.Uncompressed)} / {AvatarSizeCheck.MiB(AvatarSizeCheck.UncompressedLimit)}, "
+                    + $"textures {AvatarSizeCheck.MiB(sizes.TextureDownload)} of the download "
+                    + $"(plan ~{AvatarSizeCheck.MiB(plan.PredictedTextureDownload)}) "
                     + $"({timer.ElapsedMilliseconds / 1000.0:0.0} s)";
                 if (over)
                     Debug.LogWarning($"[Avatar Compressor] Size check: {summary}. The avatar may be over VRChat's mobile limit.", avatarGameObject);

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Keep under the mobile size limit predicted the download about 20% low** - On every mobile build the plan's download came out 1.2-1.8 MiB under the measured size (Android and iOS alike; a test avatar planned at 8.23 MiB measured 10.04 MiB and VRChat rejected it), while the uncompressed size was right. The texture data's download was predicted from how the textures compress as they are imported, also for textures the compressor writes in another format, whose imported bytes compress much better than freshly encoded ASTC. Only textures that keep their format are predicted from their own bytes now; the others count as fresh block data. The plan also keeps 3% under the download target instead of 1%.
+- **Safety net after the build** - If the check after the build still measures the avatar over the limit although the plan said it fits, it now makes more textures smaller right there, picked the same way as the plan, by dropping their largest mip level (they aren't compressed again), and measures again, up to three times. The textures it shrinks are listed with the others in the popup and the Batch Uploader summary.
+- **Size plan log per texture** - The plan now logs each texture's imported and output format, size, memory and predicted download, and the plan and check lines show the textures' share of the download, so a wrong prediction shows where it comes from.
+
 ## [1.4.1] - 2026-11-07
 
 ### Fixed
