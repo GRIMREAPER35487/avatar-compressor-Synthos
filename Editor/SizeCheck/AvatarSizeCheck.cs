@@ -49,14 +49,6 @@ namespace dev.limitex.avatar.compressor.editor.size
         private const double PlanSlack = 0.01;
 
         /// <summary>
-        /// Extra room for the download, which is predicted less exactly than the uncompressed
-        /// size (texture data's LZMA size is estimated, not built). The check after the build
-        /// makes more textures smaller if the prediction was still low
-        /// (<see cref="ShrinkAfterBuild"/>).
-        /// </summary>
-        private const double DownloadPlanSlack = 0.03;
-
-        /// <summary>
         /// LZMA size per byte of freshly encoded block data, used only when a texture's sample
         /// can't be encoded (<see cref="SampledDownloadRatio"/>). Measured on an avatar whose
         /// textures went from imported ASTC 6x6 to mostly ASTC 4x4: about 0.48.
@@ -71,6 +63,9 @@ namespace dev.limitex.avatar.compressor.editor.size
         // Samples encoded during the current plan and the time they took, for its log
         private static int _sampled;
         private static readonly System.Diagnostics.Stopwatch _sampleTime = new System.Diagnostics.Stopwatch();
+
+        // The current plan's correction for the samples (Calibrate), worked out once per plan
+        private static double? _calibration;
 
         /// <summary>
         /// Download saved per byte of removed material properties: they are near-identical
@@ -178,7 +173,9 @@ namespace dev.limitex.avatar.compressor.editor.size
             long download = BundleSizeCalculator.DownloadSize(before);
             long stripped = StrippedPropertyBytes(avatarRoot, config);
             long uncompressedGoal = (long)(UncompressedTarget * (1 - PlanSlack));
-            long downloadGoal = (long)(DownloadTarget * (1 - DownloadPlanSlack));
+            // The download is predicted less exactly than the uncompressed size; if the plan is
+            // still low, the check after the build makes more textures smaller (ShrinkAfterBuild)
+            long downloadGoal = (long)(DownloadTarget * (1 - PlanSlack));
 
             // Work in differences from the measured avatar: textures the preview doesn't list
             // (not on a material) stay counted as they are
@@ -189,6 +186,7 @@ namespace dev.limitex.avatar.compressor.editor.size
             var sampleCache = new Dictionary<(Texture2D, TextureFormat, Vector2Int), double>();
             _sampled = 0;
             _sampleTime.Reset();
+            _calibration = null;
             long textureDownloadNow = -1;
             long allTexturesDownloadNow = -1;
             var pickOrder = new List<string>();
@@ -234,10 +232,26 @@ namespace dev.limitex.avatar.compressor.editor.size
                     })
                     .OrderBy(c => pickOrder.IndexOf(data.First(d => d.Texture == c.Texture).Guid))
                     .ToList();
-                plan.Candidates = CandidatesFrom(data);
+                plan.Candidates = CandidatesFrom(data, perTexture);
                 bool done = fits || !shrink || round >= MaxPlanRounds;
                 if (done && log)
                     LogTexturePredictions(perTexture);
+                if (fits && shrink && halvings.Count > 0)
+                {
+                    var (memory, dl, count) = GiveBack(plan.Candidates, halvings, uncompressedGoal - uncompressed, downloadGoal - predictedDownload);
+                    if (count > 0)
+                    {
+                        plan.Predicted = new Sizes { Uncompressed = uncompressed + memory, Download = predictedDownload + dl };
+                        plan.PredictedTextureDownload += dl;
+                        plan.Changes = ChangesFrom(plan.Candidates, pickOrder);
+                        if (log)
+                            Debug.Log(
+                                $"[Avatar Compressor] Size plan: kept {count} halvings back that weren't needed "
+                                    + $"({halvings.Count} textures smaller): download ~{MiB(plan.Predicted.Download)}, "
+                                    + $"uncompressed ~{MiB(plan.Predicted.Uncompressed)} (fits)"
+                            );
+                    }
+                }
                 if (fits || !shrink)
                     return plan;
                 if (round >= MaxPlanRounds)
@@ -297,7 +311,17 @@ namespace dev.limitex.avatar.compressor.editor.size
                         continue;
                     if (canHalve != null && !canHalve(c))
                         continue;
-                    double score = HalvingCost(c.Data, next, c.Halvings) / (c.Memory * 0.75);
+                    // How much of what is over this halving removes, each limit counted up to
+                    // all of its excess: a texture that clears the excess on its own isn't
+                    // favoured over a cheaper one that also does
+                    double savedMemory = c.Memory * 0.75;
+                    double savedDownload = savedMemory * RatioOf(c, downloadRatio);
+                    double benefit =
+                        (uncompressedExcess > 0 ? Math.Min(1.0, savedMemory / uncompressedExcess) : 0)
+                        + (downloadExcess > 0 ? Math.Min(1.0, savedDownload / downloadExcess) : 0);
+                    if (benefit <= 0)
+                        continue;
+                    double score = HalvingCost(c.Data, next, c.Halvings) / benefit;
                     if (score < bestScore)
                     {
                         bestScore = score;
@@ -309,7 +333,7 @@ namespace dev.limitex.avatar.compressor.editor.size
 
                 long saved = (long)(best.Memory * 0.75);
                 uncompressedExcess -= saved;
-                downloadExcess -= (long)(saved * downloadRatio);
+                downloadExcess -= (long)(saved * RatioOf(best, downloadRatio));
                 best.Size = FitHalving.Halve(best.Size, 1);
                 best.Memory -= saved;
                 best.Halvings++;
@@ -321,17 +345,46 @@ namespace dev.limitex.avatar.compressor.editor.size
             return picked;
         }
 
-        /// <summary>Textures "Keep under size limit" may make smaller.</summary>
-        private static List<Candidate> CandidatesFrom(List<TexturePreviewData> data) =>
-            data.Where(d =>
+        /// <summary>The textures the plan made smaller, from the candidates, in the order they were picked.</summary>
+        private static List<FitChange> ChangesFrom(List<Candidate> candidates, List<string> pickOrder) =>
+            candidates.Where(c => c.Halvings > 0)
+                .Select(c => (c, original: new Vector2Int(c.Data.RecommendedSize.x << c.Data.FitHalvings, c.Data.RecommendedSize.y << c.Data.FitHalvings)))
+                .Select(p => new FitChange { Texture = p.c.Data.Texture, From = p.original, To = FitHalving.Halve(p.original, p.c.Halvings) })
+                .OrderBy(ch => pickOrder.IndexOf(candidates.First(c => c.Data.Texture == ch.Texture).Data.Guid))
+                .ToList();
+
+        /// <summary>Download per byte of the candidate's memory, or <paramref name="fallback"/> if unknown.</summary>
+        private static double RatioOf(Candidate c, double fallback) => c.DownloadRatio > 0 ? c.DownloadRatio : fallback;
+
+        /// <summary>
+        /// Textures "Keep under size limit" may make smaller, each with its own predicted
+        /// download per byte (textures compress anywhere from about 0.1 to 0.7).
+        /// </summary>
+        private static List<Candidate> CandidatesFrom(
+            List<TexturePreviewData> data,
+            List<(TexturePreviewData Data, long Download)> perTexture
+        )
+        {
+            var downloads = new Dictionary<TexturePreviewData, long>();
+            foreach (var (d, dl) in perTexture)
+                downloads[d] = dl;
+            return data.Where(d =>
                     d.IsProcessed
                     && !d.IsFrozen
                     && d.FollowsGuid == null
                     && !d.FormatOnly
                     && !string.IsNullOrEmpty(d.Guid)
                 )
-                .Select(d => new Candidate { Data = d, Size = d.RecommendedSize, Memory = d.EstimatedMemory, Halvings = d.FitHalvings })
+                .Select(d => new Candidate
+                {
+                    Data = d,
+                    Size = d.RecommendedSize,
+                    Memory = d.EstimatedMemory,
+                    Halvings = d.FitHalvings,
+                    DownloadRatio = d.EstimatedMemory > 0 && downloads.TryGetValue(d, out long dl) ? (double)dl / d.EstimatedMemory : 0,
+                })
                 .ToList();
+        }
 
         internal sealed class Candidate
         {
@@ -339,6 +392,67 @@ namespace dev.limitex.avatar.compressor.editor.size
             public Vector2Int Size;
             public long Memory;
             public int Halvings;
+
+            /// <summary>Predicted download per byte of memory.</summary>
+            public double DownloadRatio;
+        }
+
+        /// <summary>
+        /// After the plan fits, undoes halvings it didn't need, the most visible first, while
+        /// the avatar is still predicted to fit: the picks are made in whole halvings with
+        /// estimated savings, so the last ones often go past the goal.
+        /// </summary>
+        /// <returns>The memory and download added back.</returns>
+        private static (long Memory, long Download, int Count) GiveBack(
+            List<Candidate> candidates,
+            Dictionary<string, int> halvings,
+            long uncompressedRoom,
+            long downloadRoom
+        )
+        {
+            long addedMemory = 0, addedDownload = 0;
+            int count = 0;
+            while (true)
+            {
+                Candidate best = null;
+                double bestCost = double.MinValue;
+                long bestMemory = 0, bestDownload = 0;
+                foreach (var c in candidates)
+                {
+                    if (c.Halvings <= 0 || !halvings.ContainsKey(c.Data.Guid) || c.DownloadRatio <= 0)
+                        continue;
+                    long memory = c.Memory * 3; // the next size up is about four times as large
+                    long dl = (long)(memory * c.DownloadRatio);
+                    if (memory > uncompressedRoom || dl > downloadRoom)
+                        continue;
+                    // what the last halving of this texture cost its look
+                    double cost = HalvingCost(c.Data, c.Size, c.Halvings - 1);
+                    if (cost > bestCost)
+                    {
+                        bestCost = cost;
+                        best = c;
+                        bestMemory = memory;
+                        bestDownload = dl;
+                    }
+                }
+                if (best == null)
+                    break;
+
+                var original = new Vector2Int(best.Data.RecommendedSize.x << best.Data.FitHalvings, best.Data.RecommendedSize.y << best.Data.FitHalvings);
+                best.Halvings--;
+                best.Size = FitHalving.Halve(original, best.Halvings);
+                best.Memory += bestMemory;
+                if (best.Halvings > 0)
+                    halvings[best.Data.Guid] = best.Halvings;
+                else
+                    halvings.Remove(best.Data.Guid);
+                uncompressedRoom -= bestMemory;
+                downloadRoom -= bestDownload;
+                addedMemory += bestMemory;
+                addedDownload += bestDownload;
+                count++;
+            }
+            return (addedMemory, addedDownload, count);
         }
 
         /// <summary>
@@ -631,6 +745,8 @@ namespace dev.limitex.avatar.compressor.editor.size
 
             var stream = TextureStream(sameFormat, rawCache, predicted: true);
             double ratio = stream.Length > 0 ? (double)BundleSizeCalculator.CompressedSize(stream) / stream.Length : 0;
+            if (_calibration == null && data.Any(ChangesFormat))
+                _calibration = Calibrate(sameFormat, rawCache);
             foreach (var d in data)
             {
                 long bytes = d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory;
@@ -638,8 +754,9 @@ namespace dev.limitex.avatar.compressor.editor.size
                 if (ChangesFormat(d))
                 {
                     var key = (d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
-                    if (!sampleCache.TryGetValue(key, out textureRatio))
-                        sampleCache[key] = textureRatio = SampledDownloadRatio(d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
+                    if (!sampleCache.TryGetValue(key, out double sampled))
+                        sampleCache[key] = sampled = SampledDownloadRatio(d.Texture, d.PredictedFormat.Value, d.RecommendedSize);
+                    textureRatio = Math.Min(1.0, sampled * (_calibration ?? 1.0));
                 }
                 long download = (long)(bytes * textureRatio);
                 perTexture?.Add((d, download));
@@ -657,6 +774,65 @@ namespace dev.limitex.avatar.compressor.editor.size
         /// </summary>
         private static double SampledDownloadRatio(Texture2D texture, TextureFormat format, Vector2Int size)
         {
+            if (TrySampleRatio(texture, format, size, out double ratio, out string error))
+                return ratio;
+            Debug.LogWarning(
+                $"[Avatar Compressor] Size plan: couldn't sample '{texture.name}' as {format} ({error}); "
+                    + $"assuming it compresses to {FreshEncodeDownloadRatio:0.0} of its size."
+            );
+            return FreshEncodeDownloadRatio;
+        }
+
+        /// <summary>Textures that keep their format whose real bytes check the samples (<see cref="Calibrate"/>).</summary>
+        private const int CalibrationTextures = 3;
+
+        /// <summary>
+        /// How far the samples are off: a sample is a small part of a texture, encoded on its own,
+        /// so LZMA finds less to repeat than in the whole texture and the ratio comes out a bit
+        /// high (about 0.6 MiB too much on a 5 MiB avatar). The largest textures that keep their
+        /// format are sampled in that same format and compared with how their real bytes compress;
+        /// the samples of the textures that change format are scaled by the difference. 1 (no
+        /// change, on the safe side) when there is nothing to compare with.
+        /// </summary>
+        private static double Calibrate(List<TexturePreviewData> sameFormat, Dictionary<Texture2D, byte[]> rawCache)
+        {
+            var references = sameFormat
+                .Where(d =>
+                    UnityEngine.Experimental.Rendering.GraphicsFormatUtility.IsCompressedFormat(d.Texture.graphicsFormat)
+                    && !UnityEngine.Experimental.Rendering.GraphicsFormatUtility.IsCrunchFormat(d.Texture.format)
+                )
+                .Select(d => (Data: d, Size: d.IsProcessed ? d.RecommendedSize : new Vector2Int(d.Texture.width, d.Texture.height)))
+                .Where(r => r.Size.x >= 128 && r.Size.y >= 128)
+                .OrderByDescending(r => r.Data.IsProcessed ? r.Data.EstimatedMemory : r.Data.OriginalMemory)
+                .Take(CalibrationTextures)
+                .ToList();
+
+            double real = 0, sampled = 0;
+            foreach (var (d, size) in references)
+            {
+                try
+                {
+                    var stream = TextureStream(new List<TexturePreviewData> { d }, rawCache, predicted: true);
+                    if (stream.Length == 0 || !TrySampleRatio(d.Texture, d.Texture.format, size, out double sampleRatio, out _))
+                        continue;
+                    double bytes = d.IsProcessed ? d.EstimatedMemory : d.OriginalMemory;
+                    real += bytes * BundleSizeCalculator.CompressedSize(stream) / stream.Length;
+                    sampled += bytes * sampleRatio;
+                }
+                catch (Exception)
+                {
+                    // one reference less
+                }
+            }
+            if (sampled <= 0)
+                return 1.0;
+            return Math.Max(0.6, Math.Min(1.5, real / sampled));
+        }
+
+        private static bool TrySampleRatio(Texture2D texture, TextureFormat format, Vector2Int size, out double ratio, out string error)
+        {
+            ratio = 0;
+            error = null;
             RenderTexture rt = null;
             Texture2D full = null, sample = null;
             var previous = RenderTexture.active;
@@ -713,16 +889,17 @@ namespace dev.limitex.avatar.compressor.editor.size
                 EditorUtility.CompressTexture(sample, format, TextureCompressionQuality.Best);
                 var raw = sample.GetRawTextureData();
                 if (raw.Length == 0)
-                    return FreshEncodeDownloadRatio;
-                return Math.Min(1.0, (double)BundleSizeCalculator.CompressedSize(raw) / raw.Length);
+                {
+                    error = "the encoded sample is empty";
+                    return false;
+                }
+                ratio = Math.Min(1.0, (double)BundleSizeCalculator.CompressedSize(raw) / raw.Length);
+                return true;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning(
-                    $"[Avatar Compressor] Size plan: couldn't sample '{texture.name}' as {format} ({ex.Message}); "
-                        + $"assuming it compresses to {FreshEncodeDownloadRatio:0.0} of its size."
-                );
-                return FreshEncodeDownloadRatio;
+                error = ex.Message;
+                return false;
             }
             finally
             {
@@ -758,7 +935,9 @@ namespace dev.limitex.avatar.compressor.editor.size
                         + $"{MiB(bytes)} memory, ~{MiB(p.Download)} download{(ChangesFormat(d) ? " (sampled in the new format)" : "")}";
                 });
             Debug.Log(
-                $"[Avatar Compressor] Size plan per texture ({_sampled} samples encoded in {_sampleTime.ElapsedMilliseconds / 1000.0:0.0} s):\n"
+                $"[Avatar Compressor] Size plan per texture ({_sampled} samples encoded in {_sampleTime.ElapsedMilliseconds / 1000.0:0.0} s"
+                    + (_calibration.HasValue ? $", samples scaled by {_calibration.Value:0.00} from textures that keep their format" : "")
+                    + "):\n"
                     + string.Join("\n", lines)
             );
         }
