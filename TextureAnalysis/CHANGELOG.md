@@ -2,6 +2,12 @@
 
 All notable changes to Synthos Texture Analysis (`com.synthos.texture-analysis`). It is released together with Avatar Compressor (Synthos Edition) and always has the same version number. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Large managed pixel copies** - Source loading, resizing, the alpha check, the banding check and normal map layout detection and conversion read and write the textures' own memory (new internal `PixelView`) instead of full-size `GetPixels32` arrays, which grew the editor's memory across builds. Source files decoded as ARGB32 (all PNGs) are converted without a managed copy. Results are unchanged.
+
 ## [1.4.1] - 2026-11-07
 
 No changes; released with Avatar Compressor 1.4.1.

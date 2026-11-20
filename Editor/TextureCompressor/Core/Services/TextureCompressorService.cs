@@ -465,26 +465,56 @@ namespace dev.limitex.avatar.compressor.editor.texture
                     continue;
                 }
 
+                // Same as the "kept as imported" check after compression below, decided before
+                // loading or resizing anything: when the format comes out as the import's with
+                // or without alpha and the artifact check cannot step it, the result is already
+                // known. Saves several full-resolution copies per texture (4096x4096 BC7
+                // textures kept as imported were the most expensive case).
+                if (
+                    !isNormalMap
+                    && targetSize == importedSize
+                    && TextureFormatInfo.IsCompressed(sourceFormat)
+                    && KeepsFormatRegardless(
+                        formatSelector,
+                        sourceFormat,
+                        analysis.NormalizedComplexity,
+                        formatOverride
+                    )
+                )
+                {
+                    LogUnchanged(originalTexture, enableLogging, densityNote);
+                    continue;
+                }
+
                 // Resize from the full-quality source when available (lock acquired and released
                 // inside ResizeSingle). The normal-map layout is read from the same pixels.
                 var source = _sourceCache?.Load(originalTexture);
                 bool fromSource = source != null;
                 NormalMapPreprocessor.SourceLayout sourceLayout;
-                Texture2D resizedTexture;
+                Texture2D resizedTexture = null;
                 try
                 {
                     sourceLayout = isNormalMap
                         ? ResolveNormalLayout(originalTexture, source, sourceFormat)
                         : NormalMapPreprocessor.SourceLayout.Auto;
-                    resizedTexture = _processor.ResizeSingle(
-                        fromSource ? source : originalTexture,
-                        targetSize,
-                        isNormalMap
-                    );
+                    // A same-size resize of the loaded source would only copy it: same pixels,
+                    // format, mips, color space and settings. Use the source itself instead
+                    // (normal maps forced to linear from an sRGB source still need the copy).
+                    resizedTexture =
+                        fromSource
+                        && source.width == targetSize.x
+                        && source.height == targetSize.y
+                        && !(isNormalMap && source.isDataSRGB)
+                            ? source
+                            : _processor.ResizeSingle(
+                                fromSource ? source : originalTexture,
+                                targetSize,
+                                isNormalMap
+                            );
                 }
                 finally
                 {
-                    if (fromSource)
+                    if (fromSource && !ReferenceEquals(resizedTexture, source))
                         UnityEngine.Object.DestroyImmediate(source);
                 }
 
@@ -548,49 +578,62 @@ namespace dev.limitex.avatar.compressor.editor.texture
                         hasAlpha
                     );
 
-                // Save original pixels BEFORE destructive normal map preprocessing (for fallback restore)
-                Color32[] originalPixels = null;
+                // Save original pixels BEFORE destructive normal map preprocessing (for fallback
+                // restore), in native memory rather than a full-resolution managed array.
+                PixelView originalPixels = default;
+                bool hasOriginalPixels = false;
                 // isReadable is always true for resizer output (new Texture2D); guard is defensive
                 if (isNormalMap && resizedTexture.isReadable)
                 {
-                    originalPixels = resizedTexture.GetPixels32();
+                    originalPixels = PixelView.CopyOf(resizedTexture);
+                    hasOriginalPixels = true;
                 }
 
-                // Preprocess + Compress (both inside protection so PrepareForCompression
-                // failures also trigger pixel restore and fallback)
-                if (resizedTexture.format != targetFormat)
+                try
                 {
-                    if (
-                        !TryPreprocessAndCompress(
-                            resizedTexture,
-                            sourceFormat,
-                            targetFormat,
-                            isNormalMap,
-                            preserveAlpha,
-                            sourceLayout
-                        )
-                    )
+                    // Preprocess + Compress (both inside protection so PrepareForCompression
+                    // failures also trigger pixel restore and fallback)
+                    if (resizedTexture.format != targetFormat)
                     {
-                        // Primary compression failed — restore pixels and attempt fallback
-                        if (originalPixels != null)
-                        {
-                            resizedTexture.SetPixels32(originalPixels);
-                            resizedTexture.Apply(resizedTexture.mipmapCount > 1);
-                        }
-
                         if (
-                            !ApplyFallbackCompression(
+                            !TryPreprocessAndCompress(
                                 resizedTexture,
                                 sourceFormat,
+                                targetFormat,
                                 isNormalMap,
+                                preserveAlpha,
                                 sourceLayout
                             )
                         )
                         {
-                            UnityEngine.Object.DestroyImmediate(resizedTexture);
-                            continue;
+                            // Primary compression failed — restore pixels and attempt fallback
+                            if (hasOriginalPixels)
+                            {
+                                if (resizedTexture.format == TextureFormat.RGBA32)
+                                    resizedTexture.SetPixelData(originalPixels.Pixels, 0);
+                                else
+                                    resizedTexture.SetPixels32(originalPixels.Pixels.ToArray());
+                                resizedTexture.Apply(resizedTexture.mipmapCount > 1);
+                            }
+
+                            if (
+                                !ApplyFallbackCompression(
+                                    resizedTexture,
+                                    sourceFormat,
+                                    isNormalMap,
+                                    sourceLayout
+                                )
+                            )
+                            {
+                                UnityEngine.Object.DestroyImmediate(resizedTexture);
+                                continue;
+                            }
                         }
                     }
+                }
+                finally
+                {
+                    originalPixels.Dispose();
                 }
 
                 resizedTexture.name = originalTexture.name + "_compressed";
@@ -817,6 +860,41 @@ namespace dev.limitex.avatar.compressor.editor.texture
             return TextureSourceCache.IsRawNormalSource(imported)
                 ? NormalMapPreprocessor.SourceLayout.RGB
                 : NormalMapSourceLayoutDetector.DetectDXTnmLike(source);
+        }
+
+        /// <summary>
+        /// True when a non-normal texture's target format is certain to be its import format
+        /// without reading any pixels: the prediction is the same with or without alpha, and
+        /// the artifact check (which only steps candidate formats) cannot change it.
+        /// </summary>
+        private bool KeepsFormatRegardless(
+            TextureFormatSelector formatSelector,
+            TextureFormat sourceFormat,
+            float complexity,
+            FrozenTextureFormat? formatOverride
+        )
+        {
+            var opaque = formatSelector.ResolveTargetFormat(
+                sourceFormat,
+                false,
+                complexity,
+                false,
+                formatOverride
+            );
+            var withAlpha = formatSelector.ResolveTargetFormat(
+                sourceFormat,
+                false,
+                complexity,
+                true,
+                formatOverride
+            );
+            if (opaque != sourceFormat || withAlpha != sourceFormat)
+                return false;
+
+            bool artifactCheck =
+                _config.AvoidCompressionArtifacts
+                && formatSelector.ChoosesFormat(sourceFormat, formatOverride);
+            return !artifactCheck || !CompressionArtifactDetector.IsCandidateFormat(sourceFormat);
         }
 
         private void LogUnchanged(Texture2D texture, bool enableLogging, string note = "")

@@ -106,7 +106,8 @@ namespace Synthos.TextureAnalysis
 
             try
             {
-                var pixels = texture.GetPixels32();
+                using var view = PixelView.Of(texture);
+                var pixels = view.Pixels;
                 if (pixels.Length == 0)
                 {
                     return NormalMapPreprocessor.SourceLayout.AG;

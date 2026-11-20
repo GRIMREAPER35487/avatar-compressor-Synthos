@@ -233,7 +233,24 @@ namespace Synthos.TextureAnalysis
                     imported.mipmapCount > 1,
                     linear
                 );
-                source.SetPixels32(decoded.GetPixels32());
+                // Copy level 0 natively. LoadImage decodes PNGs to ARGB32, and the
+                // GetPixels32 array this used to go through (64 MB at 4096x4096, every
+                // texture, every build) was what grew the editor's heap across builds.
+                if (decoded.format == TextureFormat.RGBA32)
+                {
+                    source.GetPixelData<Color32>(0).CopyFrom(decoded.GetPixelData<Color32>(0));
+                }
+                else if (decoded.format == TextureFormat.ARGB32)
+                {
+                    var argb = decoded.GetPixelData<byte>(0);
+                    var rgba = source.GetPixelData<Color32>(0);
+                    for (int i = 0, j = 0; i < rgba.Length; i++, j += 4)
+                        rgba[i] = new Color32(argb[j + 1], argb[j + 2], argb[j + 3], argb[j]);
+                }
+                else
+                {
+                    source.SetPixels32(decoded.GetPixels32());
+                }
                 source.Apply(imported.mipmapCount > 1);
                 TextureReadback.CopyTextureSettings(imported, source);
                 source.name = imported.name;
@@ -371,7 +388,10 @@ namespace Synthos.TextureAnalysis
             );
             try
             {
-                rgba.SetPixels32(imported.GetPixels32());
+                if (imported.format == TextureFormat.RGBA32)
+                    rgba.GetPixelData<Color32>(0).CopyFrom(imported.GetPixelData<Color32>(0));
+                else
+                    rgba.SetPixels32(imported.GetPixels32());
                 rgba.Apply(false);
                 File.WriteAllBytes(cachePath, rgba.EncodeToPNG());
                 return true;

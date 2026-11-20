@@ -103,18 +103,23 @@ namespace Synthos.TextureAnalysis
                     ? GetChannelLayout(sourceFormat)
                     : ToChannelLayout(sourceLayout);
             var targetLayout = GetChannelLayout(targetFormat, preserveAlpha);
-            var pixels = texture.GetPixels32();
+            // Rewritten in place through a view of the texture's own memory; a non-RGBA32
+            // texture gets a copy that is written back below.
+            bool direct = PixelView.IsDirect(texture);
+            using var view = PixelView.Of(texture);
+            var pixels = view.Pixels;
 
             bool isRgbSource = sourceChannelLayout == NormalChannelLayout.RGB;
 
             for (int i = 0; i < pixels.Length; i++)
             {
-                byte sourceAlpha = pixels[i].a;
+                var pixel = pixels[i];
+                byte sourceAlpha = pixel.a;
 
                 float x,
                     y,
                     originalZ;
-                ReadNormalChannels(pixels[i], sourceChannelLayout, out x, out y, out originalZ);
+                ReadNormalChannels(pixel, sourceChannelLayout, out x, out y, out originalZ);
 
                 float xySqr = x * x + y * y;
                 float z;
@@ -152,10 +157,12 @@ namespace Synthos.TextureAnalysis
                     z = 1f;
                 }
 
-                WriteNormalChannels(ref pixels[i], targetLayout, x, y, z, sourceAlpha);
+                WriteNormalChannels(ref pixel, targetLayout, x, y, z, sourceAlpha);
+                pixels[i] = pixel;
             }
 
-            texture.SetPixels32(pixels);
+            if (!direct)
+                texture.SetPixels32(pixels.ToArray());
             texture.Apply();
         }
 

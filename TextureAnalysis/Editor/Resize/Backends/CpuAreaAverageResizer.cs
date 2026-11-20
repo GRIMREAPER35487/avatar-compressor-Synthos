@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Synthos.TextureAnalysis
@@ -30,40 +31,85 @@ namespace Synthos.TextureAnalysis
             bool isSRGB = source.isDataSRGB;
             bool outputSRGB = isSRGB && !forceLinearOutput;
 
-            var pixels = GetStoredPixels(source);
-            if (pixels == null || pixels.Length == 0)
-                return null;
-
-            if (source.filterMode == FilterMode.Point)
+            // Source pixels and the output are read and written as native views of the
+            // textures' own memory: no full-resolution managed arrays, which fragment the
+            // editor's non-moving heap across builds. Values and order are unchanged.
+            Texture2D readable = null;
+            Texture2D output = null;
+            try
             {
-                return ResizeNearest(
-                    pixels,
-                    srcW,
-                    srcH,
-                    targetWidth,
-                    targetHeight,
-                    source,
-                    isSRGB,
-                    outputSRGB
-                );
-            }
+                if (!ReadStoredPixels(source, out readable, out var stored))
+                    return null;
+                using (stored)
+                {
+                    var pixels = stored.Pixels;
+                    if (pixels.Length == 0)
+                        return null;
 
-            // A same-size target needs no filtering: copy the bytes, decoding
-            // sRGB to linear first when the output is forced linear (normal
-            // maps). Skipping the two-pass filter also skips its full-image
-            // intermediate buffer.
-            if (targetWidth == srcW && targetHeight == srcH)
+                    output = NewOutput(targetWidth, targetHeight, source, outputSRGB);
+                    var result = output.GetPixelData<Color32>(0);
+
+                    // A same-size target needs no filtering: copy the bytes, decoding sRGB
+                    // to linear first when the output is forced linear (normal maps).
+                    // Nearest neighbour at scale 1 is the same copy, so Point-filtered
+                    // sources take this path too.
+                    if (targetWidth == srcW && targetHeight == srcH)
+                    {
+                        result.CopyFrom(pixels);
+                        if (outputSRGB != isSRGB)
+                            DecodeToLinear(result);
+                    }
+                    else if (source.filterMode == FilterMode.Point)
+                    {
+                        ResizeNearest(pixels, srcW, srcH, targetWidth, targetHeight, result);
+                        if (isSRGB && !outputSRGB)
+                        {
+                            // Forced-linear output (normal maps) still needs the sRGB decode.
+                            DecodeToLinear(result);
+                        }
+                    }
+                    else
+                    {
+                        ResizeArea(
+                            pixels,
+                            srcW,
+                            srcH,
+                            targetWidth,
+                            targetHeight,
+                            isSRGB,
+                            outputSRGB,
+                            result
+                        );
+                    }
+                }
+
+                var finished = FinishOutput(output, source);
+                output = null;
+                return finished;
+            }
+            finally
             {
-                if (outputSRGB != isSRGB)
-                    DecodeToLinear(pixels);
-                return CreateOutput(pixels, targetWidth, targetHeight, source, outputSRGB);
+                if (output != null)
+                    UnityEngine.Object.DestroyImmediate(output);
+                if (readable != null)
+                    UnityEngine.Object.DestroyImmediate(readable);
             }
+        }
 
+        private static void ResizeArea(
+            NativeArray<Color32> pixels,
+            int srcW,
+            int srcH,
+            int targetWidth,
+            int targetHeight,
+            bool isSRGB,
+            bool outputSRGB,
+            NativeArray<Color32> result
+        )
+        {
             var decode = BuildDecodeTable(isSRGB);
             var planX = BuildPlan(srcW, targetWidth);
             var planY = BuildPlan(srcH, targetHeight);
-
-            var result = new Color32[targetWidth * targetHeight];
 
             // Output rows are processed in contiguous chunks, each streaming
             // the horizontal pass through a ring buffer that holds only one
@@ -126,8 +172,6 @@ namespace Synthos.TextureAnalysis
                     }
                 }
             );
-
-            return CreateOutput(result, targetWidth, targetHeight, source, outputSRGB);
         }
 
         /// <summary>
@@ -136,7 +180,7 @@ namespace Synthos.TextureAnalysis
         /// (source row index modulo the ring height).
         /// </summary>
         private static void ResampleRowHorizontally(
-            Color32[] pixels,
+            NativeArray<Color32> pixels,
             int srcW,
             int y,
             float[] decode,
@@ -175,21 +219,18 @@ namespace Synthos.TextureAnalysis
         /// colors that the Point filter then displays crisply. Matches the old
         /// blit path, which sampled with the source's own filter mode.
         /// </summary>
-        private static Texture2D ResizeNearest(
-            Color32[] pixels,
+        private static void ResizeNearest(
+            NativeArray<Color32> pixels,
             int srcW,
             int srcH,
             int dstW,
             int dstH,
-            Texture2D source,
-            bool isSRGB,
-            bool outputSRGB
+            NativeArray<Color32> result
         )
         {
             float scaleX = (float)srcW / dstW;
             float scaleY = (float)srcH / dstH;
 
-            var result = new Color32[dstW * dstH];
             for (int y = 0; y < dstH; y++)
             {
                 int sy = Math.Min((int)((y + 0.5f) * scaleY), srcH - 1);
@@ -201,14 +242,6 @@ namespace Synthos.TextureAnalysis
                     result[dstRow + x] = pixels[srcRow + sx];
                 }
             }
-
-            if (isSRGB && !outputSRGB)
-            {
-                // Forced-linear output (normal maps) still needs the sRGB decode.
-                DecodeToLinear(result);
-            }
-
-            return CreateOutput(result, dstW, dstH, source, outputSRGB);
         }
 
         internal struct AxisPlan
@@ -344,7 +377,7 @@ namespace Synthos.TextureAnalysis
         /// In-place sRGB→linear decode of the RGB channels (alpha is stored
         /// linearly). Used by the 1:1 paths where no filtering runs.
         /// </summary>
-        private static void DecodeToLinear(Color32[] pixels)
+        private static void DecodeToLinear(NativeArray<Color32> pixels)
         {
             var decode = BuildDecodeTable(true);
             for (int i = 0; i < pixels.Length; i++)
@@ -397,54 +430,61 @@ namespace Synthos.TextureAnalysis
         }
 
         /// <summary>
-        /// Returns the texture's stored bytes unchanged. Non-readable textures
-        /// are read back through a RenderTexture whose color space matches the
-        /// source, so the hardware decode/encode round-trip preserves the bytes.
+        /// The texture's stored bytes, unchanged. Non-readable textures are read
+        /// back through a RenderTexture whose color space matches the source, so
+        /// the hardware decode/encode round-trip preserves the bytes; the readable
+        /// copy is returned in <paramref name="readable"/> for the caller to destroy
+        /// once done with the view.
         /// </summary>
-        private static Color32[] GetStoredPixels(Texture2D texture)
+        private static bool ReadStoredPixels(
+            Texture2D texture,
+            out Texture2D readable,
+            out PixelView pixels
+        )
         {
+            readable = null;
             if (texture.isReadable)
             {
-                return texture.GetPixels32();
+                pixels = PixelView.Of(texture);
+                return true;
             }
 
             var colorSpace = texture.isDataSRGB
                 ? RenderTextureReadWrite.sRGB
                 : RenderTextureReadWrite.Linear;
 
-            var readable = TextureReadback.BlitToReadable(
+            readable = TextureReadback.BlitToReadable(
                 texture,
                 colorSpace,
                 linearFlag: !texture.isDataSRGB
             );
             if (readable == null)
-                return null;
-            try
             {
-                return readable.GetPixels32();
+                pixels = default;
+                return false;
             }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(readable);
-            }
+            pixels = PixelView.Of(readable);
+            return true;
         }
 
-        private static Texture2D CreateOutput(
-            Color32[] pixels,
+        private static Texture2D NewOutput(
             int width,
             int height,
             Texture2D source,
             bool outputSRGB
         )
         {
-            var output = new Texture2D(
+            return new Texture2D(
                 width,
                 height,
                 TextureFormat.RGBA32,
                 source.mipmapCount > 1,
                 linear: !outputSRGB
             );
-            output.SetPixels32(pixels);
+        }
+
+        private static Texture2D FinishOutput(Texture2D output, Texture2D source)
+        {
             output.Apply(source.mipmapCount > 1);
             TextureReadback.CopyTextureSettings(source, output);
             return output;

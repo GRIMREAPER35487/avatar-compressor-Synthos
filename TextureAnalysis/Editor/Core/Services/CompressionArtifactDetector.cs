@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
@@ -220,7 +221,9 @@ namespace Synthos.TextureAnalysis
             }
 
             int width = texture.width;
-            var pixels = texture.GetPixels32();
+            // A view, not a GetPixels32 copy: only the chosen tiles are copied out.
+            using var view = PixelView.Of(texture);
+            var pixels = view.Pixels;
 
             var tiles = SelectTiles(pixels, width, texture.height, out int cleanTiles);
             if (tiles.Count == 0)
@@ -241,7 +244,7 @@ namespace Synthos.TextureAnalysis
                 int my = (t / columns) * TileSize;
                 for (int y = 0; y < TileSize; y++)
                 {
-                    Array.Copy(
+                    NativeArray<Color32>.Copy(
                         pixels,
                         (tileY + y) * width + tileX,
                         mosaicPixels,
@@ -297,7 +300,7 @@ namespace Synthos.TextureAnalysis
         /// Picks tiles that are mostly smooth but contain a color change, smoothest first.
         /// </summary>
         private static List<(int X, int Y)> SelectTiles(
-            Color32[] pixels,
+            NativeArray<Color32> pixels,
             int width,
             int height,
             out int cleanTiles

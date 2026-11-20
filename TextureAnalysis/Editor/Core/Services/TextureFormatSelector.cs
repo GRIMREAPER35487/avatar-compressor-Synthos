@@ -226,7 +226,8 @@ namespace Synthos.TextureAnalysis
 
             try
             {
-                var pixels = texture.GetPixels32();
+                using var view = PixelView.Of(texture);
+                var pixels = view.Pixels;
                 int sampleCount = Mathf.Min(pixels.Length, AnalysisConstants.MaxAlphaSampleCount);
                 int step = Mathf.Max(1, pixels.Length / sampleCount);
 
