@@ -209,6 +209,34 @@ namespace Synthos.TextureAnalysis
                 Generate(missing);
         }
 
+
+        // One buffer for every cache file read, grown to the next power of two. A new
+        // exact-size array per file (up to ~30 MB for a 4K normal map) fragmented Mono's
+        // non-moving heap, so it grew whenever an outfit brought new file sizes. LoadImage
+        // stops at the end of the PNG, so the stale bytes after it are ignored.
+        private static byte[] _readBuffer;
+
+        private static byte[] ReadIntoSharedBuffer(string path)
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
+            long length = stream.Length;
+            if (_readBuffer == null || _readBuffer.Length < length)
+            {
+                int size = 1 << 20;
+                while (size < length) size <<= 1;
+                _readBuffer = null;
+                _readBuffer = new byte[size];
+            }
+            int read = 0;
+            while (read < length)
+            {
+                int n = stream.Read(_readBuffer, read, (int)length - read);
+                if (n <= 0) throw new EndOfStreamException(path);
+                read += n;
+            }
+            return _readBuffer;
+        }
+
         /// <summary>
         /// Loads the source texture for an imported texture, or returns null if none is cached.
         /// The result is a readable RGBA32 texture with the imported texture's color space,
@@ -223,7 +251,7 @@ namespace Synthos.TextureAnalysis
             var decoded = new Texture2D(2, 2, TextureFormat.RGBA32, false, linear);
             try
             {
-                if (!File.Exists(cachePath) || !decoded.LoadImage(File.ReadAllBytes(cachePath)))
+                if (!File.Exists(cachePath) || !decoded.LoadImage(ReadIntoSharedBuffer(cachePath)))
                     return null;
 
                 var source = new Texture2D(

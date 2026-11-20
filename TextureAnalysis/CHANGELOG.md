@@ -7,6 +7,7 @@ All notable changes to Synthos Texture Analysis (`com.synthos.texture-analysis`)
 ### Fixed
 
 - **Large managed pixel copies** - Source loading, resizing, the alpha check, the banding check and normal map layout detection and conversion read and write the textures' own memory (new internal `PixelView`) instead of full-size `GetPixels32` arrays, which grew the editor's memory across builds. Source files decoded as ARGB32 (all PNGs) are converted without a managed copy. Results are unchanged.
+- **Reading source files** - The cached full-quality source files (up to about 30 MB each for a 4096x4096 normal map) are read into one reused buffer instead of a new array per file. New file sizes, which every outfit brings, kept making the editor's script memory grow. The decoded pixels are the same.
 
 ## [1.4.1] - 2026-11-07
 
